@@ -51,10 +51,36 @@
          or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version) }}
   tags: unifi_poller
 
-- name: Fetch checksum list on localhost
+- name: Select release artifact names
   ansible.builtin.set_fact:
-    _checksums: "{{ lookup('url', 'https://github.com/unpoller/unpoller/releases/download/v' + unifi_poller_version + '/checksums.sha256.txt', wantlist=True) | list }}"
+    __unifi_poller_modern_release: "{{ (unifi_poller_version is version('3.0.0', '>=')) | bool }}"
+    __unifi_poller_checksums_file: >-
+      {{ 'unpoller_' + unifi_poller_version + '_checksums.txt'
+         if unifi_poller_version is version('3.0.0', '>=')
+         else 'checksums.sha256.txt' }}
+    __unifi_poller_archive_name: >-
+      {{ 'unpoller_' + unifi_poller_version + '_linux_' + go_arch + '.tar.gz'
+         if unifi_poller_version is version('3.0.0', '>=')
+         else 'unifi-poller.' + go_arch + '.linux.gz' }}
+  tags: unifi_poller
+
+- name: Download checksum list on localhost
+  ansible.builtin.get_url:
+    url: "https://github.com/unpoller/unpoller/releases/download/v{{ unifi_poller_version }}/{{ __unifi_poller_checksums_file }}"
+    dest: "/tmp/unifi_poller-{{ unifi_poller_version }}-checksums.txt"
+    mode: "0644"
   environment: "{{ proxy_env }}"
+  delegate_to: localhost
+  run_once: true
+  check_mode: false
+  become: true
+  tags: unifi_poller
+  when: __unifi_poller_install_required
+
+- name: Read checksum list on localhost
+  ansible.builtin.slurp:
+    src: "/tmp/unifi_poller-{{ unifi_poller_version }}-checksums.txt"
+  register: __unifi_poller_checksum_file
   delegate_to: localhost
   run_once: true
   become: true
@@ -64,17 +90,17 @@
 - name: Select checksum for {{ go_arch }} architecture
   ansible.builtin.set_fact:
     unifi_poller_checksum: "{{ item.split(' ')[0] }}"
-  with_items: "{{ _checksums }}"
+  with_items: "{{ (__unifi_poller_checksum_file.content | b64decode).splitlines() }}"
   delegate_to: localhost
   when:
-  - "('unifi-poller.' + go_arch + '.linux.gz') in item"
+  - __unifi_poller_archive_name in item
   - __unifi_poller_install_required
   become: true
   tags: unifi_poller
 
 - name: Download binary on localhost
   ansible.builtin.get_url:
-    url: "https://github.com/unpoller/unpoller/releases/download/v{{ unifi_poller_version }}/unifi-poller.{{ go_arch }}.linux.gz"
+    url: "https://github.com/unpoller/unpoller/releases/download/v{{ unifi_poller_version }}/{{ __unifi_poller_archive_name }}"
     dest: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
     checksum: "sha256:{{ unifi_poller_checksum }}"
     mode: "0644"
@@ -89,7 +115,7 @@
   tags: unifi_poller
   when: __unifi_poller_install_required
 
-- name: Unpack binary on localhost
+- name: Unpack legacy binary on localhost
   ansible.builtin.command:
     cmd: "/usr/bin/gzip -f -d /tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
     creates: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}"
@@ -97,11 +123,40 @@
   check_mode: false
   become: true
   tags: unifi_poller
-  when: __unifi_poller_install_required
+  when:
+  - __unifi_poller_install_required
+  - not __unifi_poller_modern_release
+
+- name: Create modern release unpack directory on localhost
+  ansible.builtin.file:
+    path: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: unifi_poller
+  when:
+  - __unifi_poller_install_required
+  - __unifi_poller_modern_release
+
+- name: Unpack modern release on localhost
+  ansible.builtin.unarchive:
+    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
+    dest: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}"
+    remote_src: true
+    creates: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}/unpoller"
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: unifi_poller
+  when:
+  - __unifi_poller_install_required
+  - __unifi_poller_modern_release
 
 - name: Install unifi_poller binary
   ansible.builtin.copy:
-    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}"
+    src: "{{ '/tmp/unifi_poller-' + unifi_poller_version + '.linux-' + go_arch + '/unpoller' if __unifi_poller_modern_release else '/tmp/unifi_poller-' + unifi_poller_version + '.linux-' + go_arch }}"
     dest: "{{ unifi_poller_binary_install_dir }}/{{ unifi_poller_binary_name }}"
     mode: "0755"
     owner: "root"
