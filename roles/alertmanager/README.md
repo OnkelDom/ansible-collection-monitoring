@@ -20,10 +20,21 @@ alertmanager_log_level: warn
 alertmanager_webconfig: {}
 alertmanager_config_dir: /etc/alertmanager
 alertmanager_web_external_url: https://alertmanager.{{ alertmanager_external_domain }}
-alertmanager_template_files:
-- default.tmpl
+alertmanager_template_files: []
+alertmanager_template_src_dir: alertmanager
 alertmanager_config_flags_extra: {}
 alertmanager_cluster: {}
+alertmanager_resolve_timeout: 5m
+alertmanager_smtp: {}
+alertmanager_time_intervals: []
+alertmanager_inhibit_rules: []
+alertmanager_route:
+  receiver: blackhole
+  group_by:
+  - alertname
+  repeat_interval: 4h
+  group_interval: 5m
+alertmanager_routes: []
 alertmanager_config: "{{ all_alertmanager_config|default({}) | combine(group_vars_alertmanager_config|default({}),recursive=True,list_merge='append') | combine(host_vars_alertmanager_config|default({}),recursive=True,list_merge='append') | combine(defaults_alertmanager_config|default({}),recursive=True,list_merge='append') }}"
 ```
 

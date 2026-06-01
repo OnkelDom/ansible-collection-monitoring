@@ -125,14 +125,16 @@
 
 - name: copy template files
   ansible.builtin.copy:
-    src: "alertmanager/default_{{ ansible_environment }}.tmpl"
-    dest: "{{ alertmanager_config_dir }}/templates/default.tmpl"
+    src: "{{ alertmanager_template_src_dir }}/{{ item }}"
+    dest: "{{ alertmanager_config_dir }}/templates/{{ item }}"
     force: true
     owner: "alertmanager"
     group: "alertmanager"
     mode: 0644
+  with_items: "{{ alertmanager_template_files }}"
   notify: reload alertmanager
   become: true
+  when: alertmanager_template_files | length > 0
   tags:
   - alertmanager
   - alertmanager_template

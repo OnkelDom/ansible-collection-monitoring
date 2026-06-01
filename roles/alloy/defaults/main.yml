@@ -48,51 +48,51 @@ alloy_linux_journal_enabled: true
 alloy_linux_journal_max_age: 24h
 alloy_linux_file_logs_enabled: true
 alloy_linux_file_log_targets:
-  - path: /var/log/syslog
-    job: syslog
-    log_type: system
-    service: syslog
-  - path: /var/log/messages
-    job: messages
-    log_type: system
-    service: messages
-  - path: /var/log/auth.log
-    job: auth
-    log_type: security
-    service: auth
-  - path: /var/log/secure
-    job: secure
-    log_type: security
-    service: secure
-  - path: /var/log/audit/audit.log
-    job: audit
-    log_type: security
-    service: audit
+- path: /var/log/syslog
+  job: syslog
+  log_type: system
+  service: syslog
+- path: /var/log/messages
+  job: messages
+  log_type: system
+  service: messages
+- path: /var/log/auth.log
+  job: auth
+  log_type: security
+  service: auth
+- path: /var/log/secure
+  job: secure
+  log_type: security
+  service: secure
+- path: /var/log/audit/audit.log
+  job: audit
+  log_type: security
+  service: audit
 
 # Windows-Metriken und Eventlogs
 alloy_windows_metrics_enabled: true
 alloy_windows_enabled_collectors:
-  - cpu
-  - cs
-  - logical_disk
-  - net
-  - os
-  - service
-  - system
+- cpu
+- cs
+- logical_disk
+- net
+- os
+- service
+- system
 alloy_windows_eventlog_enabled: true
 alloy_windows_eventlogs:
-  - name: Application
-    job: windows-eventlog-application
-    log_type: application
-    service: application
-  - name: System
-    job: windows-eventlog-system
-    log_type: system
-    service: system
-  - name: Security
-    job: windows-eventlog-security
-    log_type: security
-    service: security
+- name: Application
+  job: windows-eventlog-application
+  log_type: application
+  service: application
+- name: System
+  job: windows-eventlog-system
+  log_type: system
+  service: system
+- name: Security
+  job: windows-eventlog-security
+  log_type: security
+  service: security
 alloy_windows_bookmark_dir: C:/ProgramData/GrafanaLabs/Alloy/bookmarks
 
 # Freie Alloy-Bloecke fuer Spezialquellen, z. B. Proxmox/Ceph Scrapes.

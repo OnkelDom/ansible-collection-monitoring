@@ -130,7 +130,7 @@
 
 - name: copy alert rules files
   ansible.builtin.copy:
-    src: "prometheus/rules/{{ item }}"
+    src: "{{ prometheus_alert_rules_src_dir }}/{{ item }}"
     dest: "/etc/prometheus/rules/{{ item }}"
     mode: 0644
     owner: prometheus
@@ -170,7 +170,7 @@
 
 - name: copy prometheus custom static targets
   ansible.builtin.copy:
-    src: "prometheus/file_sd/{{ item }}"
+    src: "{{ prometheus_static_targets_src_dir }}/{{ item }}"
     dest: "/etc/prometheus/file_sd/"
     force: true
     owner: prometheus

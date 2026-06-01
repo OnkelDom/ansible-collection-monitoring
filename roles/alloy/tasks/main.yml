@@ -2,212 +2,212 @@
 - name: Include OS-specific variables
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
   tags:
-    - alloy
-    - alloy-config
+  - alloy
+  - alloy-config
 
 - name: Validate supported platform
   ansible.builtin.assert:
     that:
-      - ansible_os_family in ['Debian', 'RedHat', 'Windows']
+    - ansible_os_family in ['Debian', 'RedHat', 'Windows']
     fail_msg: "The alloy role supports Debian, RedHat and Windows hosts."
   tags:
-    - alloy
+  - alloy
 
 - name: Install and configure Alloy on Linux
   when: ansible_os_family != "Windows"
   tags:
-    - alloy
+  - alloy
   block:
-    - name: Install Grafana Alloy package
-      ansible.builtin.package:
-        name: "{{ alloy_package_name }}"
-        state: present
-      become: true
-      when: alloy_linux_install_package
-      notify: start alloy
-      tags:
-        - alloy-install
+  - name: Install Grafana Alloy package
+    ansible.builtin.package:
+      name: "{{ alloy_package_name }}"
+      state: present
+    become: true
+    when: alloy_linux_install_package
+    notify: start alloy
+    tags:
+    - alloy-install
 
-    - name: Create alloy configuration directory
-      ansible.builtin.file:
-        path: "{{ alloy_config_dir }}"
-        state: directory
-        owner: "{{ alloy_user }}"
-        group: "{{ alloy_group }}"
-        mode: "0755"
-      become: true
-      tags:
-        - alloy-config
+  - name: Create alloy configuration directory
+    ansible.builtin.file:
+      path: "{{ alloy_config_dir }}"
+      state: directory
+      owner: "{{ alloy_user }}"
+      group: "{{ alloy_group }}"
+      mode: "0755"
+    become: true
+    tags:
+    - alloy-config
 
-    - name: Create alloy data directory
-      ansible.builtin.file:
-        path: "{{ alloy_data_dir }}"
-        state: directory
-        owner: "{{ alloy_user }}"
-        group: "{{ alloy_group }}"
-        mode: "0755"
-      become: true
-      tags:
-        - alloy-config
+  - name: Create alloy data directory
+    ansible.builtin.file:
+      path: "{{ alloy_data_dir }}"
+      state: directory
+      owner: "{{ alloy_user }}"
+      group: "{{ alloy_group }}"
+      mode: "0755"
+    become: true
+    tags:
+    - alloy-config
 
-    - name: Generate alloy configuration file
-      ansible.builtin.template:
-        src: config.alloy.j2
-        dest: "{{ alloy_config_file }}"
-        owner: "{{ alloy_user }}"
-        group: "{{ alloy_group }}"
-        mode: "0644"
-        backup: true
-      become: true
-      notify: restart alloy
-      tags:
-        - alloy-config
+  - name: Generate alloy configuration file
+    ansible.builtin.template:
+      src: config.alloy.j2
+      dest: "{{ alloy_config_file }}"
+      owner: "{{ alloy_user }}"
+      group: "{{ alloy_group }}"
+      mode: "0644"
+      backup: true
+    become: true
+    notify: restart alloy
+    tags:
+    - alloy-config
 
-    - name: Validate alloy configuration
-      ansible.builtin.command:
-        cmd: "alloy fmt --test {{ alloy_config_file }}"
-      become: true
-      changed_when: false
-      when: alloy_validate_config
-      tags:
-        - alloy-config
+  - name: Validate alloy configuration
+    ansible.builtin.command:
+      cmd: "alloy fmt --test {{ alloy_config_file }}"
+    become: true
+    changed_when: false
+    when: alloy_validate_config
+    tags:
+    - alloy-config
 
-    - name: Create systemd service override directory
-      ansible.builtin.file:
-        path: /etc/systemd/system/{{ alloy_service_name }}.service.d
-        state: directory
-        mode: "0755"
-      become: true
-      when: alloy_service_override | length > 0
-      tags:
-        - alloy-service
+  - name: Create systemd service override directory
+    ansible.builtin.file:
+      path: /etc/systemd/system/{{ alloy_service_name }}.service.d
+      state: directory
+      mode: "0755"
+    become: true
+    when: alloy_service_override | length > 0
+    tags:
+    - alloy-service
 
-    - name: Create systemd service override file
-      ansible.builtin.template:
-        src: systemd-override.conf.j2
-        dest: /etc/systemd/system/{{ alloy_service_name }}.service.d/override.conf
-        mode: "0644"
-      become: true
-      when: alloy_service_override | length > 0
-      notify:
-        - restart alloy
-      tags:
-        - alloy-service
+  - name: Create systemd service override file
+    ansible.builtin.template:
+      src: systemd-override.conf.j2
+      dest: /etc/systemd/system/{{ alloy_service_name }}.service.d/override.conf
+      mode: "0644"
+    become: true
+    when: alloy_service_override | length > 0
+    notify:
+    - restart alloy
+    tags:
+    - alloy-service
 
-    - name: Configure firewalld for alloy
-      ansible.posix.firewalld:
-        port: "{{ item }}"
-        permanent: true
-        state: enabled
-        immediate: true
-      loop: "{{ alloy_firewall_ports }}"
-      become: true
-      when:
-        - alloy_firewall_enabled
-        - alloy_firewall_ports | length > 0
-        - ansible_os_family == "RedHat"
-      tags:
-        - alloy-firewall
+  - name: Configure firewalld for alloy
+    ansible.posix.firewalld:
+      port: "{{ item }}"
+      permanent: true
+      state: enabled
+      immediate: true
+    loop: "{{ alloy_firewall_ports }}"
+    become: true
+    when:
+    - alloy_firewall_enabled
+    - alloy_firewall_ports | length > 0
+    - ansible_os_family == "RedHat"
+    tags:
+    - alloy-firewall
 
-    - name: Configure UFW for alloy
-      community.general.ufw:
-        rule: allow
-        port: "{{ item.split('/')[0] }}"
-        proto: "{{ item.split('/')[1] | default('tcp') }}"
-      loop: "{{ alloy_firewall_ports }}"
-      become: true
-      when:
-        - alloy_firewall_enabled
-        - alloy_firewall_ports | length > 0
-        - ansible_os_family == "Debian"
-      tags:
-        - alloy-firewall
+  - name: Configure UFW for alloy
+    community.general.ufw:
+      rule: allow
+      port: "{{ item.split('/')[0] }}"
+      proto: "{{ item.split('/')[1] | default('tcp') }}"
+    loop: "{{ alloy_firewall_ports }}"
+    become: true
+    when:
+    - alloy_firewall_enabled
+    - alloy_firewall_ports | length > 0
+    - ansible_os_family == "Debian"
+    tags:
+    - alloy-firewall
 
-    - name: Start and enable alloy service
-      ansible.builtin.systemd:
-        name: "{{ alloy_service_name }}"
-        state: "{{ alloy_service_state }}"
-        enabled: "{{ alloy_service_enabled }}"
-        daemon_reload: true
-      become: true
-      tags:
-        - alloy-service
+  - name: Start and enable alloy service
+    ansible.builtin.systemd:
+      name: "{{ alloy_service_name }}"
+      state: "{{ alloy_service_state }}"
+      enabled: "{{ alloy_service_enabled }}"
+      daemon_reload: true
+    become: true
+    tags:
+    - alloy-service
 
 - name: Install and configure Alloy on Windows
   when: ansible_os_family == "Windows"
   tags:
-    - alloy
+  - alloy
   block:
-    - name: Install Grafana Alloy with winget
-      ansible.windows.win_command: winget install --id {{ alloy_windows_product_id }} --silent --accept-package-agreements --accept-source-agreements
-      register: alloy_windows_winget_install
-      changed_when: "'Successfully installed' in alloy_windows_winget_install.stdout"
-      failed_when:
-        - alloy_windows_winget_install.rc != 0
-        - "'No installed package found matching input criteria' not in alloy_windows_winget_install.stderr"
-      when: alloy_windows_install_method == "winget"
-      tags:
-        - alloy-install
+  - name: Install Grafana Alloy with winget
+    ansible.windows.win_command: winget install --id {{ alloy_windows_product_id }} --silent --accept-package-agreements --accept-source-agreements
+    register: alloy_windows_winget_install
+    changed_when: "'Successfully installed' in alloy_windows_winget_install.stdout"
+    failed_when:
+    - alloy_windows_winget_install.rc != 0
+    - "'No installed package found matching input criteria' not in alloy_windows_winget_install.stderr"
+    when: alloy_windows_install_method == "winget"
+    tags:
+    - alloy-install
 
-    - name: Download Grafana Alloy installer
-      ansible.windows.win_get_url:
-        url: "{{ alloy_windows_installer_url }}"
-        dest: "{{ alloy_windows_installer_path }}"
-      when: alloy_windows_install_method == "url"
-      tags:
-        - alloy-install
+  - name: Download Grafana Alloy installer
+    ansible.windows.win_get_url:
+      url: "{{ alloy_windows_installer_url }}"
+      dest: "{{ alloy_windows_installer_path }}"
+    when: alloy_windows_install_method == "url"
+    tags:
+    - alloy-install
 
-    - name: Install Grafana Alloy from installer
-      ansible.windows.win_package:
-        path: "{{ alloy_windows_installer_path }}"
-        arguments: /S
-        state: present
-      when: alloy_windows_install_method == "url"
-      tags:
-        - alloy-install
+  - name: Install Grafana Alloy from installer
+    ansible.windows.win_package:
+      path: "{{ alloy_windows_installer_path }}"
+      arguments: /S
+      state: present
+    when: alloy_windows_install_method == "url"
+    tags:
+    - alloy-install
 
-    - name: Create Alloy configuration directory
-      ansible.windows.win_file:
-        path: "{{ alloy_config_dir }}"
-        state: directory
-      tags:
-        - alloy-config
+  - name: Create Alloy configuration directory
+    ansible.windows.win_file:
+      path: "{{ alloy_config_dir }}"
+      state: directory
+    tags:
+    - alloy-config
 
-    - name: Create Alloy data directory
-      ansible.windows.win_file:
-        path: "{{ alloy_data_dir }}"
-        state: directory
-      tags:
-        - alloy-config
+  - name: Create Alloy data directory
+    ansible.windows.win_file:
+      path: "{{ alloy_data_dir }}"
+      state: directory
+    tags:
+    - alloy-config
 
-    - name: Create Windows Event Log bookmark directory
-      ansible.windows.win_file:
-        path: "{{ alloy_windows_bookmark_dir }}"
-        state: directory
-      when: alloy_windows_eventlog_enabled
-      tags:
-        - alloy-config
+  - name: Create Windows Event Log bookmark directory
+    ansible.windows.win_file:
+      path: "{{ alloy_windows_bookmark_dir }}"
+      state: directory
+    when: alloy_windows_eventlog_enabled
+    tags:
+    - alloy-config
 
-    - name: Generate alloy configuration file
-      ansible.windows.win_template:
-        src: config.alloy.j2
-        dest: "{{ alloy_config_file }}"
-        backup: true
-      notify: restart alloy
-      tags:
-        - alloy-config
+  - name: Generate alloy configuration file
+    ansible.windows.win_template:
+      src: config.alloy.j2
+      dest: "{{ alloy_config_file }}"
+      backup: true
+    notify: restart alloy
+    tags:
+    - alloy-config
 
-    - name: Validate alloy configuration
-      ansible.windows.win_command: '"{{ alloy_windows_binary_path }}" fmt --test "{{ alloy_config_file }}"'
-      changed_when: false
-      when: alloy_validate_config
-      tags:
-        - alloy-config
+  - name: Validate alloy configuration
+    ansible.windows.win_command: '"{{ alloy_windows_binary_path }}" fmt --test "{{ alloy_config_file }}"'
+    changed_when: false
+    when: alloy_validate_config
+    tags:
+    - alloy-config
 
-    - name: Start and enable alloy service
-      ansible.windows.win_service:
-        name: "{{ alloy_service_name }}"
-        state: "{{ alloy_service_state }}"
-        start_mode: "{{ 'auto' if alloy_service_enabled else 'manual' }}"
-      tags:
-        - alloy-service
+  - name: Start and enable alloy service
+    ansible.windows.win_service:
+      name: "{{ alloy_service_name }}"
+      state: "{{ alloy_service_state }}"
+      start_mode: "{{ 'auto' if alloy_service_enabled else 'manual' }}"
+    tags:
+    - alloy-service

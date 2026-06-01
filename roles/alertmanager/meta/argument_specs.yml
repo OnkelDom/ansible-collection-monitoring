@@ -40,7 +40,11 @@ argument_specs:
         - Controls `alertmanager_template_files` for the `alertmanager` role.
         required: false
         type: list
-        elements: str
+      alertmanager_template_src_dir:
+        description:
+        - Controls `alertmanager_template_src_dir` for the `alertmanager` role.
+        required: false
+        type: str
       alertmanager_config_flags_extra:
         description:
         - Controls `alertmanager_config_flags_extra` for the `alertmanager` role.
@@ -51,11 +55,6 @@ argument_specs:
         - Controls `alertmanager_cluster` for the `alertmanager` role.
         required: false
         type: dict
-      alertmanager_config:
-        description:
-        - Controls `alertmanager_config` for the `alertmanager` role.
-        required: false
-        type: str
       alertmanager_resolve_timeout:
         description:
         - Controls `alertmanager_resolve_timeout` for the `alertmanager` role.
@@ -86,3 +85,8 @@ argument_specs:
         - Controls `alertmanager_routes` for the `alertmanager` role.
         required: false
         type: list
+      alertmanager_config:
+        description:
+        - Controls `alertmanager_config` for the `alertmanager` role.
+        required: false
+        type: str

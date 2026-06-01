@@ -24,28 +24,29 @@ loki_binary_install_dir: /usr/local/bin
 loki_config_dir: /etc/loki
 loki_config_file: config.yml
 loki_data_dir: /var/lib/loki
-loki_rule_path: /tmp/loki/rules
+loki_rule_path: '{{ loki_data_dir }}/rules'
+loki_validate_certs: true
 loki_system_user: loki
 loki_system_group: loki
 loki_auth_enabled: false
 loki_log_level: warn
 loki_config:
-  auth_enabled: "{{ loki_auth_enabled }}"
+  auth_enabled: '{{ loki_auth_enabled }}'
   server:
-    http_listen_address: "{{ loki_http_listen_address }}"
-    http_listen_port: "{{ loki_http_listen_port }}"
-    grpc_listen_address: "{{ loki_grpc_listen_address }}"
-    grpc_listen_port: "{{ loki_grpc_listen_port }}"
-    log_level: "{{ loki_log_level }}"
+    http_listen_address: '{{ loki_http_listen_address }}'
+    http_listen_port: '{{ loki_http_listen_port }}'
+    grpc_listen_address: '{{ loki_grpc_listen_address }}'
+    grpc_listen_port: '{{ loki_grpc_listen_port }}'
+    log_level: '{{ loki_log_level }}'
   common:
-    path_prefix: "{{ loki_data_dir }}"
+    path_prefix: '{{ loki_data_dir }}'
     replication_factor: 1
     ring:
       kvstore:
         store: inmemory
   schema_config:
     configs:
-    - from: "2024-01-01"
+    - from: '2024-01-01'
       store: tsdb
       object_store: filesystem
       schema: v13
@@ -54,17 +55,26 @@ loki_config:
         period: 24h
   storage_config:
     filesystem:
-      directory: "{{ loki_data_dir }}/chunks"
+      directory: '{{ loki_data_dir }}/chunks'
+  ruler:
+    alertmanager_url: http://localhost:9093
+    storage:
+      type: local
+      local:
+        directory: '{{ loki_data_dir }}/rules'
+    rule_path: '{{ loki_rule_path }}'
+  analytics:
+    reporting_enabled: false
 ```
 
 ## Example Playbook
 
 ```yaml
 - name: Apply loki
-  hosts: logging
+  hosts: all
   become: true
   roles:
-  - role: lenmail.monitoring.loki
+    - role: lenmail.monitoring.loki
 ```
 
 ## Testing

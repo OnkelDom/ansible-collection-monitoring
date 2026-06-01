@@ -1,116 +1,115 @@
 # alloy
 
-Installiert und konfiguriert Grafana Alloy als Standard-Agent fuer Linux- und Windows-Systeme.
+Install and configure Grafana Alloy as a telemetry agent.
 
-## Plattform-Support
+## Supported platforms
 
 - Ubuntu 22.04+
 - Debian 12+
 - RHEL 9+
-- Windows Server mit WinRM und `ansible.windows`
 
-## Zielzustand
+## Role Variables
 
-Die Rolle betreibt Alloy als hostnahen Agenten fuer Logs und Metriken:
-
-- Linux-Hostmetriken ueber `prometheus.exporter.unix`
-- Windows-Hostmetriken ueber `prometheus.exporter.windows`
-- Linux-Logs aus journald und definierten Logdateien
-- Windows Event Logs aus Application, System und Security
-- stabile Loglabels fuer Dashboard-Filter: `service`, bei journald zusaetzlich `unit`, `syslog_identifier` und `level`
-- Versand von Logs an Loki
-- Versand von Metriken per Prometheus Remote Write
-- erweiterbare Alloy-Rohkonfiguration fuer Sonderquellen
-
-Exporter fuer fachliche Plattformen wie UniFi, Proxmox, Ceph, SNMP, Blackbox oder iLO werden bewusst nicht in diese Rolle eingebaut. Sie bleiben eigene Integrationen und werden bei Bedarf per `alloy_extra_config` oder separater Rolle angebunden.
-
-## Wichtige Variablen
+The role interface is validated through `meta/argument_specs.yml`. Defaults are defined in `defaults/main.yml`.
 
 ```yaml
+---
+alloy_service_enabled: true
+alloy_service_state: started
+alloy_linux_install_package: true
+alloy_windows_install_method: winget
+alloy_windows_installer_url: ''
+alloy_windows_installer_path: C:/Windows/Temp/alloy-installer-windows-amd64.exe
+alloy_windows_product_id: GrafanaLabs.Alloy
+alloy_windows_binary_path: C:/Program Files/GrafanaLabs/Alloy/alloy.exe
+alloy_config_file: ''
+alloy_config_dir: ''
+alloy_data_dir: ''
+alloy_user: alloy
+alloy_group: alloy
+alloy_log_level: info
+alloy_validate_config: true
 alloy_labels:
-  tenant: kunde_a
+  tenant: default
   environment: prod
-  site: rz1
-  platform: proxmox
-  system_role: hypervisor
+  site: default
+  platform: generic
+  system_role: server
   component_type: compute
   managed_by: ansible
-
-alloy_loki_endpoint: http://observability.example.local:3100/loki/api/v1/push
-alloy_loki_tenant_id: kunde_a
-
-alloy_prometheus_remote_write_url: http://observability.example.local:9090/api/v1/write
-
+alloy_loki_endpoint: ''
+alloy_loki_tenant_id: ''
+alloy_loki_external_labels: {}
+alloy_prometheus_remote_write_url: ''
+alloy_prometheus_remote_write_headers: {}
+alloy_prometheus_external_labels: {}
 alloy_linux_metrics_enabled: true
+alloy_linux_metrics_collectors_disabled: []
+alloy_linux_metrics_collectors_enabled: []
 alloy_linux_journal_enabled: true
+alloy_linux_journal_max_age: 24h
 alloy_linux_file_logs_enabled: true
-
+alloy_linux_file_log_targets:
+- path: /var/log/syslog
+  job: syslog
+  log_type: system
+  service: syslog
+- path: /var/log/messages
+  job: messages
+  log_type: system
+  service: messages
+- path: /var/log/auth.log
+  job: auth
+  log_type: security
+  service: auth
+- path: /var/log/secure
+  job: secure
+  log_type: security
+  service: secure
+- path: /var/log/audit/audit.log
+  job: audit
+  log_type: security
+  service: audit
 alloy_windows_metrics_enabled: true
+alloy_windows_enabled_collectors:
+- cpu
+- cs
+- logical_disk
+- net
+- os
+- service
+- system
 alloy_windows_eventlog_enabled: true
+alloy_windows_eventlogs:
+- name: Application
+  job: windows-eventlog-application
+  log_type: application
+  service: application
+- name: System
+  job: windows-eventlog-system
+  log_type: system
+  service: system
+- name: Security
+  job: windows-eventlog-security
+  log_type: security
+  service: security
+alloy_windows_bookmark_dir: C:/ProgramData/GrafanaLabs/Alloy/bookmarks
+alloy_extra_config: ''
+alloy_firewall_enabled: false
+alloy_firewall_ports: []
+alloy_service_override: {}
 ```
 
-Wenn `alloy_loki_endpoint` leer ist, wird kein Logversand konfiguriert. Wenn `alloy_prometheus_remote_write_url` leer ist, wird kein Metrikversand konfiguriert.
-
-## Linux-Beispiel
+## Example Playbook
 
 ```yaml
-- name: Deploy Alloy on Linux hosts
-  hosts: linux
+- name: Apply alloy
+  hosts: all
   become: true
   roles:
     - role: lenmail.monitoring.alloy
-      vars:
-        alloy_loki_endpoint: http://monitoring.internal:3100/loki/api/v1/push
-        alloy_prometheus_remote_write_url: http://monitoring.internal:9090/api/v1/write
-        alloy_labels:
-          tenant: internal
-          environment: prod
-          site: rz1
-          platform: linux
-          system_role: server
-          component_type: compute
-          managed_by: ansible
 ```
 
-## Windows-Beispiel
+## Testing
 
-```yaml
-- name: Deploy Alloy on Windows hosts
-  hosts: windows
-  gather_facts: true
-  roles:
-    - role: lenmail.monitoring.alloy
-      vars:
-        alloy_windows_install_method: winget
-        alloy_loki_endpoint: http://monitoring.internal:3100/loki/api/v1/push
-        alloy_prometheus_remote_write_url: http://monitoring.internal:9090/api/v1/write
-        alloy_labels:
-          tenant: internal
-          environment: prod
-          site: rz1
-          platform: windows
-          system_role: application
-          component_type: compute
-          managed_by: ansible
-```
-
-## Proxmox/Ceph-Erweiterung
-
-Hostnahe Metriken und Logs kommen aus Alloy. Plattformmetriken sollten ueber geeignete Exporter oder vorhandene Prometheus-Endpunkte angebunden werden.
-
-```yaml
-alloy_extra_config: |
-  prometheus.scrape "ceph_mgr" {
-    targets = [{
-      __address__ = "127.0.0.1:9283",
-      job         = "ceph",
-    }]
-    forward_to = [prometheus.remote_write.default.receiver]
-  }
-```
-
-## Betrieb
-
-Die Rolle validiert die gerenderte Alloy-Konfiguration mit `alloy fmt --test`, sofern `alloy_validate_config` aktiv ist. Bei Plattformen ohne lokal verfuegbares Alloy-Binary kann die Validierung temporaer deaktiviert werden.
-
-Interaktive Betriebsanleitungen verwenden `vim`, nicht `nano`.
+The collection CI runs `ansible-lint`, `ansible-test sanity`, repository consistency tests, and per-role syntax checks using `roles/alloy/tests/test.yml`.

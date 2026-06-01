@@ -5,8 +5,8 @@ alertmanager_log_level: warn
 alertmanager_webconfig: {}
 alertmanager_config_dir: "/etc/alertmanager"
 alertmanager_web_external_url: "https://alertmanager.{{ alertmanager_external_domain }}"
-alertmanager_template_files:
-- default.tmpl
+alertmanager_template_files: []
+alertmanager_template_src_dir: alertmanager
 alertmanager_config_flags_extra: {}
 alertmanager_cluster: {}
 alertmanager_resolve_timeout: "5m"

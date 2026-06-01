@@ -60,6 +60,11 @@ argument_specs:
         - Controls `loki_rule_path` for the `loki` role.
         required: false
         type: str
+      loki_validate_certs:
+        description:
+        - Controls `loki_validate_certs` for the `loki` role.
+        required: false
+        type: bool
       loki_system_user:
         description:
         - Controls `loki_system_user` for the `loki` role.

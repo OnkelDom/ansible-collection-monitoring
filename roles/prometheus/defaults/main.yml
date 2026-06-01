@@ -10,6 +10,8 @@ prometheus_config_flags_extra: {}
 prometheus_config: "{{ all_prometheus_config|default({}) | combine(group_vars_prometheus_config|default({}),recursive=True,list_merge='append') | combine(host_vars_prometheus_config|default({}),recursive=True,list_merge='append') | combine(defaults_prometheus_config|default({}),recursive=True,list_merge='append') }}"
 prometheus_static_targets_files: "{{ all_prometheus_static_targets_files|default([]) + group_vars_prometheus_static_targets_files|default([]) + host_vars_prometheus_static_targets_files|default([]) }}"
 prometheus_alert_rules_files: "{{ all_prometheus_alert_rules_files|default([]) + group_vars_prometheus_alert_rules_files|default([]) + host_vars_prometheus_alert_rules_files|default([]) }}"
+prometheus_alert_rules_src_dir: prometheus/rules
+prometheus_static_targets_src_dir: prometheus/file_sd
 
 defaults_prometheus_config:
   global:

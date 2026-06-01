@@ -9,7 +9,7 @@ argument_specs:
         description:
         - Controls `proxy_env` for the `prometheus` role.
         required: false
-        type: dict
+        type: list
       prometheus_version:
         description:
         - Controls `prometheus_version` for the `prometheus` role.
@@ -58,6 +58,16 @@ argument_specs:
       prometheus_alert_rules_files:
         description:
         - Controls `prometheus_alert_rules_files` for the `prometheus` role.
+        required: false
+        type: str
+      prometheus_alert_rules_src_dir:
+        description:
+        - Controls `prometheus_alert_rules_src_dir` for the `prometheus` role.
+        required: false
+        type: str
+      prometheus_static_targets_src_dir:
+        description:
+        - Controls `prometheus_static_targets_src_dir` for the `prometheus` role.
         required: false
         type: str
       defaults_prometheus_config:
