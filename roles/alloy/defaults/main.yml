@@ -44,6 +44,7 @@ alloy_prometheus_external_labels: {}
 alloy_linux_metrics_enabled: true
 alloy_linux_metrics_collectors_disabled: []
 alloy_linux_metrics_collectors_enabled: []
+alloy_linux_metrics_textfile_directory: ""
 alloy_linux_journal_enabled: true
 alloy_linux_journal_max_age: 24h
 alloy_linux_file_logs_enabled: true

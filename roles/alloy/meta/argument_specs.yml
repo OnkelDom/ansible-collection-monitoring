@@ -130,6 +130,17 @@ argument_specs:
         - Controls `alloy_linux_metrics_collectors_enabled` for the `alloy` role.
         required: false
         type: list
+      alloy_linux_metrics_textfile_directory:
+        description:
+          - Optional directory for prometheus.exporter.unix textfile metrics on Linux.
+          - Leave empty to disable the textfile collector directory block.
+        required: false
+        type: str
+      alloy_linux_file_logs_enabled:
+        description:
+        - Controls `alloy_linux_file_logs_enabled` for the `alloy` role.
+        required: false
+        type: bool
       alloy_linux_journal_enabled:
         description:
         - Controls `alloy_linux_journal_enabled` for the `alloy` role.
@@ -140,11 +151,6 @@ argument_specs:
         - Controls `alloy_linux_journal_max_age` for the `alloy` role.
         required: false
         type: str
-      alloy_linux_file_logs_enabled:
-        description:
-        - Controls `alloy_linux_file_logs_enabled` for the `alloy` role.
-        required: false
-        type: bool
       alloy_linux_file_log_targets:
         description:
         - Controls `alloy_linux_file_log_targets` for the `alloy` role.

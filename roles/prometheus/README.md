@@ -14,7 +14,7 @@ The role interface is validated through `meta/argument_specs.yml`. Defaults are 
 
 ```yaml
 ---
-proxy_env: []
+proxy_env: {}
 prometheus_version: 2.48.0
 prometheus_web_external_url: https://prometheus.{{ ansible_external_domain }}
 prometheus_webconfig: {}

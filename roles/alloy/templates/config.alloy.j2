@@ -47,6 +47,11 @@ prometheus.exporter.unix "local" {
 {% if alloy_linux_metrics_collectors_enabled | length > 0 %}
   enable_collectors = {{ alloy_linux_metrics_collectors_enabled | to_json }}
 {% endif %}
+{% if alloy_linux_metrics_textfile_directory | length > 0 %}
+  textfile {
+    directory = "{{ alloy_linux_metrics_textfile_directory }}"
+  }
+{% endif %}
 }
 
 prometheus.scrape "linux_host" {

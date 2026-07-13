@@ -50,6 +50,20 @@
     tags:
     - alloy-config
 
+  - name: Create Linux metrics textfile directory
+    ansible.builtin.file:
+      path: "{{ alloy_linux_metrics_textfile_directory }}"
+      state: directory
+      owner: root
+      group: root
+      mode: "0755"
+    become: true
+    when:
+    - alloy_linux_metrics_enabled
+    - alloy_linux_metrics_textfile_directory | length > 0
+    tags:
+    - alloy-config
+
   - name: Generate alloy configuration file
     ansible.builtin.template:
       src: config.alloy.j2
