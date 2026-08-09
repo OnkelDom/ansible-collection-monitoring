@@ -79,7 +79,7 @@
 
   - name: Validate alloy configuration
     ansible.builtin.command:
-      cmd: "alloy fmt --test {{ alloy_config_file }}"
+      cmd: "alloy validate {{ alloy_config_file }}"
     become: true
     changed_when: false
     when: alloy_validate_config
