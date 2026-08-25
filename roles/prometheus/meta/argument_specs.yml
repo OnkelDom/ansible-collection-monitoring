@@ -9,7 +9,7 @@ argument_specs:
         description:
         - Controls `proxy_env` for the `prometheus` role.
         required: false
-        type: list
+        type: dict
       prometheus_version:
         description:
         - Controls `prometheus_version` for the `prometheus` role.

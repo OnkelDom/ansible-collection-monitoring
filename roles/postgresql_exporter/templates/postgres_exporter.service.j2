@@ -1,25 +1,26 @@
 {{ ansible_managed | comment }}
 [Unit]
-Description=Prometheus Postgres Exporter
+Description=Prometheus PostgreSQL Exporter
 Documentation=https://github.com/prometheus-community/postgres_exporter
-After=network-online.target
-StartLimitInterval=0
+Wants=network-online.target
+After=network-online.target postgresql.service
 
 [Service]
 Type=simple
-User=postgres
-Group=postgres
+User={{ postgres_exporter_system_user }}
+Group={{ postgres_exporter_system_group }}
 Environment="DATA_SOURCE_NAME={{ postgres_exporter_data_source_name }}"
-ExecStart=/usr/local/bin/postgres_exporter \
-  --log.level warn \
-  --auto-discover-databases \
-  --extend.query-path /etc/postgres_exporter/{{ postgres_exporter_query_filename }} \
-  --web.listen-address 0.0.0.0:9187{% for key, value in postgres_exporter_config_flags_extra.items() %} \
-  --{{ key }}={{ value }}{% endfor %}
-
-SyslogIdentifier=postgres_exporter
-Restart=always
-RestartSec=1
+ExecStart={{ postgres_exporter_install_dir }}/postgres_exporter --log.level={{ postgres_exporter_log_level }} --web.listen-address={{ postgres_exporter_web_listen_address }}{% for collector in postgres_exporter_collectors_enabled %} --collector.{{ collector }}{% endfor %}{% for key, value in postgres_exporter_config_flags_extra.items() %} --{{ key }}{% if value is not sameas true %}={{ value }}{% endif %}{% endfor %}{{ '\n' }}
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictSUIDSGID=true
 
 [Install]
 WantedBy=multi-user.target

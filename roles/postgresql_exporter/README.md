@@ -14,13 +14,29 @@ The role interface is validated through `meta/argument_specs.yml`. Defaults are 
 
 ```yaml
 ---
-proxy_env: {}
-postgres_exporter_version: 0.11.1
-postgres_exporter_config_flags_extra: {}
+postgres_exporter_version: 0.20.1
+postgres_exporter_checksums:
+  amd64: 89d4f7e7920cad48fdc3133f789556ef5253c330a9f5fdace3bdb6344c0a8b5a
+  arm64: d5d86fb98bb1f26b088d1a6fda07fd6b6f035cb5d40492f75ec3bfebb5ddfe9d
+postgres_exporter_download_url: https://github.com/prometheus-community/postgres_exporter/releases/download/v{{ postgres_exporter_version }}/postgres_exporter-{{ postgres_exporter_version }}.linux-{{ go_arch }}.tar.gz
+postgres_exporter_install_dir: /usr/local/bin
+postgres_exporter_config_dir: /etc/postgres_exporter
+postgres_exporter_system_user: postgres_exporter
+postgres_exporter_system_group: postgres_exporter
+postgres_exporter_service_enabled: true
+postgres_exporter_service_state: started
+postgres_exporter_web_listen_address: 127.0.0.1:9187
+postgres_exporter_log_level: warn
 postgres_exporter_dbname: postgres
-postgres_exporter_username: postgres
-postgres_exporter_query_filename: queries-default.yml
-postgres_exporter_data_source_name: user={{ postgres_exporter_username }} dbname={{ postgres_exporter_dbname }} host=/var/run/postgresql/ sslmode=disable
+postgres_exporter_username: postgres_exporter
+postgres_exporter_data_source_name: user={{ postgres_exporter_username }} dbname={{ postgres_exporter_dbname }} host=/var/run/postgresql sslmode=disable
+postgres_exporter_collectors_enabled:
+- long_running_transactions
+- stat_activity_autovacuum
+- stat_statements
+- statio_user_indexes
+postgres_exporter_config_flags_extra: {}
+postgres_exporter_proxy_env: {}
 ```
 
 ## Example Playbook

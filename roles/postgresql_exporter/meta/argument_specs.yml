@@ -5,21 +5,61 @@ argument_specs:
     description:
     - Validate variables for the `postgresql_exporter` role.
     options:
-      proxy_env:
-        description:
-        - Controls `proxy_env` for the `postgresql_exporter` role.
-        required: false
-        type: dict
       postgres_exporter_version:
         description:
         - Controls `postgres_exporter_version` for the `postgresql_exporter` role.
         required: false
         type: str
-      postgres_exporter_config_flags_extra:
+      postgres_exporter_checksums:
         description:
-        - Controls `postgres_exporter_config_flags_extra` for the `postgresql_exporter` role.
+        - Controls `postgres_exporter_checksums` for the `postgresql_exporter` role.
         required: false
         type: dict
+      postgres_exporter_download_url:
+        description:
+        - Controls `postgres_exporter_download_url` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_install_dir:
+        description:
+        - Controls `postgres_exporter_install_dir` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_config_dir:
+        description:
+        - Controls `postgres_exporter_config_dir` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_system_user:
+        description:
+        - Controls `postgres_exporter_system_user` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_system_group:
+        description:
+        - Controls `postgres_exporter_system_group` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_service_enabled:
+        description:
+        - Controls `postgres_exporter_service_enabled` for the `postgresql_exporter` role.
+        required: false
+        type: bool
+      postgres_exporter_service_state:
+        description:
+        - Controls `postgres_exporter_service_state` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_web_listen_address:
+        description:
+        - Controls `postgres_exporter_web_listen_address` for the `postgresql_exporter` role.
+        required: false
+        type: str
+      postgres_exporter_log_level:
+        description:
+        - Controls `postgres_exporter_log_level` for the `postgresql_exporter` role.
+        required: false
+        type: str
       postgres_exporter_dbname:
         description:
         - Controls `postgres_exporter_dbname` for the `postgresql_exporter` role.
@@ -30,13 +70,24 @@ argument_specs:
         - Controls `postgres_exporter_username` for the `postgresql_exporter` role.
         required: false
         type: str
-      postgres_exporter_query_filename:
-        description:
-        - Controls `postgres_exporter_query_filename` for the `postgresql_exporter` role.
-        required: false
-        type: str
       postgres_exporter_data_source_name:
         description:
         - Controls `postgres_exporter_data_source_name` for the `postgresql_exporter` role.
         required: false
         type: str
+      postgres_exporter_collectors_enabled:
+        description:
+        - Controls `postgres_exporter_collectors_enabled` for the `postgresql_exporter` role.
+        required: false
+        type: list
+        elements: str
+      postgres_exporter_config_flags_extra:
+        description:
+        - Controls `postgres_exporter_config_flags_extra` for the `postgresql_exporter` role.
+        required: false
+        type: dict
+      postgres_exporter_proxy_env:
+        description:
+        - Controls `postgres_exporter_proxy_env` for the `postgresql_exporter` role.
+        required: false
+        type: dict
