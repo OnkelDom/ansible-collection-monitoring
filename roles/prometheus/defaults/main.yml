@@ -1,6 +1,7 @@
 ---
 proxy_env: {}
 prometheus_version: 2.48.0
+prometheus_data_dir: /var/lib/prometheus
 prometheus_web_external_url: "https://prometheus.{{ ansible_external_domain }}"
 prometheus_webconfig: {}
 prometheus_log_level: warn
@@ -12,6 +13,7 @@ prometheus_static_targets_files: "{{ all_prometheus_static_targets_files|default
 prometheus_alert_rules_files: "{{ all_prometheus_alert_rules_files|default([]) + group_vars_prometheus_alert_rules_files|default([]) + host_vars_prometheus_alert_rules_files|default([]) }}"
 prometheus_alert_rules_src_dir: prometheus/rules
 prometheus_static_targets_src_dir: prometheus/file_sd
+prometheus_platform_annotation_overrides: []
 
 defaults_prometheus_config:
   global:

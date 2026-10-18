@@ -28,7 +28,7 @@
   - "/etc/prometheus"
   - "/etc/prometheus/rules"
   - "/etc/prometheus/file_sd"
-  - "/var/lib/prometheus"
+  - "{{ prometheus_data_dir }}"
   become: true
   tags: prometheus
 
@@ -103,7 +103,9 @@
   notify: restart prometheus
   become: true
   tags: prometheus
-  when: (not __prometheus_is_installed.stat.exists) or (__prometheus_current_version_output.stdout_lines[0].split(" ")[2] != prometheus_version)
+  when:
+  - prometheus_version is version('3.0.0', '<')
+  - (not __prometheus_is_installed.stat.exists) or (__prometheus_current_version_output.stdout_lines[0].split(" ")[2] != prometheus_version)
 
 - name: register alertrules
   ansible.builtin.find:
@@ -137,6 +139,23 @@
     group: prometheus
     validate: "/usr/local/bin/promtool check rules %s"
   with_items: "{{ prometheus_alert_rules_files }}"
+  when: prometheus_platform_annotation_overrides | length == 0
+  notify: reload prometheus
+  become: true
+  tags:
+  - prometheus
+  - prometheus_alertrules
+
+- name: Apply platform-specific alert annotations
+  ansible.builtin.copy:
+    content: "{{ lookup('ansible.builtin.file', prometheus_alert_rules_src_dir ~ '/' ~ item) | from_yaml | lenmail.monitoring.monitoring_platform_annotations(prometheus_platform_annotation_overrides) | to_nice_yaml(indent=2, sort_keys=False) }}"
+    dest: "/etc/prometheus/rules/{{ item }}"
+    mode: '0644'
+    owner: prometheus
+    group: prometheus
+    validate: /usr/local/bin/promtool check rules %s
+  loop: "{{ prometheus_alert_rules_files }}"
+  when: prometheus_platform_annotation_overrides | length > 0
   notify: reload prometheus
   become: true
   tags:

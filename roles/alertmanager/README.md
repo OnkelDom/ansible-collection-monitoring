@@ -16,6 +16,7 @@ The role interface is validated through `meta/argument_specs.yml`. Defaults are 
 ---
 proxy_env: {}
 alertmanager_version: 0.27.0
+alertmanager_data_dir: /var/lib/alertmanager
 alertmanager_log_level: warn
 alertmanager_webconfig: {}
 alertmanager_config_dir: /etc/alertmanager
@@ -51,3 +52,8 @@ alertmanager_config: "{{ all_alertmanager_config|default({}) | combine(group_var
 ## Testing
 
 The collection CI runs `ansible-lint`, `ansible-test sanity`, repository consistency tests, and per-role syntax checks using `roles/alertmanager/tests/test.yml`.
+
+## Persistent notification state
+
+`alertmanager_data_dir` can be placed on a dedicated data volume. It contains
+silence and notification state and must be backed up with the service.

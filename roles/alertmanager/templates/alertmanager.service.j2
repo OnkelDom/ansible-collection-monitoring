@@ -21,7 +21,7 @@ ExecStart=/usr/local/bin/alertmanager \
 {%   endif %}
 {% endfor %}
   --config.file=/etc/alertmanager/config.yml \
-  --storage.path=/var/lib/alertmanager \
+  --storage.path={{ alertmanager_data_dir }} \
 {% if alertmanager_webconfig | length > 0 %}
   --web.config=/etc/alertmanager/web-config.yml \
 {% endif %}

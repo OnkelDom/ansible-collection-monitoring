@@ -1,0 +1,47 @@
+---
+argument_specs:
+  main:
+    short_description: Entry point for the tempo role.
+    description:
+    - Validate variables for the `tempo` role.
+    options:
+      tempo_version:
+        description:
+        - Controls `tempo_version` for the `tempo` role.
+        required: false
+        type: str
+      tempo_archive_sha256:
+        description:
+        - Controls `tempo_archive_sha256` for the `tempo` role.
+        required: false
+        type: dict
+      tempo_data_dir:
+        description:
+        - Controls `tempo_data_dir` for the `tempo` role.
+        required: false
+        type: str
+      tempo_http_listen_address:
+        description:
+        - Controls `tempo_http_listen_address` for the `tempo` role.
+        required: false
+        type: str
+      tempo_otlp_listen_address:
+        description:
+        - Controls `tempo_otlp_listen_address` for the `tempo` role.
+        required: false
+        type: str
+      tempo_service_enabled:
+        description:
+        - Controls `tempo_service_enabled` for the `tempo` role.
+        required: false
+        type: bool
+      tempo_service_state:
+        description:
+        - Controls `tempo_service_state` for the `tempo` role.
+        required: false
+        type: str
+      tempo_config:
+        description:
+        - Controls `tempo_config` for the `tempo` role.
+        required: false
+        type: dict

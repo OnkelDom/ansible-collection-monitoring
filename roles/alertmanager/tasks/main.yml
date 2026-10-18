@@ -28,7 +28,7 @@
   - "/etc/alertmanager"
   - "{{ alertmanager_config_dir }}/templates"
   - "/etc/jiralert"
-  - "/var/lib/alertmanager"
+  - "{{ alertmanager_data_dir }}"
   become: true
   tags: alertmanager
 
@@ -50,6 +50,7 @@
 - name: installed version
   ansible.builtin.debug:
     var: __alertmanager_current_version_output.stdout_lines[0].split(" ")[2]
+  when: __alertmanager_is_installed.stat.exists
   tags: alertmanager
 
 - name: download binary to local folder

@@ -18,3 +18,15 @@ def test_generated_role_files_are_current() -> None:
         for path, expected in generated.items():
             assert path.exists(), f"Missing generated file: {path}"
             assert path.read_text(encoding="utf-8") == f"{expected.rstrip()}\n"
+
+
+def test_generation_retains_operating_instructions(tmp_path) -> None:
+    role = tmp_path / "prometheus"
+    (role / "docs").mkdir(parents=True)
+    note = "## Operating instructions\n\nKeep data on the dedicated volume.\n"
+    (role / "docs" / "operations.md").write_text(note, encoding="utf-8")
+    readme = build_role_files(load_config(), role)[role / "README.md"]
+    assert "## Example Playbook" in readme
+    assert readme.endswith(note)
+    (role / "README.md").write_text(readme, encoding="utf-8")
+    assert build_role_files(load_config(), role)[role / "README.md"] == readme

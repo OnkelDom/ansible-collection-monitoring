@@ -38,21 +38,23 @@ Die Collection enthaelt derzeit diese Rollen:
 - `snmp_exporter`
 - `squid_exporter`
 - `systemd_exporter`
+- `tempo`
 - `unbound_exporter`
+- `unifi_poller`
 - `vector`
 - `victoriametrics`
 
 ## Installation
 
 ```bash
-ansible-galaxy collection install git+https://github.com/lenmail/ansible-collection-monitoring.git
+ansible-galaxy collection install git+https://github.com/OnkelDom/ansible-collection-monitoring.git
 ```
 
 Oder ueber eine `requirements.yml`:
 
 ```yaml
 collections:
-  - name: git+https://github.com/lenmail/ansible-collection-monitoring.git
+  - name: git+https://github.com/OnkelDom/ansible-collection-monitoring.git
 ```
 
 ## Verwendung

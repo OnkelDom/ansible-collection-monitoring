@@ -181,8 +181,12 @@ def build_role_files(config: dict[str, Any], role_dir: Path) -> dict[Path, str]:
     role_name = role_dir.name
     description = config["role_descriptions"].get(role_name, f"Manage {role_name} configuration.")
     defaults = load_yaml(role_dir / "defaults" / "main.yml")
+    readme = build_role_readme(config, role_name, description, defaults)
+    operations = role_dir / "docs" / "operations.md"
+    if operations.exists():
+        readme = readme.rstrip() + "\n\n" + operations.read_text(encoding="utf-8").strip() + "\n"
     return {
-        role_dir / "README.md": build_role_readme(config, role_name, description, defaults),
+        role_dir / "README.md": readme,
         role_dir / "meta" / "main.yml": build_meta_main(config, role_name, description),
         role_dir / "meta" / "argument_specs.yml": build_argument_specs(role_name, defaults),
         role_dir / "tests" / "test.yml": build_role_test_playbook(config, role_name),

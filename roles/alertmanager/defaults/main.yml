@@ -1,6 +1,7 @@
 ---
 proxy_env: {}
 alertmanager_version: 0.27.0
+alertmanager_data_dir: /var/lib/alertmanager
 alertmanager_log_level: warn
 alertmanager_webconfig: {}
 alertmanager_config_dir: "/etc/alertmanager"

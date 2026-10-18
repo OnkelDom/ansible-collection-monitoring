@@ -85,6 +85,11 @@ argument_specs:
         - Controls `loki_log_level` for the `loki` role.
         required: false
         type: str
+      loki_config_extra:
+        description:
+        - Controls `loki_config_extra` for the `loki` role.
+        required: false
+        type: dict
       loki_config:
         description:
         - Controls `loki_config` for the `loki` role.

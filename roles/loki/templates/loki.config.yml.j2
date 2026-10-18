@@ -1,1 +1,1 @@
-{{ loki_config | to_nice_yaml(indent=2, sort_keys=False) }}
+{{ loki_config | combine(loki_config_extra, recursive=True) | to_nice_yaml(indent=2, sort_keys=False) }}

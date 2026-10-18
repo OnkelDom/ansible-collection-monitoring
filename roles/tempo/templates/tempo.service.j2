@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=Grafana Tempo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tempo
+Group=tempo
+ExecStart=/usr/local/bin/tempo -config.file=/etc/tempo/config.yml -target=all
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=65536
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths={{ tempo_data_dir }}
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

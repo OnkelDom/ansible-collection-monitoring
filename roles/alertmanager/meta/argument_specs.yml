@@ -15,6 +15,11 @@ argument_specs:
         - Controls `alertmanager_version` for the `alertmanager` role.
         required: false
         type: str
+      alertmanager_data_dir:
+        description:
+        - Controls `alertmanager_data_dir` for the `alertmanager` role.
+        required: false
+        type: str
       alertmanager_log_level:
         description:
         - Controls `alertmanager_log_level` for the `alertmanager` role.

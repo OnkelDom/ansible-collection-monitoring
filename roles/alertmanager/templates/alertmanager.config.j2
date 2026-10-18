@@ -4,7 +4,7 @@
 global:
   resolve_timeout: {{ alertmanager_resolve_timeout | quote}}
 {% for key, value in alertmanager_smtp.items() %}
-  smtp_{{ key }}: {{ value | quote }}
+  smtp_{{ key }}: {{ value | to_json }}
 {% endfor %}
 
 time_intervals:
@@ -21,7 +21,7 @@ receivers:
 {# STANDARD RECEIVERS #}
 {% set receivers = alertmanager_routes | selectattr('config','defined') %}{% for receiver in receivers %}
 - name: {{ receiver.receiver }}
-  {{ receiver.config  | to_nice_yaml(indent=2,sort_keys=False) | indent(2) }}
+{{ receiver.config | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
 {%- endfor %}
 {# GLOBAL TICKET #}
 {% set receivers = alertmanager_routes | selectattr('global_config','defined') -%}
@@ -33,7 +33,7 @@ receivers:
 {% endfor %}
 
 route:
-  {{ alertmanager_route | to_nice_yaml(indent=2,sort_keys=False) | indent(2, False) }}
+{{ alertmanager_route | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
   routes:
   {% set receivers = alertmanager_routes | selectattr('routes','defined') %}{% for receiver in receivers %}{% for route in receiver.routes %}
   - receiver: {{ receiver.receiver }}

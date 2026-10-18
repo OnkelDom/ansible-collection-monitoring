@@ -15,6 +15,11 @@ argument_specs:
         - Controls `prometheus_version` for the `prometheus` role.
         required: false
         type: str
+      prometheus_data_dir:
+        description:
+        - Controls `prometheus_data_dir` for the `prometheus` role.
+        required: false
+        type: str
       prometheus_web_external_url:
         description:
         - Controls `prometheus_web_external_url` for the `prometheus` role.
@@ -70,6 +75,11 @@ argument_specs:
         - Controls `prometheus_static_targets_src_dir` for the `prometheus` role.
         required: false
         type: str
+      prometheus_platform_annotation_overrides:
+        description:
+        - Controls `prometheus_platform_annotation_overrides` for the `prometheus` role.
+        required: false
+        type: list
       defaults_prometheus_config:
         description:
         - Controls `defaults_prometheus_config` for the `prometheus` role.

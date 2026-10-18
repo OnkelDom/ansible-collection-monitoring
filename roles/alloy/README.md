@@ -46,7 +46,7 @@ alloy_prometheus_external_labels: {}
 alloy_linux_metrics_enabled: true
 alloy_linux_metrics_collectors_disabled: []
 alloy_linux_metrics_collectors_enabled: []
-alloy_linux_metrics_textfile_directory: /var/lib/prometheus/node-exporter
+alloy_linux_metrics_textfile_directory: ''
 alloy_linux_journal_enabled: true
 alloy_linux_journal_max_age: 24h
 alloy_linux_file_logs_enabled: true
@@ -101,11 +101,7 @@ alloy_firewall_ports: []
 alloy_service_override: {}
 ```
 
-Wenn `alloy_loki_endpoint` leer ist, wird kein Logversand konfiguriert. Wenn `alloy_prometheus_remote_write_url` leer ist, wird kein Metrikversand konfiguriert.
-
-`alloy_linux_metrics_textfile_directory` bindet vorhandene `*.prom`-Dateien in den Linux-Metrikpfad ein, zum Beispiel fuer SMART-, NVMe- oder applikationsnahe Textfile-Collector. Die Rolle legt nur das Verzeichnis an und konfiguriert Alloy; Erzeugung, Timer und Paketquellen der Textfile-Dateien bleiben separate Host-Integrationen.
-
-## Linux-Beispiel
+## Example Playbook
 
 ```yaml
 - name: Apply alloy
@@ -118,3 +114,13 @@ Wenn `alloy_loki_endpoint` leer ist, wird kein Logversand konfiguriert. Wenn `al
 ## Testing
 
 The collection CI runs `ansible-lint`, `ansible-test sanity`, repository consistency tests, and per-role syntax checks using `roles/alloy/tests/test.yml`.
+
+## Linux-Beispiel
+
+```yaml
+- name: Apply alloy
+  hosts: all
+  become: true
+  roles:
+    - role: lenmail.monitoring.alloy
+```

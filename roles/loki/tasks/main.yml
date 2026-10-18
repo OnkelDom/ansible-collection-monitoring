@@ -73,6 +73,7 @@
   - name: get checksum list from github
     ansible.builtin.set_fact:
       _checksums: "{{ lookup('url', 'https://github.com/grafana/loki/releases/download/v' + _loki_effective_version + '/SHA256SUMS', wantlist=True) | list }}"
+    when: loki_checksum is not defined
     environment: "{{ proxy_env }}"
     become: true
     tags: loki
@@ -80,8 +81,8 @@
   - name: get checksum for architecture
     ansible.builtin.set_fact:
       loki_checksum: "{{ item.split(' ')[0] }}"
-    with_items: "{{ _checksums }}"
-    when: "('loki-linux-' + go_arch + '.zip') in item"
+    with_items: "{{ _checksums | default([]) }}"
+    when: loki_checksum is not defined and ('loki-linux-' + go_arch + '.zip') in item
     become: true
     tags: loki
 

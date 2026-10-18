@@ -1,5 +1,5 @@
 ---
-namespace: onkeldom
+namespace: lenmail
 name: monitoring
 version: 0.1.0
 readme: README.md

@@ -1,7 +1,7 @@
 ---
 collection_namespace: lenmail
 collection_name: monitoring
-min_ansible_version: "2.16"
+min_ansible_version: '2.16'
 common_platforms:
 - name: Ubuntu
   display: Ubuntu 22.04+
@@ -15,7 +15,7 @@ common_platforms:
 - name: EL
   display: RHEL 9+
   versions:
-  - "9"
+  - '9'
 role_descriptions:
   alertmanager: Install and configure Prometheus Alertmanager.
   alloy: Install and configure Grafana Alloy as a telemetry agent.
@@ -43,4 +43,20 @@ role_descriptions:
   unifi_poller: Install and configure the Unifi Poller metrics exporter.
   vector: Install and configure Vector for log and metric pipelines.
   victoriametrics: Install and configure VictoriaMetrics.
-role_platform_overrides: {}
+  tempo: Install and configure a native Grafana Tempo service.
+role_platform_overrides:
+  tempo:
+  - name: Ubuntu
+    display: Ubuntu 22.04+
+    versions:
+    - jammy
+    - noble
+  - name: Debian
+    display: Debian 12/13
+    versions:
+    - bookworm
+    - trixie
+  - name: EL
+    display: RHEL 9+
+    versions:
+    - '9'

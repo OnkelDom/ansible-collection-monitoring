@@ -30,6 +30,7 @@ loki_system_user: loki
 loki_system_group: loki
 loki_auth_enabled: false
 loki_log_level: warn
+loki_config_extra: {}
 loki_config:
   auth_enabled: '{{ loki_auth_enabled }}'
   server:

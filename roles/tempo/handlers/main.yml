@@ -1,0 +1,7 @@
+---
+- name: Restart Tempo
+  ansible.builtin.systemd_service:
+    name: tempo
+    daemon_reload: true
+    state: restarted
+  when: tempo_service_enabled | bool

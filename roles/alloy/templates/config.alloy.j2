@@ -12,14 +12,14 @@ logging {
 {% set base_labels = alloy_labels | combine({'host': ansible_hostname | default(inventory_hostname)}) %}
 {% set log_labels = base_labels | combine(alloy_loki_external_labels) %}
 {% set metric_labels = base_labels | combine(alloy_prometheus_external_labels) %}
-{% set loki_enabled = alloy_loki_endpoint | length > 0 %}
-{% set remote_write_enabled = alloy_prometheus_remote_write_url | length > 0 %}
+{% set loki_enabled = alloy_loki_endpoint | default('', true) | length > 0 %}
+{% set remote_write_enabled = alloy_prometheus_remote_write_url | default('', true) | length > 0 %}
 
 {% if loki_enabled %}
 loki.write "default" {
   endpoint {
     url = "{{ alloy_loki_endpoint }}"
-{% if alloy_loki_tenant_id | length > 0 %}
+{% if alloy_loki_tenant_id | default('', true) | length > 0 %}
     tenant_id = "{{ alloy_loki_tenant_id }}"
 {% endif %}
   }
@@ -30,7 +30,7 @@ loki.write "default" {
 prometheus.remote_write "default" {
   endpoint {
     url = "{{ alloy_prometheus_remote_write_url }}"
-{% if alloy_prometheus_remote_write_headers | length > 0 %}
+{% if alloy_prometheus_remote_write_headers | default({}, true) | length > 0 %}
     headers = {{ river_map(alloy_prometheus_remote_write_headers) }}
 {% endif %}
   }
@@ -41,13 +41,13 @@ prometheus.remote_write "default" {
 
 {% if ansible_os_family != 'Windows' and alloy_linux_metrics_enabled and remote_write_enabled %}
 prometheus.exporter.unix "local" {
-{% if alloy_linux_metrics_collectors_disabled | length > 0 %}
+{% if alloy_linux_metrics_collectors_disabled | default([], true) | length > 0 %}
   disable_collectors = {{ alloy_linux_metrics_collectors_disabled | to_json }}
 {% endif %}
-{% if alloy_linux_metrics_collectors_enabled | length > 0 %}
+{% if alloy_linux_metrics_collectors_enabled | default([], true) | length > 0 %}
   enable_collectors = {{ alloy_linux_metrics_collectors_enabled | to_json }}
 {% endif %}
-{% if alloy_linux_metrics_textfile_directory | length > 0 %}
+{% if alloy_linux_metrics_textfile_directory | default('', true) | length > 0 %}
   textfile {
     directory = "{{ alloy_linux_metrics_textfile_directory }}"
   }
@@ -124,7 +124,7 @@ loki.source.windowsevent "{{ eventlog.name | lower }}" {
 {% endfor %}
 {% endif %}
 
-{% if alloy_extra_config | length > 0 %}
+{% if alloy_extra_config | default('', true) | length > 0 %}
 // Custom configuration blocks
 {{ alloy_extra_config }}
 {% endif %}

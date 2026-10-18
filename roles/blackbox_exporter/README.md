@@ -34,7 +34,7 @@ defaults_blackbox_exporter_config:
       dns:
         transport_protocol: tcp
         preferred_ip_protocol: ip4
-        query_name: '{{ ansible_external_domain }}'
+        query_name: "{{ ansible_external_domain | default('lenmail.de') }}"
         query_type: A
         valid_rcodes:
         - NOERROR
@@ -44,7 +44,7 @@ defaults_blackbox_exporter_config:
       dns:
         transport_protocol: udp
         preferred_ip_protocol: ip4
-        query_name: '{{ ansible_external_domain }}'
+        query_name: "{{ ansible_external_domain | default('lenmail.de') }}"
         query_type: A
         valid_rcodes:
         - NOERROR
@@ -54,7 +54,7 @@ defaults_blackbox_exporter_config:
       dns:
         transport_protocol: tcp
         preferred_ip_protocol: ip6
-        query_name: '{{ ansible_external_domain }}'
+        query_name: "{{ ansible_external_domain | default('lenmail.de') }}"
         query_type: A
         valid_rcodes:
         - NOERROR
@@ -64,7 +64,7 @@ defaults_blackbox_exporter_config:
       dns:
         transport_protocol: udp
         preferred_ip_protocol: ip6
-        query_name: '{{ ansible_external_domain }}'
+        query_name: "{{ ansible_external_domain | default('lenmail.de') }}"
         query_type: A
         valid_rcodes:
         - NOERROR
@@ -132,8 +132,8 @@ defaults_blackbox_exporter_config:
         preferred_ip_protocol: ip4
         headers:
           Content-Type: application/json
-          Auth-User: '{{ traefik_alertmanager_auth_user }}'
-          Auth-Token: '{{ traefik_alertmanager_auth_token }}'
+          Auth-User: "{{ traefik_alertmanager_auth_user | default('') }}"
+          Auth-Token: "{{ traefik_alertmanager_auth_token | default('') }}"
           Host: alertmanager.reifen-wolf.de
         method: POST
         body: "[{\n  \"status\": \"firing\",\n  \"labels\": {\n    \"alertname\": \"Test Blackox-Exporter Post\",\n    \"test\": \"yes\"\n  },\n  \"annotations\": {\n  \"summary\": \"Test Blackox-Exporter Post\"\n}, \"generatorURL\": \"https://alertmanager.reifen-wolf.de\" }]\n"
@@ -146,8 +146,8 @@ defaults_blackbox_exporter_config:
         preferred_ip_protocol: ip4
         headers:
           Content-Type: data-binary
-          Auth-User: '{{ traefik_pushgateway_auth_user }}'
-          Auth-Token: '{{ traefik_pushgateway_auth_token }}'
+          Auth-User: "{{ traefik_pushgateway_auth_user | default('') }}"
+          Auth-Token: "{{ traefik_pushgateway_auth_token | default('') }}"
           Host: pushgateway.reifen-wolf.de
         method: POST
         body: "test_metric 1\n  "

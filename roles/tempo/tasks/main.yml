@@ -1,0 +1,99 @@
+---
+- name: Validate Tempo host and archive
+  ansible.builtin.assert:
+    that:
+    - ansible_os_family in ['Debian', 'RedHat']
+    - ansible_architecture in tempo_archive_sha256
+    - tempo_version | length > 0
+
+- name: Create Tempo system group
+  ansible.builtin.group:
+    name: tempo
+    system: true
+
+- name: Create Tempo system user
+  ansible.builtin.user:
+    name: tempo
+    group: tempo
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Create Tempo directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+  - {path: /etc/tempo, owner: root, group: tempo, mode: '0750'}
+  - {path: "{{ tempo_data_dir }}", owner: tempo, group: tempo, mode: '0750'}
+  - {path: "{{ tempo_data_dir }}/traces", owner: tempo, group: tempo, mode: '0750'}
+  - {path: "{{ tempo_data_dir }}/wal", owner: tempo, group: tempo, mode: '0750'}
+
+- name: Keep Tempo's internal default paths on the data volume
+  ansible.builtin.file:
+    src: "{{ tempo_data_dir }}"
+    dest: /var/tempo
+    state: link
+    owner: tempo
+    group: tempo
+
+- name: Download verified Tempo archive
+  ansible.builtin.get_url:
+    url: "https://github.com/grafana/tempo/releases/download/v{{ tempo_version }}/tempo_{{ tempo_version }}_linux_{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_architecture] }}.tar.gz"
+    dest: "/var/tmp/tempo_{{ tempo_version }}_{{ ansible_architecture }}.tar.gz"
+    checksum: "sha256:{{ tempo_archive_sha256[ansible_architecture] }}"
+    mode: '0644'
+
+- name: Create versioned Tempo installation directory
+  ansible.builtin.file:
+    path: "/opt/tempo-{{ tempo_version }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Unpack Tempo binary
+  ansible.builtin.unarchive:
+    src: "/var/tmp/tempo_{{ tempo_version }}_{{ ansible_architecture }}.tar.gz"
+    dest: "/opt/tempo-{{ tempo_version }}"
+    remote_src: true
+    creates: "/opt/tempo-{{ tempo_version }}/tempo"
+
+- name: Install Tempo binary
+  ansible.builtin.copy:
+    src: "/opt/tempo-{{ tempo_version }}/tempo"
+    dest: /usr/local/bin/tempo
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart Tempo
+
+- name: Render and validate Tempo configuration
+  ansible.builtin.copy:
+    content: "{{ tempo_config | to_nice_yaml(indent=2, sort_keys=False) }}\n"
+    dest: /etc/tempo/config.yml
+    owner: root
+    group: tempo
+    mode: '0640'
+    validate: /usr/local/bin/tempo -config.file=%s -config.verify=true
+  notify: Restart Tempo
+
+- name: Install Tempo service
+  ansible.builtin.template:
+    src: tempo.service.j2
+    dest: /etc/systemd/system/tempo.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Tempo
+
+- name: Enable Tempo service
+  ansible.builtin.systemd_service:
+    name: tempo
+    daemon_reload: true
+    enabled: "{{ tempo_service_enabled }}"
+    state: "{{ tempo_service_state }}"
