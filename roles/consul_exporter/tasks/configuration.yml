@@ -1,0 +1,129 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _consul_exporter_service_policy:
+      manage: '{{ consul_exporter_manage_service | bool }}'
+      state: '{{ consul_exporter_service_state }}'
+      enabled: '{{ consul_exporter_service_enabled | bool }}'
+- name: create system group
+  when: consul_exporter_system_group != "root"
+  become: true
+  tags: consul_exporter
+  ansible.builtin.group:
+    name: '{{ consul_exporter_system_group }}'
+    system: true
+    state: present
+- name: create system user
+  when: consul_exporter_system_user != "root"
+  become: true
+  tags: consul_exporter
+  ansible.builtin.user:
+    name: '{{ consul_exporter_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ consul_exporter_system_group }}'
+    home: /
+    createhome: false
+- name: check if is installed
+  register: __consul_exporter_is_installed
+  become: true
+  tags: consul_exporter
+  ansible.builtin.stat:
+    path: '{{ consul_exporter_binary_install_dir }}/consul_exporter'
+- name: get latest release
+  environment: '{{ proxy_env }}'
+  no_log: '{{ not lookup(''env'', ''MOLECULE_DEBUG'') | bool }}'
+  register: _latest_release
+  until: _latest_release.status == 200
+  when: consul_exporter_version == "latest"
+  delegate_to: localhost
+  retries: 5
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/prometheus/consul_exporter/releases/latest
+    method: GET
+    return_content: true
+    status_code: 200
+    body_format: json
+    validate_certs: true
+    user: '{{ lookup(''env'', ''GH_USER'') | default(omit) }}'
+    password: '{{ lookup(''env'', ''GH_TOKEN'') | default(omit) }}'
+- name: set version to {{ _latest_release.json.tag_name[1:] }}
+  when: consul_exporter_version == "latest"
+  delegate_to: localhost
+  run_once: true
+  become: true
+  tags: consul_exporter
+  ansible.builtin.set_fact:
+    consul_exporter_version: '{{ _latest_release.json.tag_name[1:] }}'
+- name: get checksum list from github
+  environment: '{{ proxy_env }}'
+  run_once: true
+  become: true
+  tags: consul_exporter
+  when: (not __consul_exporter_is_installed.stat.exists)
+  ansible.builtin.set_fact:
+    _checksums: '{{ lookup(''url'', ''https://github.com/prometheus/consul_exporter/releases/download/v'' + consul_exporter_version + ''/sha256sums.txt'', wantlist=True) | list }}'
+- name: get checksum for {{ go_arch }} architecture
+  with_items: '{{ _checksums }}'
+  when:
+  - ('linux-' + go_arch + '.tar.gz') in item
+  - (not __consul_exporter_is_installed.stat.exists)
+  become: true
+  tags: consul_exporter
+  ansible.builtin.set_fact:
+    consul_exporter_checksum: '{{ item.split('' '')[0] }}'
+- name: download binary to local folder
+  environment: '{{ proxy_env }}'
+  register: _download_binary
+  until: _download_binary is success
+  retries: 5
+  delay: 2
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: consul_exporter
+  when: (not __consul_exporter_is_installed.stat.exists)
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/consul_exporter/releases/download/v{{ consul_exporter_version }}/consul_exporter-{{ consul_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+    dest: /tmp
+    checksum: sha256:{{ consul_exporter_checksum }}
+    mode: '0644'
+- name: unpack binary
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: consul_exporter
+  when: (not __consul_exporter_is_installed.stat.exists)
+  ansible.builtin.unarchive:
+    src: /tmp/consul_exporter-{{ consul_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+    dest: /tmp
+    creates: /tmp/consul_exporter-{{ consul_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}/consul_exporter
+- name: propagate binaries
+  notify: restart consul_exporter
+  become: true
+  tags: consul_exporter
+  when: (not __consul_exporter_is_installed.stat.exists)
+  ansible.builtin.copy:
+    src: /tmp/consul_exporter-{{ consul_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}/consul_exporter
+    dest: '{{ consul_exporter_binary_install_dir }}/consul_exporter'
+    mode: '0755'
+- name: copy service unit
+  notify: restart consul_exporter
+  become: true
+  tags: consul_exporter
+  ansible.builtin.template:
+    src: consul_exporter.service.j2
+    dest: /etc/systemd/system/consul_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+- name: ensure service is started and enabled
+  become: true
+  tags: consul_exporter
+  when:
+  - consul_exporter_manage_service | bool
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: consul_exporter
+    state: '{{ consul_exporter_service_state }}'
+    enabled: '{{ consul_exporter_service_enabled }}'

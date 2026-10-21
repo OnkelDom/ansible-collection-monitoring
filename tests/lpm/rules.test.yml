@@ -1,0 +1,308 @@
+---
+evaluation_interval: 1m
+tests:
+- name: linux node
+  interval: 1m
+  input_series:
+  - series: node_filesystem_avail_bytes{instance="node:9100",job="node",mountpoint="/srv",device="/dev/vda1",fstype="ext4"}
+    values: 5+0x60
+  - series: node_filesystem_size_bytes{instance="node:9100",job="node",mountpoint="/srv",device="/dev/vda1",fstype="ext4"}
+    values: 100+0x60
+  promql_expr_test:
+  - expr: lpm:disk_used_percent:avg15m
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:disk_used_percent:avg15m{instance="node:9100",platform="linux",path="/srv",device="/dev/vda1",fstype="ext4",lpm_dsk_criticality="mid"}
+      value: 95
+  - expr: ALERTS{alertname="LPMDiskUsageMid_ERROR",alertstate="firing"}
+    eval_time: 40m
+    exp_samples:
+    - labels: ALERTS{instance="node:9100",platform="linux",path="/srv",device="/dev/vda1",fstype="ext4",lpm_dsk_criticality="mid",alertname="LPMDiskUsageMid_ERROR",alertstate="firing",severity="ERROR",category="disk",lpm="mid",monitoring_profile="lpm",hostname="node:9100",alert_family="LPMDiskUsageMid"}
+      value: 1
+  alert_rule_test:
+  - eval_time: 40m
+    alertname: LPMDiskUsageMid_ERROR
+    exp_alerts:
+    - exp_labels:
+        instance: node:9100
+        platform: linux
+        path: /srv
+        device: /dev/vda1
+        lpm_dsk_criticality: mid
+        severity: ERROR
+        category: disk
+        lpm: mid
+        monitoring_profile: lpm
+        hostname: node:9100
+        alert_family: LPMDiskUsageMid
+        fstype: ext4
+      exp_annotations:
+        summary: "Wenig freier Speicher auf node:9100 \u2013 /srv"
+        description: "Belegt (15-Minuten-Mittel): 95.0 %. Alarmgrenze: \xFCber 90 % belegt, mindestens 15 Minuten."
+        action: "Linux: df -h \"/srv\"; sudo du -xhd1 \"/srv\" | sort -h. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern."
+        pending_for: 15m
+        resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFCfen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: linux integrations/unix
+  interval: 1m
+  input_series:
+  - series: node_filesystem_avail_bytes{instance="alloy-linux",job="integrations/unix",mountpoint="/srv",device="/dev/vda1",fstype="ext4"}
+    values: 5+0x60
+  - series: node_filesystem_size_bytes{instance="alloy-linux",job="integrations/unix",mountpoint="/srv",device="/dev/vda1",fstype="ext4"}
+    values: 100+0x60
+  promql_expr_test:
+  - expr: lpm:disk_used_percent:avg15m
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:disk_used_percent:avg15m{instance="alloy-linux",platform="linux",path="/srv",device="/dev/vda1",fstype="ext4",lpm_dsk_criticality="mid"}
+      value: 95
+  - expr: ALERTS{alertname="LPMDiskUsageMid_ERROR",alertstate="firing"}
+    eval_time: 40m
+    exp_samples:
+    - labels: ALERTS{instance="alloy-linux",platform="linux",path="/srv",device="/dev/vda1",fstype="ext4",lpm_dsk_criticality="mid",alertname="LPMDiskUsageMid_ERROR",alertstate="firing",severity="ERROR",category="disk",lpm="mid",monitoring_profile="lpm",hostname="alloy-linux",alert_family="LPMDiskUsageMid"}
+      value: 1
+- name: windows windows
+  interval: 1m
+  input_series:
+  - series: windows_logical_disk_free_bytes{instance="win:9182",job="windows",volume="C:"}
+    values: 5+0x60
+  - series: windows_logical_disk_size_bytes{instance="win:9182",job="windows",volume="C:"}
+    values: 100+0x60
+  promql_expr_test:
+  - expr: lpm:disk_used_percent:avg15m
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:disk_used_percent:avg15m{instance="win:9182",platform="windows",path="C:",device="C:",lpm_dsk_criticality="mid"}
+      value: 95
+  - expr: ALERTS{alertname="LPMDiskUsageMid_ERROR",alertstate="firing"}
+    eval_time: 40m
+    exp_samples:
+    - labels: ALERTS{instance="win:9182",platform="windows",path="C:",device="C:",lpm_dsk_criticality="mid",alertname="LPMDiskUsageMid_ERROR",alertstate="firing",severity="ERROR",category="disk",lpm="mid",monitoring_profile="lpm",hostname="win:9182",alert_family="LPMDiskUsageMid"}
+      value: 1
+  alert_rule_test:
+  - eval_time: 40m
+    alertname: LPMDiskUsageMid_ERROR
+    exp_alerts:
+    - exp_labels:
+        instance: win:9182
+        platform: windows
+        path: 'C:'
+        device: 'C:'
+        lpm_dsk_criticality: mid
+        severity: ERROR
+        category: disk
+        lpm: mid
+        monitoring_profile: lpm
+        hostname: win:9182
+        alert_family: LPMDiskUsageMid
+      exp_annotations:
+        summary: "Wenig freier Speicher auf win:9182 \u2013 C:"
+        description: "Belegt (15-Minuten-Mittel): 95.0 %. Alarmgrenze: \xFCber 90 % belegt, mindestens 15 Minuten."
+        action: "Windows: Get-Volume -FilePath 'C:\\' | Format-List DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr C: pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern."
+        pending_for: 15m
+        resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFCfen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: windows integrations/windows
+  interval: 1m
+  input_series:
+  - series: windows_logical_disk_free_bytes{instance="alloy-windows",job="integrations/windows",volume="C:"}
+    values: 5+0x60
+  - series: windows_logical_disk_size_bytes{instance="alloy-windows",job="integrations/windows",volume="C:"}
+    values: 100+0x60
+  promql_expr_test:
+  - expr: lpm:disk_used_percent:avg15m
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:disk_used_percent:avg15m{instance="alloy-windows",platform="windows",path="C:",device="C:",lpm_dsk_criticality="mid"}
+      value: 95
+  - expr: ALERTS{alertname="LPMDiskUsageMid_ERROR",alertstate="firing"}
+    eval_time: 40m
+    exp_samples:
+    - labels: ALERTS{instance="alloy-windows",platform="windows",path="C:",device="C:",lpm_dsk_criticality="mid",alertname="LPMDiskUsageMid_ERROR",alertstate="firing",severity="ERROR",category="disk",lpm="mid",monitoring_profile="lpm",hostname="alloy-windows",alert_family="LPMDiskUsageMid"}
+      value: 1
+- name: Tenant isolation and explicit high criticality
+  interval: 1m
+  input_series:
+  - series: node_filesystem_avail_bytes{instance="shared",tenant="a",lpm_dsk_criticality="high",mountpoint="/data",device="vda",fstype="ext4"}
+    values: 5+0x60
+  - series: node_filesystem_size_bytes{instance="shared",tenant="a",lpm_dsk_criticality="high",mountpoint="/data",device="vda",fstype="ext4"}
+    values: 100+0x60
+  - series: node_filesystem_avail_bytes{instance="shared",tenant="b",lpm_dsk_criticality="high",mountpoint="/data",device="vda",fstype="ext4"}
+    values: 75+0x60
+  - series: node_filesystem_size_bytes{instance="shared",tenant="b",lpm_dsk_criticality="high",mountpoint="/data",device="vda",fstype="ext4"}
+    values: 100+0x60
+  promql_expr_test:
+  - expr: lpm:disk_used_percent:avg15m
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:disk_used_percent:avg15m{instance="shared",tenant="a",platform="linux",path="/data",device="vda",fstype="ext4",lpm_dsk_criticality="high"}
+      value: 95
+    - labels: lpm:disk_used_percent:avg15m{instance="shared",tenant="b",platform="linux",path="/data",device="vda",fstype="ext4",lpm_dsk_criticality="high"}
+      value: 25
+  - expr: ALERTS{alertname="LPMDiskUsageHigh_ERROR",tenant="b"}
+    eval_time: 40m
+    exp_samples: []
+  - expr: count(ALERTS{alertname="LPMDiskUsageHigh_ERROR",tenant="a",alertstate="firing"})
+    eval_time: 40m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: windows_system_boot_time_timestamp
+  interval: 1m
+  input_series:
+  - series: windows_system_boot_time_timestamp{instance="win"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: lpm:system_uptime_seconds
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:system_uptime_seconds{instance="win",platform="windows"}
+      value: 2400
+- name: windows_system_boot_time_timestamp_seconds
+  interval: 1m
+  input_series:
+  - series: windows_system_boot_time_timestamp_seconds{instance="win"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: lpm:system_uptime_seconds
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:system_uptime_seconds{instance="win",platform="windows"}
+      value: 2400
+- name: windows_system_system_up_time
+  interval: 1m
+  input_series:
+  - series: windows_system_system_up_time{instance="win"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: lpm:system_uptime_seconds
+    eval_time: 40m
+    exp_samples:
+    - labels: lpm:system_uptime_seconds{instance="win",platform="windows"}
+      value: 2400
+- name: Zero-size Windows volumes are ignored
+  interval: 1m
+  input_series:
+  - series: windows_logical_disk_free_bytes{instance="win",volume="Z:"}
+    values: 0+0x60
+  - series: windows_logical_disk_size_bytes{instance="win",volume="Z:"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: lpm:disk_used_percent:avg15m
+    eval_time: 40m
+    exp_samples: []
+- name: No samples produce no resource alarm
+  interval: 1m
+  input_series: []
+  promql_expr_test:
+  - expr: ALERTS
+    eval_time: 40m
+    exp_samples: []
+- name: Low criticality requires a sustained hour
+  interval: 1m
+  input_series:
+  - series: node_filesystem_avail_bytes{instance="low",mountpoint="/srv",device="vda",fstype="ext4",lpm_dsk_criticality="low"}
+    values: 4+0x100
+  - series: node_filesystem_size_bytes{instance="low",mountpoint="/srv",device="vda",fstype="ext4",lpm_dsk_criticality="low"}
+    values: 100+0x100
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="LPMDiskUsageLow_ERROR",alertstate="firing"})
+    eval_time: 30m
+    exp_samples: []
+  - expr: count(ALERTS{alertname="LPMDiskUsageLow_ERROR",alertstate="firing"})
+    eval_time: 80m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Scrape failure requires an explicit LPM target label
+  interval: 1m
+  input_series:
+  - series: up{instance="marked",monitoring_profile="lpm"}
+    values: 0+0x20
+  - series: up{instance="unmarked"}
+    values: 0+0x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="LPMCollectorDown_ERROR",alertstate="firing"})
+    eval_time: 4m
+    exp_samples: []
+  - expr: count(ALERTS{alertname="LPMCollectorDown_ERROR",alertstate="firing"})
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="LPMCollectorDown_ERROR",instance="unmarked"})
+    eval_time: 10m
+    exp_samples: []
+- name: removed bind alias expires while canonical byte and inode monitoring remains
+  interval: 1m
+  input_series:
+  - series: node_filesystem_avail_bytes{instance="node:9100",job="node",environment="testing",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 1+0x10
+  - series: node_filesystem_size_bytes{instance="node:9100",job="node",environment="testing",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 100+0x10
+  - series: node_filesystem_files_free{instance="node:9100",job="node",environment="testing",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 1+0x10
+  - series: node_filesystem_files{instance="node:9100",job="node",environment="testing",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 100+0x10
+  - series: node_filesystem_avail_bytes{instance="node:9100",job="node",environment="testing",mountpoint="/bind-alias",device="/dev/vda1",fstype="xfs"}
+    values: 1 1 stale
+  - series: node_filesystem_size_bytes{instance="node:9100",job="node",environment="testing",mountpoint="/bind-alias",device="/dev/vda1",fstype="xfs"}
+    values: 100 100 stale
+  - series: node_filesystem_files_free{instance="node:9100",job="node",environment="testing",mountpoint="/bind-alias",device="/dev/vda1",fstype="xfs"}
+    values: 1 1 stale
+  - series: node_filesystem_files{instance="node:9100",job="node",environment="testing",mountpoint="/bind-alias",device="/dev/vda1",fstype="xfs"}
+    values: 100 100 stale
+  promql_expr_test:
+  - expr: count(lpm:disk_used_percent:avg15m{path="/srv"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(lpm:disk_used_percent:avg15m{path="/bind-alias"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(lpm:disk_inodes_used_percent:avg15m{path="/srv"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(lpm:disk_inodes_used_percent:avg15m{path="/bind-alias"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: disappeared tenant mount cannot be kept alive by another tenant
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{instance="shared",tenant="a",environment="testing",site="test",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 100 100 stale
+  - series: node_filesystem_avail_bytes{instance="shared",tenant="a",environment="testing",site="test",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 1 1 stale
+  - series: node_filesystem_size_bytes{instance="shared",tenant="b",environment="testing",site="test",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 100+0x10
+  - series: node_filesystem_avail_bytes{instance="shared",tenant="b",environment="testing",site="test",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 1+0x10
+  promql_expr_test:
+  - expr: count(lpm:disk_used_percent:avg15m{tenant="a"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(lpm:disk_used_percent:avg15m{tenant="b"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: inode monitoring does not depend on a byte-capacity series
+  interval: 1m
+  input_series:
+  - series: node_filesystem_files{instance="node",environment="testing",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 100+0x10
+  - series: node_filesystem_files_free{instance="node",environment="testing",mountpoint="/srv",device="/dev/vda1",fstype="xfs"}
+    values: 1+0x10
+  promql_expr_test:
+  - expr: count(lpm:disk_inodes_used_percent:avg15m{path="/srv"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 1

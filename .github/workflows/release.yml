@@ -1,0 +1,42 @@
+---
+name: Release
+on:
+  push:
+    tags: [v*]
+permissions:
+  contents: read
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+  release:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version: '3.12'
+    - name: Install build tools and check tag
+      env:
+        RELEASE_TAG: ${{ github.ref_name }}
+      run: |
+        python -m pip install -r requirements-test.txt
+        python - <<'PY'
+        import os, yaml
+        version = str(yaml.safe_load(open('galaxy.yml'))['version'])
+        assert os.environ['RELEASE_TAG'] == 'v' + version, 'Tag must match galaxy.yml'
+        PY
+    - name: Build and inspect release artifact
+      run: |
+        ansible-galaxy collection build --force
+        python tools/check_collection_artifact.py degit-monitoring-*.tar.gz
+    - name: Create GitHub release with collection artifact
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ github.ref_name }}
+      run: gh release create "$RELEASE_TAG" degit-monitoring-*.tar.gz --verify-tag --generate-notes

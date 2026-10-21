@@ -1,19 +1,23 @@
 ---
-collection_namespace: lenmail
+collection_namespace: degit
 collection_name: monitoring
-min_ansible_version: '2.16'
+min_ansible_version: '2.20'
 common_platforms:
-- name: Ubuntu
-  display: Ubuntu 22.04+
+- &id001
+  name: Ubuntu
+  display: Ubuntu 22.04, 24.04, 26.04
   versions:
   - jammy
   - noble
-- name: Debian
-  display: Debian 12+
+  - resolute
+- &id002
+  name: Debian
+  display: Debian 13
   versions:
-  - bookworm
-- name: EL
-  display: RHEL 9+
+  - trixie
+- &id003
+  name: EL
+  display: Rocky Linux 9 / RHEL 9
   versions:
   - '9'
 role_descriptions:
@@ -23,7 +27,6 @@ role_descriptions:
   consul_exporter: Install and configure the Prometheus consul_exporter.
   dovecot_exporter: Install and configure a Dovecot Prometheus exporter.
   grafana: Install and configure Grafana dashboards, datasources, and settings.
-  grafana_agent: Install and configure Grafana Agent.
   ilo5_exporter: Install and configure the HPE iLO5 Prometheus exporter.
   ipmi_exporter: Install and configure the Prometheus ipmi_exporter.
   keepalived_exporter: Install and configure the Prometheus keepalived_exporter.
@@ -33,7 +36,6 @@ role_descriptions:
   postgresql_exporter: Install and configure the postgres_exporter for PostgreSQL metrics.
   process_exporter: Install and configure the Prometheus process_exporter.
   prometheus: Install and configure the Prometheus server and rule files.
-  promtail: Install and configure Grafana Promtail log shipping.
   pushgateway: Install and configure the Prometheus Pushgateway.
   redis_exporter: Install and configure the Prometheus redis_exporter.
   snmp_exporter: Install and configure the Prometheus snmp_exporter.
@@ -45,18 +47,34 @@ role_descriptions:
   victoriametrics: Install and configure VictoriaMetrics.
   tempo: Install and configure a native Grafana Tempo service.
 role_platform_overrides:
-  tempo:
-  - name: Ubuntu
-    display: Ubuntu 22.04+
+  dovecot_exporter: []
+  ipmi_exporter: []
+  keepalived_exporter: []
+  postfix_exporter: []
+  alloy:
+  - *id001
+  - *id002
+  - *id003
+  - name: Windows
+    display: Windows (Alloy agent only; separate runtime validation required)
     versions:
-    - jammy
-    - noble
-  - name: Debian
-    display: Debian 12/13
-    versions:
-    - bookworm
-    - trixie
-  - name: EL
-    display: RHEL 9+
-    versions:
-    - '9'
+    - all
+role_argument_overrides:
+  alloy:
+    alloy_selinux_packages:
+      type: list
+      elements: str
+  node_exporter: {}
+  prometheus:
+    prometheus_lpm_default_criticality:
+      choices:
+      - high
+      - mid
+      - low
+role_notes:
+  dovecot_exporter: Not implemented. Execution is rejected before making changes.
+  ipmi_exporter: Not implemented. Execution is rejected before making changes.
+  keepalived_exporter: Not implemented. Execution is rejected before making changes.
+  postfix_exporter: Not implemented. Execution is rejected before making changes.
+  alloy: Owned exclusively by degit.monitoring. Optional firewall rules delegate to degit.infrastructure.firewall. Configure only one telemetry agent for each metric source.
+  node_exporter: Owned exclusively by degit.monitoring. Optional firewall rules delegate to degit.infrastructure.firewall. Configure only one telemetry agent for each metric source.

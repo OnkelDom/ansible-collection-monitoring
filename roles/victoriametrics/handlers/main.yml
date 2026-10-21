@@ -1,15 +1,20 @@
 ---
 - name: restart victoriametrics
-  systemd:
+  become: true
+  tags: victoriametrics
+  when:
+  - _victoriametrics_service_policy.manage | default(false) | bool
+  - (_victoriametrics_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: victoriametrics
     state: restarted
+- name: reload victoriametrics
   become: true
   tags: victoriametrics
-
-- name: reload victoriametrics
-  systemd:
+  when:
+  - _victoriametrics_service_policy.manage | default(false) | bool
+  - (_victoriametrics_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     name: victoriametrics
     state: reloaded
-  become: true
-  tags: victoriametrics

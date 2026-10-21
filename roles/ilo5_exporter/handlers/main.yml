@@ -6,3 +6,6 @@
     state: restarted
   become: true
   tags: ilo5_exporter
+  when:
+  - _ilo5_exporter_service_policy.manage | default(false) | bool
+  - (_ilo5_exporter_service_policy.state | default('stopped')) != 'stopped'

@@ -1,0 +1,8 @@
+---
+_alloy_platform_package_name: GrafanaLabs.Alloy
+_alloy_platform_service_name: Alloy
+_alloy_platform_config_dir: C:/ProgramData/GrafanaLabs/Alloy
+_alloy_platform_data_dir: C:/ProgramData/GrafanaLabs/Alloy/data
+_alloy_platform_log_dir: C:/ProgramData/GrafanaLabs/Alloy/logs
+_alloy_platform_config_file: C:/ProgramData/GrafanaLabs/Alloy/config.alloy
+_alloy_platform_binary_path: C:/Program Files/GrafanaLabs/Alloy/alloy-windows-amd64.exe

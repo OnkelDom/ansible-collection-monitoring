@@ -1,89 +1,29 @@
 ---
-- name: Check variable types
-  assert:
+- name: Collect missing Linux platform facts
+  ansible.builtin.setup: {}
+  when:
+  - "['architecture', 'distribution', 'distribution_major_version', 'distribution_version', 'fqdn', 'os_family', 'pkg_mgr'] | difference(ansible_facts.keys()) | length > 0"
+  - ansible_connection | default('ssh') not in ['winrm', 'psrp']
+  - ansible_facts.get('os_family', '') != 'Windows'
+- name: Validate the supported operating system release
+  ansible.builtin.assert:
     that:
-    - grafana_server is mapping
-    - grafana_database is mapping
-    - grafana_security is mapping
-  tags: grafana
-
-- name: Fail when datasources aren't configured when dashboards are set to be installed
-  fail:
-    msg: "You need to specify datasources for dashboards!!!"
-  when: grafana_dashboards != [] and grafana_datasources == []
-  tags: grafana
-
-- name: Fail when grafana admin user isn't set
-  fail:
-    msg: "Please specify grafana admin user (grafana_security.admin_user)"
-  when:
-  - grafana_security.admin_user == '' or grafana_security.admin_user is not defined
-  tags: grafana
-
-- name: Fail when grafana admin password isn't set
-  fail:
-    msg: "Please specify grafana admin password (grafana_security.admin_password)"
-  when:
-  - grafana_security.admin_password == '' or grafana_security.admin_password is not defined
-  tags: grafana
-
-- name: Fail on incorrect variable types in datasource definitions
-  fail:
-    msg: "Boolean variables in grafana_datasources shouldn't be passed as strings. Please remove unneeded apostrophes."
-  when: ( item.isDefault is defined and item.isDefault is string ) or ( item.basicAuth is defined and item.basicAuth is string )
-  with_items: "{{ grafana_datasources }}"
-  tags: grafana
-
-- name: Fail on bad database configuration
-  fail:
-    msg: "Wrong database configuration. Please look at http://docs.grafana.org/installation/configuration/#database"
-  when: ( grafana_database.type == "sqlite3" and grafana_database.url is defined ) or ( grafana_database.type != "sqlite3" and grafana_database.path is defined ) or ( grafana_database.type == "sqlite3" and grafana_database.host is defined ) or ( grafana_database.type == "sqlite3" and grafana_database.user is defined ) or ( grafana_database.type == "sqlite3" and grafana_database.password is defined ) or ( grafana_database.type == "sqlite3" and grafana_database.server_cert_name is defined )
-  tags: grafana
-
-- name: Fail when grafana domain isn't properly configured
-  fail:
-    msg: "Check server configuration. Please look at http://docs.grafana.org/installation/configuration/#server"
-  when:
-  - grafana_server.root_url is defined
-  - grafana_server.root_url is search(grafana_server.domain)
-  tags: grafana
-
-- name: Fail when grafana_api_keys uses invalid role names
-  fail:
-    msg: "Check grafana_api_keys. The role can only be one of the following values: Viewer, Editor or Admin."
-  when:
-  - item.role not in ['Viewer', 'Editor', 'Admin']
-  with_items: "{{ grafana_api_keys }}"
-  tags: grafana
-
-- name: Fail when grafana_ldap isn't set when grafana_auth.ldap is
-  fail:
-    msg: "You need to configure grafana_ldap.servers and grafana_ldap.group_mappings when grafana_auth.ldap is set"
-  when:
-  - "'ldap' in grafana_auth"
-  - grafana_ldap is not defined or ('servers' not in grafana_ldap or 'group_mappings' not in grafana_ldap)
-  tags: grafana
-
-- name: Force grafana_use_provisioning to false if grafana_version is < 5.0 ( grafana_version is set to '{{ grafana_version }}' )
-  set_fact:
-    grafana_use_provisioning: false
-  when:
-  - grafana_version != 'latest'
-  - grafana_version is version_compare('5.0', '<')
-  tags: grafana
-
-- name: Fail if grafana_port is lower than 1024 and grafana_cap_net_bind_service is not true
-  fail:
-    msg: Trying to use a port lower than 1024 without setting grafana_cap_net_bind_service.
-  when:
-  - grafana_port | int <= 1024
-  - not grafana_cap_net_bind_service
-  tags: grafana
-
-- name: Fail if grafana_server.socket not defined when in socket mode
-  fail:
-    msg: "You need to configure grafana_server.socket when grafana_server.protocol is set to 'socket'"
-  when:
-  - grafana_server.protocol is defined and grafana_server.protocol == 'socket'
-  - grafana_server.socket is undefined or grafana_server.socket == ''
-  tags: grafana
+    - (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] == '13') or (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_version'] in ['22.04', '24.04', '26.04']) or (ansible_facts['distribution'] in ['Rocky', 'RedHat'] and ansible_facts['distribution_major_version'] == '9')
+    fail_msg: Unsupported or unimplemented role/platform combination for grafana. See the role README.
+    quiet: true
+- name: Load family platform variables
+  ansible.builtin.include_vars:
+    file: "{{ role_path }}/vars/platform/{{ ansible_facts['os_family'] }}.yml"
+- name: Load distribution platform variables
+  ansible.builtin.include_vars:
+    file: "{{ role_path }}/vars/platform/{{ ansible_facts['distribution'] }}.yml"
+  when: ansible_facts['os_family'] != 'Windows' and ansible_facts['distribution'] != ansible_facts['os_family']
+- name: Load release platform variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+  - files:
+    - "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_version'] }}.yml"
+    - "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_major_version'] }}.yml"
+    paths:
+    - '{{ role_path }}/vars/platform'
+    skip: true

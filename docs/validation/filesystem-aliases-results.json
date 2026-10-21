@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-21T22:16:38.064054+02:00",
+  "scope": "Authorized obsolete release cleanup, test data retention audit and persistent bind-alias monitoring fix",
+  "validation": {
+    "release_pruner_tests": 5,
+    "collection_unit_tests": 31,
+    "lpm_semantic_cases": 15,
+    "rcw_bind_alias_cases": 2,
+    "existing_rcw_disk_alarm_content_tests": "passed",
+    "neutral_mail_regression_scenarios": 7,
+    "proxmox_rule_regression": "passed",
+    "collection_lint": "0 failures, 0 warnings",
+    "installed_collection_structured_pipeline": "rendered by Ansible and validated with the real Alloy binary; never activated",
+    "application_main_pids_unchanged": [
+      331761,
+      331830
+    ],
+    "workspace_http_status": 302
+  },
+  "artifact": {
+    "identity": "degit.monitoring:2.0.0",
+    "sha256": "f821438ce8abf6999ac83c2b66ccdb9bcf084344c589d5c3a80f54a259c61a8b",
+    "scope": "Built and validated runtime code before final evidence attachments"
+  },
+  "live_proof": {
+    "canonical_mount": "/opt/datahub",
+    "alias_records_absent": true,
+    "record_health_errors": [],
+    "independent_child_mounts_preserved": true
+  },
+  "remaining_capacity_warning_is_expected": true,
+  "repository_state": "Local changes only; no commit/push/release in this task"
+}

@@ -41,7 +41,7 @@ SyslogIdentifier=systemd_exporter
 Restart=always
 RestartSec=30
 PrivateTmp=yes
-{% for m in ansible_mounts if m.mount == '/home' %}
+{% for m in ansible_facts.mounts if m.mount == '/home' %}
 ProtectHome=read-only
 {% else %}
 ProtectHome=yes

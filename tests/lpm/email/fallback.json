@@ -1,0 +1,20 @@
+{
+  "Receiver": "mail",
+  "Status": "firing",
+  "GroupLabels": {
+    "alertname": ""
+  },
+  "CommonLabels": {},
+  "CommonAnnotations": {},
+  "ExternalURL": "https://alertmanager.example.invalid",
+  "Alerts": [
+    {
+      "Status": "firing",
+      "Labels": {},
+      "Annotations": {},
+      "StartsAt": "2026-10-18T10:00:00Z",
+      "EndsAt": "0001-01-01T00:00:00Z",
+      "GeneratorURL": "https://prometheus.example.invalid/graph"
+    }
+  ]
+}

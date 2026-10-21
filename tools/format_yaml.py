@@ -5,12 +5,13 @@ import io
 from pathlib import Path
 
 from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 
 ROOT = Path(__file__).resolve().parents[1]
 INCLUDE_NAMES = {".ansible-lint.yml", "galaxy.yml", "meta/runtime.yml"}
 INCLUDE_SUFFIXES = {".yml", ".yaml"}
-EXCLUDE_PARTS = {".git", ".venv", ".ansible"}
+EXCLUDE_PARTS = {".git", ".venv", ".ansible", ".host-collection", ".venv-v2"}
 
 
 def iter_yaml_files() -> list[Path]:
@@ -24,6 +25,18 @@ def iter_yaml_files() -> list[Path]:
         if relative.as_posix() in INCLUDE_NAMES or path.suffix in INCLUDE_SUFFIXES:
             paths.append(path)
     return sorted(paths)
+
+
+def quote_ambiguous_strings(data):
+    if isinstance(data, str) and data.lower() in {"yes", "no", "on", "off", "y", "n"}:
+        return DoubleQuotedScalarString(data)
+    if isinstance(data, list):
+        for index, value in enumerate(data):
+            data[index] = quote_ambiguous_strings(value)
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            data[key] = quote_ambiguous_strings(value)
+    return data
 
 
 def main() -> int:
@@ -40,7 +53,7 @@ def main() -> int:
         text = path.read_text(encoding="utf-8")
         if not text.strip():
             continue
-        data = yaml.load(text)
+        data = quote_ambiguous_strings(yaml.load(text))
         if data is None:
             continue
         buffer = io.StringIO()

@@ -2,22 +2,32 @@
 proxy_env: {}
 prometheus_version: 2.48.0
 prometheus_data_dir: /var/lib/prometheus
-prometheus_web_external_url: "https://prometheus.{{ ansible_external_domain }}"
+prometheus_web_external_url: http://localhost:9090
 prometheus_webconfig: {}
 prometheus_log_level: warn
-prometheus_storage_retention_time: "30d"
-prometheus_remote_write_reveicer: true
+prometheus_storage_retention_time: 30d
 prometheus_config_flags_extra: {}
-prometheus_config: "{{ all_prometheus_config|default({}) | combine(group_vars_prometheus_config|default({}),recursive=True,list_merge='append') | combine(host_vars_prometheus_config|default({}),recursive=True,list_merge='append') | combine(defaults_prometheus_config|default({}),recursive=True,list_merge='append') }}"
-prometheus_static_targets_files: "{{ all_prometheus_static_targets_files|default([]) + group_vars_prometheus_static_targets_files|default([]) + host_vars_prometheus_static_targets_files|default([]) }}"
-prometheus_alert_rules_files: "{{ all_prometheus_alert_rules_files|default([]) + group_vars_prometheus_alert_rules_files|default([]) + host_vars_prometheus_alert_rules_files|default([]) }}"
-prometheus_alert_rules_src_dir: prometheus/rules
-prometheus_static_targets_src_dir: prometheus/file_sd
-prometheus_platform_annotation_overrides: []
-
-defaults_prometheus_config:
+prometheus_config:
   global:
     scrape_interval: 60s
     scrape_timeout: 10s
   rule_files:
   - /etc/prometheus/rules/*.rules
+prometheus_static_targets_files: []
+prometheus_alert_rules_files: []
+prometheus_alert_rules_src_dir: prometheus/rules
+prometheus_static_targets_src_dir: prometheus/file_sd
+prometheus_platform_annotation_overrides: []
+prometheus_manage_service: true
+prometheus_service_enabled: true
+prometheus_service_state: started
+prometheus_remote_write_receiver_enabled: false
+prometheus_lpm_enabled: true
+prometheus_lpm_default_criticality: mid
+prometheus_lpm_dashboard_url: ''
+prometheus_lpm_runbook_url: ''
+# Opt-in: expected PVE nodes enable disappearance detection without fixed hostnames.
+prometheus_proxmox_enabled: false
+prometheus_proxmox_expected_nodes: []
+prometheus_proxmox_expected_guests: []
+prometheus_proxmox_dashboard_url: ''

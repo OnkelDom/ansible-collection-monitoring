@@ -1,0 +1,74 @@
+// Central native PVE metrics; no receiver-host external labels.
+{% if alloy_proxmox_htpasswd_file | length > 0 %}
+otelcol.auth.basic "proxmox" {
+  htpasswd {
+    file = {{ alloy_proxmox_htpasswd_file | to_json }}
+  }
+}
+{% endif %}
+otelcol.receiver.otlp "proxmox" {
+  http {
+    endpoint = {{ alloy_proxmox_endpoint | to_json }}
+{% if alloy_proxmox_htpasswd_file | length > 0 %}
+    auth = otelcol.auth.basic.proxmox.handler
+{% endif %}
+{% if alloy_proxmox_tls_cert_file | length > 0 %}
+    tls {
+      cert_file = {{ alloy_proxmox_tls_cert_file | to_json }}
+      key_file = {{ alloy_proxmox_tls_key_file | to_json }}
+    }
+{% endif %}
+  }
+  output {
+    metrics = [otelcol.processor.transform.proxmox.input]
+  }
+}
+
+otelcol.processor.transform "proxmox" {
+  error_mode = "propagate"
+  metric_statements {
+    context = "datapoint"
+    statements = [
+      `set(attributes["cluster"], resource.attributes["proxmox.cluster"])`,
+      `set(attributes["cluster"], resource.attributes["monitoring.cluster"]) where resource.attributes["monitoring.cluster"] != nil`,
+      `set(attributes["node"], resource.attributes["proxmox.node"])`,
+      `set(attributes["host"], attributes["node"])`,
+      `set(attributes["instance"], Concat([attributes["cluster"], attributes["node"]], "/"))`,
+      `set(attributes["job"], "proxmox-otel")`,
+      `set(attributes["platform"], "proxmox")`,
+      `set(attributes["monitoring_profile"], "proxmox")`,
+{% for key, value in alloy_proxmox_labels.items() %}
+      {{ ('set(attributes[' ~ (key | to_json) ~ '], ' ~ (value | string | to_json) ~ ')') | to_json }},
+{% endfor %}
+      `set(attributes["guest_id"], Concat([attributes["tenant"], attributes["environment"], attributes["site"], attributes["cluster"], attributes["vmid"]], "/")) where attributes["vmid"] != nil`,
+    ]
+  }
+  output {
+    metrics = [otelcol.processor.batch.proxmox.input]
+  }
+}
+
+otelcol.processor.batch "proxmox" {
+  timeout = "5s"
+  send_batch_size = 1024
+  send_batch_max_size = 2048
+  output {
+    metrics = [otelcol.exporter.prometheus.proxmox.input]
+  }
+}
+
+otelcol.exporter.prometheus "proxmox" {
+  add_metric_suffixes = false
+  include_target_info = false
+  include_scope_labels = false
+  forward_to = [prometheus.remote_write.proxmox.receiver]
+}
+
+prometheus.remote_write "proxmox" {
+  endpoint {
+    url = {{ alloy_proxmox_remote_write_url | to_json }}
+{% if alloy_proxmox_remote_write_headers | length > 0 %}
+    headers = { {% for key, value in alloy_proxmox_remote_write_headers.items() %}{{ key | to_json }} = {{ value | to_json }}, {% endfor %} }
+{% endif %}
+  }
+}

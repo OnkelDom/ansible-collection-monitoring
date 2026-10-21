@@ -1,0 +1,89 @@
+{{ define "monitoring.priority" -}}{{ if match "(?i)^(critical|error|fatal)$" . }}KRITISCH{{ else if match "(?i)^(warn|warning|standard)$" . }}WARNUNG{{ else }}INFORMATION{{ end }}{{- end }}
+{{ define "monitoring.resource" -}}{{ if .hostname }}{{ .hostname }}{{ else if .host }}{{ .host }}{{ else if .instance }}{{ .instance }}{{ else if .cluster }}{{ .cluster }}{{ else if .source }}{{ .source }}{{ else if .job }}{{ .job }}{{ else }}Infrastruktur{{ end }}{{- end }}
+{{ define "monitoring.title" -}}{{ if .CommonAnnotations.summary }}{{ .CommonAnnotations.summary | reReplaceAll "[\r\n]+" " " }}{{ else if .GroupLabels.alertname }}{{ .GroupLabels.alertname }}{{ else if .CommonLabels.alertname }}{{ .CommonLabels.alertname }}{{ else }}{{ len .Alerts }} Monitoring-Meldungen{{ end }}{{- end }}
+{{ define "monitoring.mail.subject" -}}
+[Monitoring · {{ if eq .Status "resolved" }}ENTWARNUNG{{ else }}{{ template "monitoring.priority" .CommonLabels.severity }}{{ end }}] {{ template "monitoring.resource" .CommonLabels }} · {{ template "monitoring.title" . }}{{ if gt (len .Alerts) 1 }} ({{ len .Alerts }} Meldungen){{ end }}
+{{- end }}
+
+{{ define "monitoring.mail.text" -}}
+MONITORING
+{{ if eq .Status "resolved" }}ENTWARNUNG – Die gemeldete Alarmbedingung ist nicht mehr aktiv.{{ else }}{{ template "monitoring.priority" .CommonLabels.severity }} – {{ len .Alerts.Firing }} aktive Meldung(en){{ end }}
+{{ template "monitoring.title" . }}
+
+Zuständigkeit: {{ if .CommonLabels.owner }}{{ .CommonLabels.owner }}{{ else }}Zuständiger Systembetrieb{{ end }}
+{{ range .Alerts }}
+------------------------------------------------------------------------
+{{ if eq .Status "resolved" }}ALARM BEENDET{{ else }}AKTIV{{ end }} | {{ template "monitoring.resource" .Labels }}
+{{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}
+Beginn: {{ .StartsAt.UTC.Format "02.01.2006 15:04:05 MST" }}
+{{ if eq .Status "resolved" }}Normalzustand seit: {{ .EndsAt.UTC.Format "02.01.2006 15:04:05 MST" }}
+{{ else if .Annotations.pending_for }}Auslösung nach anhaltender Bedingung: {{ .Annotations.pending_for }}
+{{ end }}{{ if .Labels.source }}Controller / Quelle: {{ .Labels.source }}
+{{ end }}{{ if .Labels.site_name }}Standort: {{ .Labels.site_name }}
+{{ end }}{{ if .Labels.essid }}WLAN: {{ .Labels.essid }}
+{{ end }}{{ if .Labels.path }}Pfad: {{ .Labels.path }}
+{{ end }}{{ if .Labels.interface }}Interface: {{ .Labels.interface }}
+{{ end }}{{ if .Labels.database }}Datenbank: {{ .Labels.database }}
+{{ end }}{{ if .Labels.datname }}Datenbank: {{ .Labels.datname }}
+{{ end }}{{ if .Labels.storage }}Storage: {{ .Labels.storage }}
+{{ end }}{{ if .Labels.task }}Aufgabe: {{ .Labels.task }}
+{{ end }}{{ if .Labels.service }}Dienst: {{ .Labels.service }}
+{{ end }}{{ if .Labels.threshold }}Schwelle: {{ .Labels.threshold }}
+{{ end }}
+Befund: {{ if .Annotations.description }}{{ .Annotations.description }}{{ else }}Die Alarmbedingung wurde erfüllt; Details in der Messreihe prüfen.{{ end }}
+{{ if eq .Status "resolved" }}Nächster Schritt: {{ if .Annotations.resolved_action }}{{ .Annotations.resolved_action }}{{ else }}Bei vorheriger Betriebsstörung den betroffenen Fachablauf kurz prüfen. Die Entwarnung bestätigt den Messzustand, keinen vollständigen Funktionstest.{{ end }}
+{{ else }}{{ if .Annotations.impact }}Auswirkung: {{ .Annotations.impact }}{{ end }}
+Nächster Schritt: {{ if .Annotations.action }}{{ .Annotations.action }}{{ else if .Labels.triage }}{{ .Labels.triage }}{{ else }}Die Messreihe und zeitgleiche Alarme öffnen, betroffenen Dienst eingrenzen und an den zuständigen Betrieb weitergeben.{{ end }}
+{{ end }}
+{{ if .Annotations.dashboard_url }}Dashboard: {{ .Annotations.dashboard_url }}
+{{ end }}{{ if .Annotations.runbook_url }}Betriebsanleitung: {{ .Annotations.runbook_url }}
+{{ end }}{{ if .GeneratorURL }}Messreihe: {{ .GeneratorURL }}
+{{ end }}Regel: {{ .Labels.alertname }}
+{{ end }}
+------------------------------------------------------------------------
+Alarmübersicht: {{ .ExternalURL }}
+Automatische Meldung · Zeiten UTC · Bitte nicht auf diese Absenderadresse antworten.
+{{- end }}
+
+{{ define "monitoring.mail.html" -}}
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#eef2f6;color:#172b3a;font-family:Arial,Helvetica,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;color:#eef2f6;">{{ template "monitoring.title" . }} · {{ len .Alerts.Firing }} aktiv / {{ len .Alerts.Resolved }} beendet</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2f6;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="720" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;background:#ffffff;border:1px solid #d7e0e7;">
+<tr><td style="padding:20px 24px;background:#102b3f;color:#ffffff;"><b style="font-size:22px;letter-spacing:1px;">MONITORING</b><span style="font-size:12px;letter-spacing:1px;">&nbsp;&nbsp; BETRIEBSMONITORING</span></td></tr>
+<tr><td style="padding:24px;border-top:5px solid {{ if eq .Status "resolved" }}#16815d{{ else if match "(?i)^(critical|error|fatal)$" .CommonLabels.severity }}#c52b37{{ else }}#bc7509{{ end }};">
+<p style="margin:0 0 10px;font-size:12px;font-weight:bold;letter-spacing:1px;color:{{ if eq .Status "resolved" }}#16815d{{ else if match "(?i)^(critical|error|fatal)$" .CommonLabels.severity }}#b3222e{{ else }}#8c5505{{ end }};">{{ if eq .Status "resolved" }}ENTWARNUNG{{ else }}{{ template "monitoring.priority" .CommonLabels.severity }} · HANDLUNGSBEDARF{{ end }}</p>
+<h1 style="margin:0 0 14px;font-size:23px;line-height:1.35;font-weight:700;">{{ template "monitoring.title" . }}</h1>
+<p style="margin:0 0 16px;line-height:1.6;color:#435767;">{{ if eq .Status "resolved" }}Die gemeldete Alarmbedingung ist nicht mehr aktiv.{{ else }}{{ len .Alerts.Firing }} aktive Meldung(en){{ if .Alerts.Resolved }} · {{ len .Alerts.Resolved }} inzwischen beendet{{ end }}{{ end }}</p>
+<p style="margin:0;font-size:13px;color:#526678;"><b>Zuständigkeit: {{ if .CommonLabels.owner }}{{ .CommonLabels.owner }}{{ else }}Zuständiger Systembetrieb{{ end }}
+</td></tr>
+{{ range .Alerts }}
+<tr><td style="padding:0 24px 20px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #d7e0e7;border-collapse:collapse;">
+<tr><td style="padding:16px 18px;background:#f5f8fa;border-bottom:1px solid #d7e0e7;">
+<p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;color:{{ if eq .Status "resolved" }}#16815d{{ else }}#b3222e{{ end }};">{{ if eq .Status "resolved" }}ALARM BEENDET{{ else }}AKTIV{{ end }}</p>
+<h2 style="margin:0;font-size:18px;line-height:1.4;overflow-wrap:anywhere;">{{ template "monitoring.resource" .Labels }}</h2>
+{{ if .Annotations.summary }}<p style="margin:6px 0 0;font-size:14px;line-height:1.5;">{{ .Annotations.summary }}</p>{{ end }}
+</td></tr>
+<tr><td style="padding:16px 18px;font-size:14px;line-height:1.65;">
+<p style="margin:0 0 12px;color:#526678;font-size:12px;">
+<b>Beginn:</b> {{ .StartsAt.UTC.Format "02.01.2006 15:04:05 MST" }}<br>
+{{ if eq .Status "resolved" }}<b>Normalzustand seit:</b> {{ .EndsAt.UTC.Format "02.01.2006 15:04:05 MST" }}<br>{{ else if .Annotations.pending_for }}<b>Auslösung nach anhaltender Bedingung:</b> {{ .Annotations.pending_for }}<br>{{ end }}
+{{ if .Labels.source }}<b>Quelle:</b> {{ .Labels.source }}<br>{{ end }}{{ if .Labels.site_name }}<b>Standort:</b> {{ .Labels.site_name }}<br>{{ end }}
+{{ if .Labels.essid }}<b>WLAN:</b> {{ .Labels.essid }}<br>{{ end }}{{ if .Labels.path }}<b>Pfad:</b> {{ .Labels.path }}<br>{{ end }}{{ if .Labels.interface }}<b>Interface:</b> {{ .Labels.interface }}<br>{{ end }}
+{{ if .Labels.database }}<b>Datenbank:</b> {{ .Labels.database }}<br>{{ end }}{{ if .Labels.datname }}<b>Datenbank:</b> {{ .Labels.datname }}<br>{{ end }}{{ if .Labels.storage }}<b>Storage:</b> {{ .Labels.storage }}<br>{{ end }}{{ if .Labels.task }}<b>Aufgabe:</b> {{ .Labels.task }}<br>{{ end }}{{ if .Labels.service }}<b>Dienst:</b> {{ .Labels.service }}<br>{{ end }}{{ if .Labels.threshold }}<b>Schwelle:</b> {{ .Labels.threshold }}{{ end }}
+</p>
+<p style="margin:0 0 14px;"><b>Befund</b><br>{{ if .Annotations.description }}{{ .Annotations.description }}{{ else }}Die Alarmbedingung wurde erfüllt. Details in der Messreihe prüfen.{{ end }}</p>
+{{ if and (ne .Status "resolved") .Annotations.impact }}<p style="margin:0 0 14px;"><b>Mögliche Auswirkung</b><br>{{ .Annotations.impact }}</p>{{ end }}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="padding:12px 14px;background:#eef5f8;border-left:3px solid #087d9b;">
+<b>Nächster Schritt</b><br>{{ if eq .Status "resolved" }}{{ if .Annotations.resolved_action }}{{ .Annotations.resolved_action }}{{ else }}Bei vorheriger Betriebsstörung den betroffenen Fachablauf kurz prüfen. Die Entwarnung bestätigt den Messzustand, keinen vollständigen Funktionstest.{{ end }}{{ else if .Annotations.action }}{{ .Annotations.action }}{{ else if .Labels.triage }}{{ .Labels.triage }}{{ else }}Messreihe und zeitgleiche Alarme öffnen, betroffenen Dienst eingrenzen und an den zuständigen Betrieb weitergeben.{{ end }}
+</td></tr></table>
+<p style="margin:18px 0 0;line-height:2;">{{ if .Annotations.dashboard_url }}<a href="{{ .Annotations.dashboard_url }}" style="color:#006581;font-weight:bold;">Dashboard öffnen</a>&nbsp; · &nbsp;{{ end }}{{ if .GeneratorURL }}<a href="{{ .GeneratorURL }}" style="color:#006581;">Messreihe</a>&nbsp; · &nbsp;{{ end }}{{ if .Annotations.runbook_url }}<a href="{{ .Annotations.runbook_url }}" style="color:#006581;">Betriebsanleitung</a>{{ end }}</p>
+<p style="margin:12px 0 0;color:#667887;font-size:11px;overflow-wrap:anywhere;">Regel: {{ .Labels.alertname }}</p>
+</td></tr></table>
+</td></tr>
+{{ end }}
+<tr><td style="padding:18px 24px;background:#f5f8fa;border-top:1px solid #d7e0e7;font-size:12px;line-height:1.7;color:#526678;"><a href="{{ .ExternalURL }}" style="color:#006581;font-weight:bold;">Alle aktiven Alarme im Alertmanager</a><br>Automatische Meldung · Zeiten UTC<br>Bitte nicht auf diese Absenderadresse antworten.</td></tr>
+</table></td></tr></table></body></html>
+{{- end }}

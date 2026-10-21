@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-18T12:56:52.348977+02:00",
+  "branch": "codex/monitoring-v2",
+  "artifact": "degit.monitoring:2.0.0",
+  "artifact_sha256": "a6fcf2792b1cc6f5f8b8b8f2c67d529a36193a2dd743dfb476f3564988e4bce1",
+  "unit_tests": 25,
+  "recording_rules": 34,
+  "alerts": 29,
+  "promtool_scenarios": 12,
+  "mail_render_scenarios": 7,
+  "validators": {
+    "promtool": "2.48.0",
+    "amtool": "0.27.0"
+  },
+  "syntax_core": [
+    "2.20.10",
+    "2.21.5"
+  ],
+  "sanity": [
+    "compile",
+    "import"
+  ],
+  "ansible_lint": {
+    "failures": 0,
+    "warnings": 0
+  },
+  "native_profile_test": {
+    "platform": "Debian 13",
+    "architecture": "x86_64",
+    "host": "pve.lenmail.de",
+    "loaded_rules": 64,
+    "lpm_groups": 8,
+    "custom_groups": 1,
+    "rule_health": "ok",
+    "repeat_changed": 0,
+    "disable_restore": "passed; custom rule retained",
+    "inhibition_isolation": [
+      "tenant",
+      "path",
+      "alert_family"
+    ],
+    "smtp_mail_sent": false
+  },
+  "windows_profile_tests": "synthetic time series plus actual Promtool annotation rendering; no new native Windows VM in this extension",
+  "production_rollout": false,
+  "cleanup": {
+    "owned_vm_removed": 3390,
+    "seed_and_downloads_removed": true,
+    "existing_guests_preserved": 14
+  },
+  "evidence": {
+    "runtime.log": {
+      "sha256": "4ea648b9b428673e3450783e041559cddd656ef9b3a189f17452c58e730f5bcf",
+      "recaps": [
+        "debian13                   : ok=79   changed=2    unreachable=0    failed=0    skipped=63   rescued=0    ignored=0   "
+      ]
+    },
+    "current.log": {
+      "sha256": "df45e39d36e1bfd6894644021e83adc61e70bda5ab38f656059c91782988783c",
+      "recaps": [
+        "debian13                   : ok=80   changed=4    unreachable=0    failed=0    skipped=63   rescued=0    ignored=0   "
+      ]
+    },
+    "disabled.log": {
+      "sha256": "034879c24848d53fef3fd08bb6fc52d4d075c730fa1666cd4f51bcd9a33ac824",
+      "recaps": [
+        "debian13                   : ok=75   changed=6    unreachable=0    failed=0    skipped=68   rescued=0    ignored=0   "
+      ]
+    },
+    "restored.log": {
+      "sha256": "be0875b3d0b07030a47e4266cd5bb6a97a40055fbf1981ae96eb1f920418799e",
+      "recaps": [
+        "debian13                   : ok=80   changed=6    unreachable=0    failed=0    skipped=63   rescued=0    ignored=0   "
+      ]
+    },
+    "idempotent.log": {
+      "sha256": "2d3f210dce3f54131456c9cd70ec0679f70bd0820349ded31ef76adfda3c8249",
+      "recaps": [
+        "debian13                   : ok=78   changed=0    unreachable=0    failed=0    skipped=63   rescued=0    ignored=0   "
+      ]
+    },
+    "cleanup.log": {
+      "sha256": "9da63efff89eb20e32759997e46321253ad22a32f710d0ae251a94a126fd5c0f",
+      "recaps": []
+    }
+  }
+}

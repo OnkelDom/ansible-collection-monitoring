@@ -1,6 +1,6 @@
 # Plugins
 
-`lenmail.monitoring.monitoring_platform_annotations` ergänzt betriebssystemspezifische
+`degit.monitoring.monitoring_platform_annotations` ergänzt betriebssystemspezifische
 Prometheus-Annotationen. Die Prometheus-Rolle aktiviert den Filter mit
 `prometheus_platform_annotation_overrides` (Standard: leere Liste).
 

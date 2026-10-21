@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#eef2f6;color:#172b3a;font-family:Arial,Helvetica,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;color:#eef2f6;">Wenig freier Speicher · 1 aktiv / 0 beendet</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2f6;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="720" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;background:#ffffff;border:1px solid #d7e0e7;">
+<tr><td style="padding:20px 24px;background:#102b3f;color:#ffffff;"><b style="font-size:22px;letter-spacing:1px;">MONITORING</b><span style="font-size:12px;letter-spacing:1px;">&nbsp;&nbsp; BETRIEBSMONITORING</span></td></tr>
+<tr><td style="padding:24px;border-top:5px solid #bc7509;">
+<p style="margin:0 0 10px;font-size:12px;font-weight:bold;letter-spacing:1px;color:#8c5505;">WARNUNG · HANDLUNGSBEDARF</p>
+<h1 style="margin:0 0 14px;font-size:23px;line-height:1.35;font-weight:700;">Wenig freier Speicher</h1>
+<p style="margin:0 0 16px;line-height:1.6;color:#435767;">1 aktive Meldung(en)</p>
+<p style="margin:0;font-size:13px;color:#526678;"><b>Zuständigkeit: Zuständiger Systembetrieb
+</td></tr>
+
+<tr><td style="padding:0 24px 20px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #d7e0e7;border-collapse:collapse;">
+<tr><td style="padding:16px 18px;background:#f5f8fa;border-bottom:1px solid #d7e0e7;">
+<p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;color:#b3222e;">AKTIV</p>
+<h2 style="margin:0;font-size:18px;line-height:1.4;overflow-wrap:anywhere;">host.example.invalid:9100</h2>
+<p style="margin:6px 0 0;font-size:14px;line-height:1.5;">Wenig freier Speicher</p>
+</td></tr>
+<tr><td style="padding:16px 18px;font-size:14px;line-height:1.65;">
+<p style="margin:0 0 12px;color:#526678;font-size:12px;">
+<b>Beginn:</b> 18.10.2026 10:00:00 UTC<br>
+<b>Auslösung nach anhaltender Bedingung:</b> 15m<br>
+
+<b>Pfad:</b> /srv<br>
+
+</p>
+<p style="margin:0 0 14px;"><b>Befund</b><br>Belegt: 85 %. Alarmgrenze: über 80 % für mindestens 15 Minuten.</p>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="padding:12px 14px;background:#eef5f8;border-left:3px solid #087d9b;">
+<b>Nächster Schritt</b><br>Linux: df -h /srv; sudo du -xhd1 /srv prüfen.
+</td></tr></table>
+<p style="margin:18px 0 0;line-height:2;"><a href="https://prometheus.example.invalid/graph" style="color:#006581;">Messreihe</a>&nbsp; · &nbsp;</p>
+<p style="margin:12px 0 0;color:#667887;font-size:11px;overflow-wrap:anywhere;">Regel: LPMDiskUsageMid_WARN</p>
+</td></tr></table>
+</td></tr>
+
+<tr><td style="padding:18px 24px;background:#f5f8fa;border-top:1px solid #d7e0e7;font-size:12px;line-height:1.7;color:#526678;"><a href="https://alertmanager.example.invalid" style="color:#006581;font-weight:bold;">Alle aktiven Alarme im Alertmanager</a><br>Automatische Meldung · Zeiten UTC<br>Bitte nicht auf diese Absenderadresse antworten.</td></tr>
+</table></td></tr></table></body></html>

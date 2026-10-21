@@ -1,15 +1,20 @@
 ---
 - name: reload snmp_exporter
-  systemd:
-    name: snmp_exporter
-    state: reloaded
   become: true
   tags: snmp_exporter
-
+  when:
+  - _snmp_exporter_service_policy.manage | default(false) | bool
+  - (_snmp_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
+    name: snmp_exporter
+    state: reloaded
 - name: restart snmp_exporter
-  systemd:
+  become: true
+  tags: snmp_exporter
+  when:
+  - _snmp_exporter_service_policy.manage | default(false) | bool
+  - (_snmp_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: snmp_exporter
     state: restarted
-  become: true
-  tags: snmp_exporter

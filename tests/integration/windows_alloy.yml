@@ -1,0 +1,31 @@
+---
+- name: Verify Alloy on a fresh disposable Windows guest
+  hosts: monitoring_windows_lab
+  gather_facts: true
+  vars:
+    alloy_windows_install_method: url
+    alloy_windows_installer_url: '{{ lookup("ansible.builtin.env", "MONITORING_LAB_ALLOY_INSTALLER_URL") }}'
+    alloy_windows_installer_checksum: '{{ lookup("ansible.builtin.env", "MONITORING_LAB_ALLOY_INSTALLER_SHA256") }}'
+    alloy_pipeline_enabled: true
+    alloy_labels:
+      tenant: validation
+      environment: lab
+    alloy_prometheus_remote_write_url: 'http://{{ monitoring_lab_sink }}:9090/api/v1/write'
+    alloy_loki_endpoint: 'http://{{ monitoring_lab_sink }}:3100/loki/api/v1/push'
+  roles:
+  - degit.monitoring.alloy
+  post_tasks:
+  - name: Apply pending Windows service handler
+    ansible.builtin.meta: flush_handlers
+  - name: Verify Alloy HTTP readiness locally
+    ansible.windows.win_uri:
+      url: http://127.0.0.1:12345/-/ready
+    register: ready
+    until: ready is succeeded
+    retries: 12
+    delay: 5
+  - name: Emit a real Windows Application event
+    ansible.windows.win_shell: >-
+      eventcreate /T INFORMATION /ID 100 /L APPLICATION /SO MonitoringValidation
+      /D "monitoring-v2-windows-runtime-proof"
+    changed_when: false

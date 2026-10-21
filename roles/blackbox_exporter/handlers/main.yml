@@ -6,10 +6,15 @@
     state: restarted
   become: true
   tags: blackbox_exporter
-
+  when:
+  - _blackbox_exporter_service_policy.manage | default(false) | bool
+  - (_blackbox_exporter_service_policy.state | default('stopped')) != 'stopped'
 - name: reload blackbox_exporter
   ansible.builtin.systemd:
     name: blackbox_exporter
     state: reloaded
   become: true
   tags: blackbox_exporter
+  when:
+  - _blackbox_exporter_service_policy.manage | default(false) | bool
+  - (_blackbox_exporter_service_policy.state | default('stopped')) != 'stopped'

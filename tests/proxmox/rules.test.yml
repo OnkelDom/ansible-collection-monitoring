@@ -1,0 +1,160 @@
+---
+rule_files:
+- native.rules
+evaluation_interval: 1m
+tests:
+- name: healthy sender
+  interval: 1m
+  input_series:
+  - &id001
+    series: proxmox_node_uptime{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 1000+60x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeMetricsMissing",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ProxmoxNativeCpuHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: other tenant same node cannot satisfy expectation
+  interval: 1m
+  input_series:
+  - series: proxmox_node_uptime{job="proxmox-otel",tenant="other",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 1000+60x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeMetricsMissing",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: counter no longer arrives
+  interval: 1m
+  input_series:
+  - series: proxmox_node_uptime{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 1000 1060 stale
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeMetricsMissing",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: sustained cpu escalation
+  interval: 1m
+  input_series:
+  - *id001
+  - series: proxmox_node_cpustat_cpu{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 0.99x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeCpuHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="ProxmoxNativeCpuCritical",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: short cpu spike is not an alert
+  interval: 1m
+  input_series:
+  - *id001
+  - series: proxmox_node_cpustat_cpu{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 0.99x3 0.1x22
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeCpuHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ProxmoxNativeCpuCritical",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: reclaimable cache does not imply pressure
+  interval: 1m
+  input_series:
+  - *id001
+  - series: proxmox_node_memory_memtotal{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 100x25
+  - series: proxmox_node_memory_memused{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 95x25
+  - series: proxmox_node_memory_memavailable{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve"}
+    values: 40x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeMemoryHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: invalid zero capacity excluded
+  interval: 1m
+  input_series:
+  - *id001
+  - series: proxmox_storage_total{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve",storage="zero"}
+    values: '0x25'
+  - series: proxmox_storage_used{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve",storage="zero"}
+    values: 1x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeStorageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ProxmoxNativeStorageCritical",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: storage escalation
+  interval: 1m
+  input_series:
+  - *id001
+  - series: proxmox_storage_total{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve",storage="data"}
+    values: 100x25
+  - series: proxmox_storage_used{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve",storage="data"}
+    values: 96x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeStorageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="ProxmoxNativeStorageCritical",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: only explicitly expected guest is alerted
+  interval: 1m
+  input_series:
+  - *id001
+  - series: proxmox_vm_uptime{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve",vmid="999"}
+    values: '0x25'
+  - series: proxmox_vm_uptime{job="proxmox-otel",tenant="validation",environment="lab",site="lab",cluster="cluster-a",node="pve",vmid="1000"}
+    values: '0x25'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeExpectedGuestMissing",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: node outage suppresses guest cascade
+  interval: 1m
+  input_series: []
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ProxmoxNativeMetricsMissing",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="ProxmoxNativeExpectedGuestMissing",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0

@@ -1,0 +1,37 @@
+---
+- name: Verify installed role preflights without modifying the controller
+  hosts: all
+  connection: local
+  gather_facts: false
+  pre_tasks:
+  - name: Supply isolated synthetic facts for this contract test
+    ansible.builtin.set_fact:
+      ansible_facts: '{{ monitoring_test_facts }}'
+    changed_when: false
+  tasks:
+  - name: Exercise the installed platform contract
+    block:
+    - name: Load the actual collection preflight
+      ansible.builtin.include_role:
+        name: 'degit.monitoring.{{ _preflight_role }}'
+        tasks_from: preflight.yml
+        public: true
+      loop: '{{ monitoring_test_roles }}'
+      loop_control:
+        loop_var: _preflight_role
+    - name: Require an allowed combination
+      ansible.builtin.assert:
+        that: not monitoring_test_expect_failure
+    - name: Verify inventory paths override platform defaults
+      ansible.builtin.assert:
+        that:
+        - alloy_config_dir == monitoring_test_config_dir
+        - alloy_service_name == ('Alloy' if ansible_facts.os_family == 'Windows' else 'alloy')
+      when: not monitoring_test_expect_failure
+    rescue:
+    - name: Require a deliberate preflight rejection
+      ansible.builtin.assert:
+        that:
+        - monitoring_test_expect_failure
+        - ansible_failed_task.name == 'Validate the supported operating system release'
+        - "'Unsupported or unimplemented' in ansible_failed_result.msg"

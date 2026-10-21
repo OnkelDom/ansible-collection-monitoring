@@ -1,0 +1,141 @@
+groups:
+- name: proxmox-native-expectations
+  rules:
+{% for target in prometheus_proxmox_expected_nodes %}
+  - record: proxmox:expected_node
+    expr: vector(1)
+    labels:
+      tenant: {{ target.tenant | to_json }}
+      environment: {{ target.environment | to_json }}
+      site: {{ target.site | to_json }}
+      cluster: {{ target.cluster | to_json }}
+      node: {{ target.node | to_json }}
+      host: {{ target.node | to_json }}
+      instance: {{ (target.cluster ~ "/" ~ target.node) | to_json }}
+{% endfor %}
+{% for target in prometheus_proxmox_expected_guests %}
+  - record: proxmox:expected_guest
+    expr: vector(1)
+    labels:
+      tenant: {{ target.tenant | to_json }}
+      environment: {{ target.environment | to_json }}
+      site: {{ target.site | to_json }}
+      cluster: {{ target.cluster | to_json }}
+      vmid: {{ target.vmid | string | to_json }}
+{% endfor %}
+- name: proxmox-native-alerts
+  rules:
+  - alert: ProxmoxNativeMetricsMissing
+    expr: proxmox:expected_node unless on (tenant, environment, site, cluster, node) (time() - timestamp(proxmox_node_uptime{job="proxmox-otel"}) < 180)
+    for: 5m
+    labels:
+      severity: ERROR
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: availability
+      alert_family: ProxmoxNativeMetricsMissing
+    annotations:
+      summary: 'Proxmox {{ "{{ $labels.cluster }}/{{ $labels.node }}" }} liefert keine aktuellen Metriken'
+      description: 'Seit mindestens 5 Minuten fehlt ein frisches Metrikpaket. Der Node oder der Exportweg kann ausgefallen sein.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'Erreichbarkeit des Nodes, pvestatd, den Metric-Server unter Datacenter und den zentralen Alloy-Empfang pruefen. Auf dem PVE: systemctl status pvestatd; journalctl -u pvestatd --since "15 min ago". Fehlender Export allein beweist keinen VM-Ausfall.'
+  - alert: ProxmoxNativeCpuHigh
+    expr: proxmox_node_cpustat_cpu{job="proxmox-otel"} > 0.90
+    for: 15m
+    labels:
+      severity: WARN
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: cpu
+      alert_family: ProxmoxNativeCpuHigh
+    annotations:
+      summary: 'Hohe CPU-Auslastung auf Proxmox {{ "{{ $labels.cluster }}/{{ $labels.node }}" }}'
+      description: 'Die CPU-Auslastung liegt seit 15 Minuten ueber 90 Prozent. VMs koennen langsamer reagieren.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'Im Proxmox-Node CPU und IO-Wait sowie die groessten VM-Verbraucher pruefen. Auf dem PVE: top; pvesh get /nodes/$(hostname)/status. Keine VMs automatisch stoppen.'
+  - alert: ProxmoxNativeMemoryHigh
+    expr: (1 - proxmox_node_memory_memavailable{job="proxmox-otel"} / proxmox_node_memory_memtotal{job="proxmox-otel"}) > 0.90
+    for: 15m
+    labels:
+      severity: WARN
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: memory
+      alert_family: ProxmoxNativeMemoryHigh
+    annotations:
+      summary: 'Hohe RAM-Belegung auf Proxmox {{ "{{ $labels.cluster }}/{{ $labels.node }}" }}'
+      description: 'Die RAM-Belegung nach Abzug des verfuegbaren Speichers liegt seit 15 Minuten ueber 90 Prozent. ZFS-Cache und Gast-Zuweisungen bei der Bewertung beruecksichtigen.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'RAM, Swap und Gast-Verbraucher im Proxmox-Node pruefen. Auf dem PVE: free -h; vmstat 1 5. Den separaten LPM-Speicherdruckalarm zur Bewertung hinzuziehen.'
+  - alert: ProxmoxNativeStorageHigh
+    expr: (proxmox_storage_used{job="proxmox-otel"} / (proxmox_storage_total{job="proxmox-otel"} > 0)) > 0.85
+    for: 15m
+    labels:
+      severity: WARN
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: storage
+      alert_family: ProxmoxNativeStorageHigh
+    annotations:
+      summary: 'Proxmox-Storage {{ "{{ $labels.storage }}" }} auf {{ "{{ $labels.cluster }}/{{ $labels.node }}" }} wird knapp'
+      description: 'Der Storage ist seit 15 Minuten zu mehr als 85 Prozent belegt. Snapshots, Backups oder VM-Schreibvorgaenge koennen bei weiterer Fuellung scheitern.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'Auf dem PVE: pvesm status. Storage, Snapshots und Backup-Aufbewahrung im Proxmox pruefen; vor Loeschungen Eigentum und Wiederherstellbarkeit klaeren.'
+  - alert: ProxmoxNativeCpuCritical
+    expr: proxmox_node_cpustat_cpu{job="proxmox-otel"} > 0.98
+    for: 10m
+    labels:
+      severity: ERROR
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: cpu
+      alert_family: ProxmoxNativeCpuHigh
+    annotations:
+      summary: 'Hohe CPU-Auslastung auf Proxmox {{ "{{ $labels.cluster }}/{{ $labels.node }}" }}'
+      description: 'Die CPU-Auslastung liegt seit 10 Minuten ueber 98 Prozent. VMs koennen langsamer reagieren.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'Im Proxmox-Node CPU und IO-Wait sowie die groessten VM-Verbraucher pruefen. Auf dem PVE: top; pvesh get /nodes/$(hostname)/status. Keine VMs automatisch stoppen.'
+  - alert: ProxmoxNativeMemoryCritical
+    expr: (1 - proxmox_node_memory_memavailable{job="proxmox-otel"} / proxmox_node_memory_memtotal{job="proxmox-otel"}) > 0.97
+    for: 10m
+    labels:
+      severity: ERROR
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: memory
+      alert_family: ProxmoxNativeMemoryHigh
+    annotations:
+      summary: 'Hohe RAM-Belegung auf Proxmox {{ "{{ $labels.cluster }}/{{ $labels.node }}" }}'
+      description: 'Die RAM-Belegung nach Abzug des verfuegbaren Speichers liegt seit 10 Minuten ueber 97 Prozent. ZFS-Cache und Gast-Zuweisungen bei der Bewertung beruecksichtigen.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'RAM, Swap und Gast-Verbraucher im Proxmox-Node pruefen. Auf dem PVE: free -h; vmstat 1 5. Den separaten LPM-Speicherdruckalarm zur Bewertung hinzuziehen.'
+  - alert: ProxmoxNativeStorageCritical
+    expr: (proxmox_storage_used{job="proxmox-otel"} / (proxmox_storage_total{job="proxmox-otel"} > 0)) > 0.95
+    for: 10m
+    labels:
+      severity: ERROR
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: storage
+      alert_family: ProxmoxNativeStorageHigh
+    annotations:
+      summary: 'Proxmox-Storage {{ "{{ $labels.storage }}" }} auf {{ "{{ $labels.cluster }}/{{ $labels.node }}" }} wird knapp'
+      description: 'Der Storage ist seit 10 Minuten zu mehr als 95 Prozent belegt. Snapshots, Backups oder VM-Schreibvorgaenge koennen bei weiterer Fuellung scheitern.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'Auf dem PVE: pvesm status. Storage, Snapshots und Backup-Aufbewahrung im Proxmox pruefen; vor Loeschungen Eigentum und Wiederherstellbarkeit klaeren.'
+{% if prometheus_proxmox_expected_guests | length > 0 %}
+  - alert: ProxmoxNativeExpectedGuestMissing
+    expr: (proxmox:expected_guest unless on (tenant, environment, site, cluster, vmid) (proxmox_vm_uptime{job="proxmox-otel"} > 0)) unless on (tenant, environment, site, cluster) (proxmox:expected_node unless on (tenant, environment, site, cluster, node) (time() - timestamp(proxmox_node_uptime{job="proxmox-otel"}) < 180))
+    for: 10m
+    labels:
+      severity: ERROR
+      platform: proxmox
+      monitoring_profile: proxmox
+      category: guest
+      alert_family: ProxmoxNativeExpectedGuestMissing
+    annotations:
+      summary: 'Erwarteter Proxmox-Gast {{ "{{ $labels.cluster }}/{{ $labels.vmid }}" }} laeuft nicht'
+      description: 'Ein ausdruecklich als erforderlich hinterlegter Gast liefert seit 10 Minuten keine positive Laufzeit. Geplante Wartung und Migration pruefen.'
+      dashboard_url: {{ prometheus_proxmox_dashboard_url | to_json }}
+      action: 'VMID im Proxmox-Cluster suchen, Status und letzte Tasks pruefen. Erst Abhaengigkeiten und Wartungsfenster klaeren, dann einen Start entscheiden. Keine ausgeschalteten Test-VMs automatisch starten.'
+{% endif %}

@@ -34,14 +34,19 @@ argument_specs:
         description:
         - Controls `blackbox_exporter_config` for the `blackbox_exporter` role.
         required: false
+        type: dict
+      blackbox_exporter_manage_service:
+        description:
+        - Controls `blackbox_exporter_manage_service` for the `blackbox_exporter` role.
+        required: false
+        type: bool
+      blackbox_exporter_service_enabled:
+        description:
+        - Controls `blackbox_exporter_service_enabled` for the `blackbox_exporter` role.
+        required: false
+        type: bool
+      blackbox_exporter_service_state:
+        description:
+        - Controls `blackbox_exporter_service_state` for the `blackbox_exporter` role.
+        required: false
         type: str
-      defaults_blackbox_exporter_config:
-        description:
-        - Controls `defaults_blackbox_exporter_config` for the `blackbox_exporter` role.
-        required: false
-        type: dict
-      additional_blackbox_exporter_config:
-        description:
-        - Controls `additional_blackbox_exporter_config` for the `blackbox_exporter` role.
-        required: false
-        type: dict

@@ -6,7 +6,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-Environment="GOMAXPROCS={{ ansible_processor_vcpus|default(ansible_processor_count) }}"
+Environment="GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count | default(1)) }}"
 User=prometheus
 Group=prometheus
 ExecReload=/bin/kill -HUP $MAINPID
@@ -14,11 +14,13 @@ ExecStart=/usr/local/bin/prometheus \
   --config.file=/etc/prometheus/config.yml \
   --storage.tsdb.path={{ prometheus_data_dir }} \
   --storage.tsdb.retention.time={{ prometheus_storage_retention_time }} \
+{% if prometheus_version is version('3.0.0', '<') %}
   --web.console.libraries=/etc/prometheus/console_libraries \
   --web.console.templates=/etc/prometheus/consoles \
+{% endif %}
   --web.listen-address=0.0.0.0:9090 \
   --web.external-url={{ prometheus_web_external_url }} \
-{% if prometheus_remote_write_reveicer %}
+{% if prometheus_remote_write_receiver_enabled %}
   --web.enable-remote-write-receiver \
 {% endif %}
 {% if prometheus_webconfig | length > 0 %}

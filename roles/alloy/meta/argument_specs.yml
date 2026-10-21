@@ -5,6 +5,16 @@ argument_specs:
     description:
     - Validate variables for the `alloy` role.
     options:
+      alloy_manage_repository:
+        description:
+        - Controls `alloy_manage_repository` for the `alloy` role.
+        required: false
+        type: bool
+      alloy_manage_service:
+        description:
+        - Controls `alloy_manage_service` for the `alloy` role.
+        required: false
+        type: bool
       alloy_service_enabled:
         description:
         - Controls `alloy_service_enabled` for the `alloy` role.
@@ -15,6 +25,116 @@ argument_specs:
         - Controls `alloy_service_state` for the `alloy` role.
         required: false
         type: str
+      alloy_repository_url:
+        description:
+        - Controls `alloy_repository_url` for the `alloy` role.
+        required: false
+        type: str
+      alloy_repository_key_url:
+        description:
+        - Controls `alloy_repository_key_url` for the `alloy` role.
+        required: false
+        type: str
+      alloy_repository_keyring:
+        description:
+        - Controls `alloy_repository_keyring` for the `alloy` role.
+        required: false
+        type: str
+      alloy_config_file:
+        description:
+        - Controls `alloy_config_file` for the `alloy` role.
+        required: false
+        type: str
+      alloy_user:
+        description:
+        - Controls `alloy_user` for the `alloy` role.
+        required: false
+        type: str
+      alloy_group:
+        description:
+        - Controls `alloy_group` for the `alloy` role.
+        required: false
+        type: str
+      alloy_log_level:
+        description:
+        - Controls `alloy_log_level` for the `alloy` role.
+        required: false
+        type: str
+      alloy_loki_endpoint:
+        description:
+        - Controls `alloy_loki_endpoint` for the `alloy` role.
+        required: false
+        type: str
+      alloy_normal_logs_tenant:
+        description:
+        - Controls `alloy_normal_logs_tenant` for the `alloy` role.
+        required: false
+        type: str
+      alloy_audit_logs_tenant:
+        description:
+        - Controls `alloy_audit_logs_tenant` for the `alloy` role.
+        required: false
+        type: str
+      alloy_config:
+        description:
+        - Controls `alloy_config` for the `alloy` role.
+        required: false
+        type: dict
+      alloy_custom_blocks:
+        description:
+        - Controls `alloy_custom_blocks` for the `alloy` role.
+        required: false
+        type: list
+      alloy_custom_blocks_group_vars:
+        description:
+        - Controls `alloy_custom_blocks_group_vars` for the `alloy` role.
+        required: false
+        type: list
+      alloy_custom_blocks_host_vars:
+        description:
+        - Controls `alloy_custom_blocks_host_vars` for the `alloy` role.
+        required: false
+        type: list
+      alloy_custom_blocks_playbook:
+        description:
+        - Controls `alloy_custom_blocks_playbook` for the `alloy` role.
+        required: false
+        type: list
+      alloy_manage_firewall:
+        description:
+        - Controls `alloy_manage_firewall` for the `alloy` role.
+        required: false
+        type: bool
+      alloy_firewall_enabled:
+        description:
+        - Controls `alloy_firewall_enabled` for the `alloy` role.
+        required: false
+        type: bool
+      alloy_firewall_zone:
+        description:
+        - Controls `alloy_firewall_zone` for the `alloy` role.
+        required: false
+        type: str
+      alloy_manage_selinux:
+        description:
+        - Controls `alloy_manage_selinux` for the `alloy` role.
+        required: false
+        type: bool
+      alloy_firewall_ports:
+        description:
+        - Controls `alloy_firewall_ports` for the `alloy` role.
+        required: false
+        type: list
+      alloy_selinux_ports:
+        description:
+        - Controls `alloy_selinux_ports` for the `alloy` role.
+        required: false
+        type: list
+      alloy_service_override:
+        description:
+        - Controls `alloy_service_override` for the `alloy` role.
+        required: false
+        type: dict
       alloy_linux_install_package:
         description:
         - Controls `alloy_linux_install_package` for the `alloy` role.
@@ -45,11 +165,6 @@ argument_specs:
         - Controls `alloy_windows_binary_path` for the `alloy` role.
         required: false
         type: str
-      alloy_config_file:
-        description:
-        - Controls `alloy_config_file` for the `alloy` role.
-        required: false
-        type: str
       alloy_config_dir:
         description:
         - Controls `alloy_config_dir` for the `alloy` role.
@@ -58,21 +173,6 @@ argument_specs:
       alloy_data_dir:
         description:
         - Controls `alloy_data_dir` for the `alloy` role.
-        required: false
-        type: str
-      alloy_user:
-        description:
-        - Controls `alloy_user` for the `alloy` role.
-        required: false
-        type: str
-      alloy_group:
-        description:
-        - Controls `alloy_group` for the `alloy` role.
-        required: false
-        type: str
-      alloy_log_level:
-        description:
-        - Controls `alloy_log_level` for the `alloy` role.
         required: false
         type: str
       alloy_validate_config:
@@ -85,11 +185,6 @@ argument_specs:
         - Controls `alloy_labels` for the `alloy` role.
         required: false
         type: dict
-      alloy_loki_endpoint:
-        description:
-        - Controls `alloy_loki_endpoint` for the `alloy` role.
-        required: false
-        type: str
       alloy_loki_tenant_id:
         description:
         - Controls `alloy_loki_tenant_id` for the `alloy` role.
@@ -188,18 +283,109 @@ argument_specs:
         - Controls `alloy_extra_config` for the `alloy` role.
         required: false
         type: str
-      alloy_firewall_enabled:
+      alloy_pipeline_enabled:
         description:
-        - Controls `alloy_firewall_enabled` for the `alloy` role.
+        - Controls `alloy_pipeline_enabled` for the `alloy` role.
         required: false
         type: bool
-      alloy_firewall_ports:
+      alloy_windows_installer_checksum:
         description:
-        - Controls `alloy_firewall_ports` for the `alloy` role.
+        - Controls `alloy_windows_installer_checksum` for the `alloy` role.
+        required: false
+        type: str
+      alloy_binary_path:
+        description:
+        - Controls `alloy_binary_path` for the `alloy` role.
+        required: false
+        type: str
+      alloy_package_name:
+        description:
+        - Controls `alloy_package_name` for the `alloy` role.
+        required: false
+        type: str
+      alloy_service_name:
+        description:
+        - Controls `alloy_service_name` for the `alloy` role.
+        required: false
+        type: str
+      alloy_log_dir:
+        description:
+        - Controls `alloy_log_dir` for the `alloy` role.
+        required: false
+        type: str
+      alloy_selinux_packages:
+        description:
+        - Controls `alloy_selinux_packages` for the `alloy` role.
         required: false
         type: list
-      alloy_service_override:
+        elements: str
+      alloy_selinux_port_type:
         description:
-        - Controls `alloy_service_override` for the `alloy` role.
+        - Controls `alloy_selinux_port_type` for the `alloy` role.
+        required: false
+        type: str
+      alloy_rpm_repository_url:
+        description:
+        - Controls `alloy_rpm_repository_url` for the `alloy` role.
+        required: false
+        type: str
+      alloy_rpm_repository_key_url:
+        description:
+        - Controls `alloy_rpm_repository_key_url` for the `alloy` role.
+        required: false
+        type: str
+      alloy_lpm_enabled:
+        description:
+        - Controls `alloy_lpm_enabled` for the `alloy` role.
+        required: false
+        type: bool
+      alloy_proxmox_enabled:
+        description:
+        - Controls `alloy_proxmox_enabled` for the `alloy` role.
+        required: false
+        type: bool
+      alloy_proxmox_endpoint:
+        description:
+        - Controls `alloy_proxmox_endpoint` for the `alloy` role.
+        required: false
+        type: str
+      alloy_proxmox_htpasswd_file:
+        description:
+        - Controls `alloy_proxmox_htpasswd_file` for the `alloy` role.
+        required: false
+        type: str
+      alloy_proxmox_tls_cert_file:
+        description:
+        - Controls `alloy_proxmox_tls_cert_file` for the `alloy` role.
+        required: false
+        type: str
+      alloy_proxmox_tls_key_file:
+        description:
+        - Controls `alloy_proxmox_tls_key_file` for the `alloy` role.
+        required: false
+        type: str
+      alloy_proxmox_remote_write_url:
+        description:
+        - Controls `alloy_proxmox_remote_write_url` for the `alloy` role.
+        required: false
+        type: str
+      alloy_proxmox_remote_write_headers:
+        description:
+        - Controls `alloy_proxmox_remote_write_headers` for the `alloy` role.
         required: false
         type: dict
+      alloy_proxmox_labels:
+        description:
+        - Controls `alloy_proxmox_labels` for the `alloy` role.
+        required: false
+        type: dict
+      alloy_linux_filesystem_mount_points_exclude:
+        description:
+        - Controls `alloy_linux_filesystem_mount_points_exclude` for the `alloy` role.
+        required: false
+        type: str
+      alloy_linux_filesystem_mount_points_exclude_extra:
+        description:
+        - Controls `alloy_linux_filesystem_mount_points_exclude_extra` for the `alloy` role.
+        required: false
+        type: list

@@ -1,5 +1,5 @@
 ---
-tempo_version: "3.0.0"
+tempo_version: 3.0.0
 tempo_archive_sha256:
   x86_64: f4150470a5f6bf57e94dac5392c552b488932ea9e88a6ee2a75d7b969b7cb6a4
   aarch64: ca4cd9db4b39f60b9b2f2f0d06c9cfd89e52b1512431cf1e262f91f8cdccafb9
@@ -11,22 +11,23 @@ tempo_service_state: started
 tempo_config:
   target: all
   server:
-    http_listen_address: "{{ tempo_http_listen_address }}"
+    http_listen_address: '{{ tempo_http_listen_address }}'
     http_listen_port: 3200
   distributor:
     receivers:
       otlp:
         protocols:
           grpc:
-            endpoint: "{{ tempo_otlp_listen_address }}:4317"
+            endpoint: '{{ tempo_otlp_listen_address }}:4317'
           http:
-            endpoint: "{{ tempo_otlp_listen_address }}:4318"
+            endpoint: '{{ tempo_otlp_listen_address }}:4318'
   storage:
     trace:
       backend: local
       local:
-        path: "{{ tempo_data_dir }}/traces"
+        path: '{{ tempo_data_dir }}/traces'
       wal:
-        path: "{{ tempo_data_dir }}/wal"
+        path: '{{ tempo_data_dir }}/wal'
   usage_report:
     reporting_enabled: false
+tempo_manage_service: true

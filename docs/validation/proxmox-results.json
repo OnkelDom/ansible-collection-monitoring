@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-18T12:15:40.849805+00:00",
+  "status": "native Proxmox profile implemented and scoped production rollout verified; collection development trees are not released",
+  "production_scope": {
+    "sender": "pve.lenmail.de",
+    "pve_version": "9.2.18",
+    "receiver": "observ01.lenmail.de",
+    "alloy_version": "1.18.0",
+    "transport": "OTLP/HTTPS JSON with gzip, Basic authentication and verified server certificate",
+    "endpoint": "https://prom.lenmail.de/v1/metrics",
+    "backend": "existing local Prometheus remote write",
+    "no_extra_pve_agent": true,
+    "tempo_trace_route_preserved": true,
+    "local_pve_log_shipping_preserved": true,
+    "unauthenticated_http_status": 401
+  },
+  "tested_artifacts": {
+    "monitoring": {
+      "identity": "degit.monitoring:2.0.0",
+      "sha256": "5b5bc9a21bfd92c6b006de9ccb5d39544d46fe704d7a9b425913d7b68d660b3b"
+    },
+    "proxmox": {
+      "identity": "lenmail.proxmox:0.2.0",
+      "sha256": "142091284531c07006a1c04f34b2f679d77956a3cc218aebbc38935ea50bc552"
+    },
+    "scope": "Runtime code and dashboard asset from these built artifacts; evidence attachments and final test fixture updates are source-side additions."
+  },
+  "automated_checks": {
+    "monitoring_unit_tests": 28,
+    "proxmox_collection_unit_tests": 51,
+    "proxmox_subtests": 3,
+    "promtool_semantic_scenarios": 10,
+    "lpm_regression_scenarios": 12,
+    "neutral_mail_regression_scenarios": 7,
+    "role_syntax_checks": 25,
+    "ansible_lint_failures": 0,
+    "ansible_lint_warnings": 0,
+    "native_inhibition_boundary_checks": [
+      "same family suppressed",
+      "same storage suppressed",
+      "other tenant not suppressed",
+      "other cluster not suppressed",
+      "other node not suppressed",
+      "other family not suppressed",
+      "other storage not suppressed"
+    ],
+    "synthetic_alert_destination": "isolated guest blackhole only; no test mail sent"
+  },
+  "idempotency": {
+    "observ01": {
+      "ok": 24,
+      "changed": 0,
+      "failed": 0
+    },
+    "pve": {
+      "ok": 3,
+      "changed": 0,
+      "failed": 0
+    }
+  },
+  "runtime": {
+    "time": "2026-10-18T12:12:00.473112+00:00",
+    "dashboard": {
+      "uid": "monitoring-proxmox-native",
+      "title": "Proxmox | Native OTLP",
+      "panels": 33
+    },
+    "source_age": [
+      {
+        "metric": {
+          "cluster": "lenmail-pve",
+          "environment": "production",
+          "host": "pve",
+          "instance": "lenmail-pve/pve",
+          "job": "proxmox-otel",
+          "monitoring_profile": "proxmox",
+          "node": "pve",
+          "platform": "proxmox",
+          "site": "lenmail",
+          "tenant": "lenmail"
+        },
+        "value": [
+          1792325520.473,
+          "13.473000049591064"
+        ]
+      }
+    ],
+    "metric_series": [
+      {
+        "metric": {},
+        "value": [
+          1792325520.473,
+          "1468"
+        ]
+      }
+    ],
+    "active_alerts": [],
+    "rule_groups": [
+      {
+        "name": "proxmox-native-alerts",
+        "rules": 7,
+        "health": [
+          "ok",
+          "ok",
+          "ok",
+          "ok",
+          "ok",
+          "ok",
+          "ok"
+        ]
+      },
+      {
+        "name": "proxmox-native-expectations",
+        "rules": 1,
+        "health": [
+          "ok"
+        ]
+      }
+    ]
+  },
+  "dashboard": {
+    "source": "https://grafana.com/grafana/dashboards/23855-proxmox-ve-dashboard/",
+    "author": "spagno",
+    "revision": 1,
+    "uid": "monitoring-proxmox-native",
+    "url": "https://dash.lenmail.de/d/monitoring-proxmox-native",
+    "panels": 33,
+    "promql_queries": 48,
+    "query_errors": [],
+    "nonempty_queries": 34,
+    "expected_empty": "active alerts and LXC panels; no active native profile alert and no LXC guests",
+    "loaded_definition": "verified in Grafana unified storage",
+    "visual_browser_acceptance": "not performed; Grafana/Authentik sign-in required"
+  },
+  "cleanup": {
+    "existing_guests": 14,
+    "names_states_nodes_unchanged": true,
+    "owned_vm_3390_removed": true,
+    "test_seed_and_image_removed": true,
+    "test_ssh_tunnels_removed": true,
+    "production_samples_fresh_after_tunnel_removal": true
+  },
+  "rollback": "Receiver configuration backup: /root/monitoring-proxmox-before-20261018.tar.gz on observ01. Suspend/remove only monitoring-otlp through lenmail.proxmox.metric_server; validate restored configs; remove only owned dashboard/provider/rule assets. Other metric servers and guests are outside rollback scope.",
+  "remaining_boundaries": [
+    "No collection release, push or main merge performed in this extension",
+    "Expected production guest list is deliberately empty; only explicitly declared required guests get down alerts",
+    "Freshness of the entire monitoring stack requires an external heartbeat",
+    "Multi-node configuration logic and scoped joins are covered by rules and identity tests; live native sender acceptance used the available standalone PVE node",
+    "Visual browser acceptance requires an existing Grafana sign-in",
+    "This scoped rollout does not qualify or deploy the remaining monitoring v2 modernization roles"
+  ]
+}

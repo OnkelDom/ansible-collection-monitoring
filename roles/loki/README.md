@@ -4,9 +4,18 @@ Install and configure Grafana Loki.
 
 ## Supported platforms
 
-- Ubuntu 22.04+
-- Debian 12+
-- RHEL 9+
+- Ubuntu 22.04, 24.04, 26.04
+- Debian 13
+- Rocky Linux 9 / RHEL 9
+
+## Architecture and operation
+
+Facts are collected at entry only when the required platform facts are missing.
+`tasks/preflight.yml` rejects unsupported releases before making changes and loads
+family, distribution and release variables from `vars/platform/` in that order.
+Public inputs belong in `defaults/main.yml`; platform internals belong in `vars/`.
+
+Run this role only on hosts assigned to its responsibility. Review the defaults and required inputs before rollout.
 
 ## Role Variables
 
@@ -20,6 +29,7 @@ loki_http_listen_port: 3100
 loki_http_listen_address: 0.0.0.0
 loki_grpc_listen_port: 9096
 loki_grpc_listen_address: 127.0.0.1
+loki_instance_addr: 127.0.0.1
 loki_binary_install_dir: /usr/local/bin
 loki_config_dir: /etc/loki
 loki_config_file: config.yml
@@ -40,6 +50,7 @@ loki_config:
     grpc_listen_port: '{{ loki_grpc_listen_port }}'
     log_level: '{{ loki_log_level }}'
   common:
+    instance_addr: '{{ loki_instance_addr }}'
     path_prefix: '{{ loki_data_dir }}'
     replication_factor: 1
     ring:
@@ -66,6 +77,9 @@ loki_config:
     rule_path: '{{ loki_rule_path }}'
   analytics:
     reporting_enabled: false
+loki_manage_service: true
+loki_service_enabled: true
+loki_service_state: started
 ```
 
 ## Example Playbook
@@ -74,10 +88,29 @@ loki_config:
 - name: Apply loki
   hosts: all
   become: true
+  gather_facts: true
   roles:
-    - role: lenmail.monitoring.loki
+    - role: degit.monitoring.loki
 ```
 
 ## Testing
 
-The collection CI runs `ansible-lint`, `ansible-test sanity`, repository consistency tests, and per-role syntax checks using `roles/loki/tests/test.yml`.
+Build and install the current collection checkout before running syntax checks, so the
+fully qualified role reference resolves to this implementation.
+
+Run `python tools/generate_role_scaffold.py --check`, `pytest tests/unit` and
+`bash tests/run_role_syntax_checks.sh` from the collection root.
+CI additionally runs YAML lint, Ansible lint, collection build/install and container smoke tests.
+VM functional results are tracked separately; metadata lists intended compatibility,
+not proof that every feature has passed on every distribution.
+
+## Dependencies
+
+Install the collection dependencies from `requirements.yml`. Role dependencies:
+`[]`.
+
+## Change management
+
+Use check mode where the underlying modules support it. Review the diff before applying
+changes. Network, firewall, identity and storage changes need an out-of-band recovery
+path. Secrets belong in Ansible Vault or the operator secret store, never in defaults.

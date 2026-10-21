@@ -1,12 +1,22 @@
 ---
 proxy_env: {}
-node_exporter_version: 1.8.2
+node_exporter_version: 1.12.1
 node_exporter_web_listen_address: 0.0.0.0
 node_exporter_binary_install_dir: /usr/local/bin
+node_exporter_binary_path: '{{ node_exporter_binary_install_dir }}/node_exporter'
 node_exporter_web_listen_port: 9100
-node_exporter_system_user: "{{ prometheus_user | default('node_exporter') }}"
-node_exporter_system_group: "{{ prometheus_group | default('node_exporter') }}"
-node_exporter_user_additional_groups: "adm"
+node_exporter_manage_service: true
+node_exporter_service_enabled: true
+node_exporter_service_state: started
+node_exporter_manage_firewall: false
+node_exporter_firewall_zone: public
+node_exporter_manage_selinux: true
+node_exporter_firewall_ports:
+- '{{ node_exporter_web_listen_port }}/tcp'
+node_exporter_selinux_ports: '{{ node_exporter_firewall_ports }}'
+node_exporter_system_user: node_exporter
+node_exporter_system_group: node_exporter
+node_exporter_user_additional_groups: adm
 node_exporter_create_consul_agent_service: false
 node_exporter_textfile_dir: /var/lib/node_exporter
 node_exporter_config_dir: /etc/node_exporter
@@ -14,32 +24,14 @@ node_exporter_log_level: warn
 node_exporter_log_format: json
 node_exporter_disable_go_metrics: true
 node_exporter_textfile_collectors: []
-#node_exporter_textfile_collectors:
-#  - src: "files/apt.sh"
-#    user: root
-#    calendar: "*-*-* 00:00:00" # every day
-#    boot_sec: 90
-#  - src: "files/lvm2.sh"
-#    params: "-g -p -s -t"
-#    user: root
-#    calendar: "*-* 00:00:00" # every hour
-#    boot_sec: 90
-
 node_exporter_tls_server_config: {}
-
 node_exporter_http_server_config: {}
-
-# Generate Passwords:
-# $ sudo dnf install httpd-tools
-# $ htpasswd -nBC 10 "" | tr -d ':\n'
 node_exporter_basic_auth_users: {}
-
 node_exporter_enabled_collectors:
 - filesystem:
-    mount-points-exclude: "^/(boot|boot/efi|dev.+|proc|run|run.+|sys.+|var/lib/docker.+|var/lib/containers/storage.+)($|/)$"
+    mount-points-exclude: ^/(boot|boot/efi|dev.+|proc|run|run.+|sys.+|var/lib/docker.+|var/lib/containers/storage.+)($|/)$
 - textfile:
-    directory: "{{ node_exporter_textfile_dir }}"
-
+    directory: '{{ node_exporter_textfile_dir }}'
 node_exporter_disabled_collectors:
 - bonding
 - zfs
@@ -49,8 +41,7 @@ node_exporter_disabled_collectors:
 - nfs
 - nfsd
 - xfs
-- vmstat
 - entropy
 - rapl
-
 node_exporter_webconfig: []
+node_exporter_checksum: ''

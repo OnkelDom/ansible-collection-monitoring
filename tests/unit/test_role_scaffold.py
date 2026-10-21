@@ -30,3 +30,25 @@ def test_generation_retains_operating_instructions(tmp_path) -> None:
     assert readme.endswith(note)
     (role / "README.md").write_text(readme, encoding="utf-8")
     assert build_role_files(load_config(), role)[role / "README.md"] == readme
+
+
+def test_new_role_has_real_entry_and_platform_layers(tmp_path):
+    role = tmp_path / 'sample'
+    role.mkdir()
+    generated = build_role_files(load_config(), role)
+    for name in ['tasks/main.yml', 'tasks/preflight.yml', 'tasks/configuration.yml', 'vars/platform/Debian.yml', 'vars/platform/Ubuntu-26.04.yml']:
+        assert role / name in generated
+
+
+def test_tests_reference_installed_collection():
+    import yaml
+    config = load_config()
+    for role in iter_role_dirs():
+        files = build_role_files(config, role)
+        play = yaml.safe_load(files[role / 'tests/test.yml'])[0]
+        assert play['roles'][0]['role'] == 'degit.monitoring.' + role.name
+
+
+def test_retired_agents_are_not_shipped():
+    assert not (ROOT / 'roles/grafana_agent').exists()
+    assert not (ROOT / 'roles/promtail').exists()

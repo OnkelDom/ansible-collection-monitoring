@@ -55,9 +55,25 @@ argument_specs:
         - Controls `consul_exporter_consul_token` for the `consul_exporter` role.
         required: false
         type: str
+        no_log: true
       consul_exporter_params:
         description:
         - Controls `consul_exporter_params` for the `consul_exporter` role.
         required: false
         type: list
         elements: str
+      consul_exporter_manage_service:
+        description:
+        - Controls `consul_exporter_manage_service` for the `consul_exporter` role.
+        required: false
+        type: bool
+      consul_exporter_service_enabled:
+        description:
+        - Controls `consul_exporter_service_enabled` for the `consul_exporter` role.
+        required: false
+        type: bool
+      consul_exporter_service_state:
+        description:
+        - Controls `consul_exporter_service_state` for the `consul_exporter` role.
+        required: false
+        type: str

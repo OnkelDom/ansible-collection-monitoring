@@ -1,0 +1,62 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _squid_exporter_service_policy:
+      manage: '{{ squid_exporter_manage_service | bool }}'
+      state: '{{ squid_exporter_service_state }}'
+      enabled: '{{ squid_exporter_service_enabled | bool }}'
+- name: create system group
+  when: squid_exporter_system_group != "root"
+  become: true
+  tags: squid_exporter
+  ansible.builtin.group:
+    name: '{{ squid_exporter_system_group }}'
+    system: true
+    state: present
+- name: create system user
+  when: squid_exporter_system_user != "root"
+  become: true
+  tags: squid_exporter
+  ansible.builtin.user:
+    name: '{{ squid_exporter_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ squid_exporter_system_group }}'
+    createhome: false
+- name: check if is installed
+  register: __squid_exporter_is_installed
+  become: true
+  tags: squid_exporter
+  ansible.builtin.stat:
+    path: '{{ squid_exporter_binary_local_dir }}/squid_exporter'
+- name: copy binaries
+  notify: restart squid_exporter
+  when: (not __squid_exporter_is_installed.stat.exists)
+  become: true
+  tags: squid_exporter
+  ansible.builtin.copy:
+    src: '{{ role_path }}/files/squid_exporter_v{{ squid_exporter_version }}_{{ go_arch }}'
+    dest: '{{ squid_exporter_binary_local_dir }}/squid_exporter'
+    mode: '0755'
+    owner: root
+    group: root
+- name: create systemd service unit
+  notify: restart squid_exporter
+  become: true
+  tags: squid_exporter
+  ansible.builtin.template:
+    src: squid_exporter.service.j2
+    dest: /etc/systemd/system/squid_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+- name: ensure squid_exporter is enabled on boot
+  become: true
+  tags: squid_exporter
+  when:
+  - squid_exporter_manage_service | bool
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: squid_exporter
+    enabled: '{{ squid_exporter_service_enabled }}'
+    state: '{{ squid_exporter_service_state }}'

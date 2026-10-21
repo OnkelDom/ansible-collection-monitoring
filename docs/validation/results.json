@@ -1,0 +1,131 @@
+{
+  "date": "2026-10-18T11:58:39.425493+02:00",
+  "branch": "codex/monitoring-v2",
+  "status": "native development acceptance; not a production release",
+  "roles": 25,
+  "unit_tests": 31,
+  "default_server_unit_tests": 42,
+  "syntax_core": [
+    "2.20",
+    "2.21"
+  ],
+  "artifact_identity": "degit.monitoring:2.0.0",
+  "sanity": [
+    "compile",
+    "import"
+  ],
+  "preflight_cases": 9,
+  "preflight_facts": "synthetic; not real OS acceptance",
+  "preflight_mutations": 0,
+  "preserved_default_server_files_checked": 1074,
+  "production_changes": true,
+  "pending": [
+    "Native qualification of the remaining implemented exporters",
+    "Windows Server and subscribed RHEL acceptance",
+    "Per-role release/version and upgrade qualification",
+    "Optional host-firewall integration acceptance",
+    "Backup/restore tests for persistent monitoring data",
+    "Replace/rebuild bundled exporter binaries with verifiable upstream provenance",
+    "Decide whether to implement or remove four unimplemented exporter roles"
+  ],
+  "artifact_sha256": "a6fcf2792b1cc6f5f8b8b8f2c67d529a36193a2dd743dfb476f3564988e4bce1",
+  "artifact_bytes": 23611397,
+  "native_acceptance": {
+    "host": "pve.lenmail.de",
+    "owned_vm_ids": [
+      3390,
+      3391,
+      3392,
+      3393,
+      3394,
+      3395
+    ],
+    "architecture": "x86_64",
+    "linux_platforms": [
+      "Debian 13",
+      "Ubuntu 22.04",
+      "Ubuntu 24.04",
+      "Ubuntu 26.04",
+      "Rocky Linux 9.8"
+    ],
+    "linux_roles": [
+      "node_exporter",
+      "prometheus",
+      "alertmanager",
+      "blackbox_exporter",
+      "loki",
+      "tempo",
+      "alloy",
+      "grafana"
+    ],
+    "windows_platform": "Windows 11 Enterprise Evaluation, build 26100",
+    "windows_roles": [
+      "alloy"
+    ],
+    "rocky_selinux": "Enforcing",
+    "linux_core_second_run_changed": {
+      "debian13": 0,
+      "rocky9": 0,
+      "ubuntu22": 0,
+      "ubuntu24": 0,
+      "ubuntu26": 0
+    },
+    "windows_second_run_changed": 0,
+    "linux_data_paths": [
+      "Alloy remote write with platform=linux",
+      "journald through Alloy into Loki",
+      "OTLP POST and Tempo trace readback"
+    ],
+    "windows_data_paths": [
+      "Alloy remote write with platform=windows",
+      "Application event through Alloy into Loki"
+    ],
+    "agent_lifecycle": [
+      "stop and disable/manual startup",
+      "deferred handler policy",
+      "reject invalid candidate before active config replacement",
+      "manage_service=false preserves stopped service",
+      "restore service"
+    ],
+    "reboot_readiness": {
+      "linux": "8 native services ready on all five platforms",
+      "windows": "Alloy ready after reboot; WinRM recovery delayed and local sign-in used during diagnosis, without manual Alloy start"
+    },
+    "application_versions": {
+      "node_exporter": "1.12.1",
+      "prometheus": "2.48.0",
+      "alertmanager": "0.27.0",
+      "blackbox_exporter": "0.25.0",
+      "loki": "3.3.0",
+      "tempo": "3.0.0",
+      "alloy": "1.20.1",
+      "grafana": "13.2.4"
+    },
+    "artifact_sha256": "6d577431019ffcdb55f8cc23a0f7c25276c45a72bb704f17c75312f5903fe12c",
+    "qualification_scope": "Foundation matrix before the LPM extension; see lpm-results.json for the separately qualified extension"
+  },
+  "lab_cleanup": {
+    "status": "complete",
+    "owned_vms_removed": [
+      3390,
+      3391,
+      3392,
+      3393,
+      3394,
+      3395
+    ],
+    "test_seed_isos_removed": true,
+    "images_and_credentials_removed": true,
+    "existing_guests_preserved": 14
+  },
+  "controller_core_versions": [
+    "2.20.10",
+    "2.21.5"
+  ],
+  "foundation_unit_tests": 22,
+  "lpm_extension_report": "lpm-results.json",
+  "production_scope": "Scoped native Proxmox profile on pve.lenmail.de and observ01.lenmail.de; foundation matrix still records its original acceptance only",
+  "proxmox_extension_report": "proxmox-results.json",
+  "artifact_scope": "Historical LPM-qualified artifact; the Proxmox extension has separate tested artifact hashes in proxmox-results.json",
+  "filesystem_alias_extension_report": "filesystem-aliases-results.json"
+}

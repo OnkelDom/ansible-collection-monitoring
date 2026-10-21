@@ -1,0 +1,281 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _node_exporter_service_policy:
+      manage: '{{ node_exporter_manage_service | bool }}'
+      state: '{{ node_exporter_service_state }}'
+      enabled: '{{ node_exporter_service_enabled | bool }}'
+- name: Create system group
+  ansible.builtin.group:
+    name: '{{ node_exporter_system_group }}'
+    system: true
+    state: present
+  when: node_exporter_system_group != "root"
+  become: true
+  tags: node_exporter
+- name: Create system user
+  ansible.builtin.user:
+    name: '{{ node_exporter_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ node_exporter_system_group }}'
+    create_home: false
+    groups: '{{ node_exporter_user_additional_groups }}'
+    home: /
+  when: node_exporter_system_user != "root"
+  become: true
+  tags: node_exporter
+- name: Create binary install directory
+  ansible.builtin.file:
+    path: '{{ node_exporter_binary_install_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+  tags: node_exporter
+- name: Install SELinux tooling for node_exporter
+  ansible.builtin.package:
+    name: '{{ node_exporter_selinux_packages }}'
+    state: present
+    policy_rc_d: '{{ 101 if ansible_facts.os_family == ''Debian'' and not (node_exporter_manage_service | bool and node_exporter_service_state == ''started'') else omit }}'
+  when:
+  - ansible_facts.os_family == "RedHat"
+  - node_exporter_manage_selinux | bool
+  - ansible_facts.selinux is defined
+  - ansible_facts.selinux.status == "enabled"
+  become: true
+  tags: node_exporter
+- name: Validate textfile collector requirements
+  when: node_exporter_textfile_collectors | length != 0
+  block:
+  - name: Check for "/etc/crontab"
+    ansible.builtin.stat:
+      path: /etc/crontab
+    register: __node_exportert_etc_crontab
+  - name: Assert /etc/crontab exists when using textfile collector scripts
+    ansible.builtin.assert:
+      that: __node_exportert_etc_crontab.stat.exists
+  - name: Assert node_exporter_textfile_dir is not empty when using collector scripts
+    ansible.builtin.assert:
+      that:
+      - node_exporter_textfile_dir | length != 0
+- name: Check if node_exporter is installed
+  ansible.builtin.stat:
+    path: '{{ node_exporter_binary_path }}'
+  register: __node_exporter_is_installed
+  become: true
+  tags: node_exporter
+- name: Gather currently installed node_exporter version (if any)
+  ansible.builtin.command: '{{ node_exporter_binary_path }} --version'
+  changed_when: false
+  register: __node_exporter_current_version_output
+  when: __node_exporter_is_installed.stat.exists
+  become: true
+  tags: node_exporter
+- name: Resolve explicitly requested latest release
+  when: node_exporter_version == "latest"
+  tags: node_exporter
+  block:
+  - name: Get latest release
+    ansible.builtin.uri:
+      url: https://api.github.com/repos/prometheus/node_exporter/releases/latest
+      method: GET
+      return_content: true
+      status_code: 200
+      body_format: json
+      validate_certs: true
+    environment: '{{ proxy_env }}'
+    register: _latest_release
+    until: _latest_release.status == 200
+    retries: 5
+  - name: Select the explicitly requested latest exporter release
+    ansible.builtin.set_fact:
+      node_exporter_version: '{{ _latest_release.json.tag_name[1:] }}'
+- name: Install checksum-verified exporter binary
+  when: (not __node_exporter_is_installed.stat.exists) or (__node_exporter_current_version_output.stdout_lines[0].split(" ")[2] != node_exporter_version)
+  block:
+  - name: Create a target-local download cache
+    ansible.builtin.file:
+      path: '{{ _node_exporter_download_dir }}'
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+    become: true
+  - name: Download the checksum-verified exporter archive on the target
+    ansible.builtin.get_url:
+      url: https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-{{ _node_exporter_arch }}.tar.gz
+      dest: '{{ _node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-{{ _node_exporter_arch }}.tar.gz'
+      checksum: '{{ node_exporter_checksum if node_exporter_checksum | length > 0 else ''sha256:https://github.com/prometheus/node_exporter/releases/download/v'' ~ node_exporter_version ~ ''/sha256sums.txt'' }}'
+      mode: '0644'
+    environment: '{{ proxy_env }}'
+    become: true
+  - name: Extract the exporter archive on the target
+    ansible.builtin.unarchive:
+      src: '{{ _node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-{{ _node_exporter_arch }}.tar.gz'
+      dest: '{{ _node_exporter_download_dir }}'
+      remote_src: true
+      creates: '{{ _node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}.linux-{{ _node_exporter_arch }}/node_exporter'
+    become: true
+  - name: Install the verified exporter binary
+    ansible.builtin.copy:
+      src: '{{ _node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}.linux-{{ _node_exporter_arch }}/node_exporter'
+      dest: '{{ node_exporter_binary_path }}'
+      remote_src: true
+      owner: root
+      group: root
+      mode: '0755'
+    notify: Restart node_exporter
+    become: true
+- name: Assert collectors are not both disabled and enabled at the same time
+  ansible.builtin.assert:
+    that:
+    - item not in node_exporter_enabled_collectors
+  with_items: '{{ node_exporter_disabled_collectors }}'
+  become: true
+  tags: node_exporter
+- name: Configure textfile collectors
+  when: ( node_exporter_tls_server_config | length > 0 ) or ( node_exporter_http_server_config | length > 0 ) or ( node_exporter_basic_auth_users | length > 0 )
+  become: true
+  tags: node_exporter
+  block:
+  - name: Create config directory
+    ansible.builtin.file:
+      path: '{{ node_exporter_config_dir }}'
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+    become: true
+    tags: node_exporter
+  - name: Copy config file
+    ansible.builtin.template:
+      src: node_exporter.config.yml.j2
+      dest: '{{ node_exporter_config_dir }}/config.yml'
+      owner: root
+      group: '{{ node_exporter_system_group }}'
+      mode: '0640'
+    notify: Restart node_exporter
+    become: true
+    tags: node_exporter
+    no_log: '{{ node_exporter_basic_auth_users | length > 0 }}'
+- name: Manage exporter configuration directory
+  when: node_exporter_textfile_dir | length > 0
+  tags: node_exporter
+  block:
+  - name: Create textfile collector dir
+    ansible.builtin.file:
+      path: '{{ node_exporter_textfile_dir }}'
+      state: directory
+      owner: '{{ node_exporter_system_user }}'
+      group: '{{ node_exporter_system_group }}'
+      recurse: true
+      mode: u+rwX,g+rwX,o=rX
+    tags: node_exporter
+  - name: Download textfile collector scripts
+    ansible.builtin.copy:
+      src: '{{ item.src }}'
+      dest: '{{ node_exporter_binary_install_dir }}/textfile_collector_{{ item.src | basename }}'
+      owner: root
+      group: root
+      mode: '0755'
+    with_items: '{{ node_exporter_textfile_collectors }}'
+    tags: node_exporter
+  - name: Setup textfile collector script systemd cron service
+    ansible.builtin.template:
+      src: cron.service.j2
+      dest: /etc/systemd/system/textfile-collector-{{ item.src | basename }}.service
+      owner: root
+      group: root
+      mode: '0644'
+    with_items: '{{ node_exporter_textfile_collectors }}'
+    notify: Reload cron
+    tags: node_exporter
+  - name: Setup textfile collector script systemd cron timer
+    ansible.builtin.template:
+      src: cron.timer.j2
+      dest: /etc/systemd/system/textfile-collector-{{ item.src | basename }}.timer
+      owner: root
+      group: root
+      mode: '0644'
+    with_items: '{{ node_exporter_textfile_collectors }}'
+    notify: Reload cron
+    tags: node_exporter
+  - name: Enable textfile collector
+    ansible.builtin.systemd:
+      daemon_reload: true
+      name: textfile-collector-{{ item.src | basename }}.timer
+      enabled: true
+      state: started
+    with_items: '{{ node_exporter_textfile_collectors }}'
+    when:
+    - node_exporter_manage_service | bool
+    - node_exporter_service_state != 'stopped'
+- name: Configure web
+  ansible.builtin.copy:
+    content: '{{ node_exporter_webconfig | to_nice_yaml(indent=2) }}'
+    dest: '{{ node_exporter_config_dir }}/web.yml'
+    force: true
+    owner: '{{ node_exporter_system_user }}'
+    group: '{{ node_exporter_system_group }}'
+    mode: '0644'
+  notify: Restart node_exporter
+  when: node_exporter_webconfig | length > 0
+  become: true
+  tags: node_exporter
+- name: Create systemd service unit
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart node_exporter
+  become: true
+  tags: node_exporter
+- name: Manage node_exporter ports through the firewall role
+  ansible.builtin.include_role:
+    name: degit.infrastructure.firewall
+    apply:
+      tags: node_exporter
+  vars:
+    firewall_manage_activation: false
+    firewall_rules:
+    - port: '{{ _node_exporter_firewall_port.split(''/'')[0] }}'
+      protocol: '{{ _node_exporter_firewall_port.split(''/'')[1] }}'
+      action: allow
+      comment: node_exporter metrics endpoint
+      zone: '{{ node_exporter_firewall_zone | default("public") }}'
+  loop: '{{ node_exporter_firewall_ports }}'
+  loop_control:
+    loop_var: _node_exporter_firewall_port
+  when:
+  - node_exporter_manage_firewall | bool
+  - node_exporter_firewall_ports | length > 0
+  tags: node_exporter
+- name: Label node_exporter ports for SELinux
+  community.general.seport:
+    ports: '{{ item.split(''/'')[0] }}'
+    proto: '{{ item.split(''/'')[1] }}'
+    setype: '{{ node_exporter_selinux_port_type }}'
+    state: present
+  loop: '{{ node_exporter_selinux_ports }}'
+  when:
+  - ansible_facts.os_family == "RedHat"
+  - node_exporter_manage_selinux | bool
+  - ansible_facts.selinux is defined
+  - ansible_facts.selinux.status == "enabled"
+  - node_exporter_selinux_ports | length > 0
+  become: true
+  tags: node_exporter
+- name: Start and enable node_exporter
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: node_exporter
+    enabled: '{{ node_exporter_service_enabled }}'
+    state: '{{ node_exporter_service_state }}'
+  when:
+  - node_exporter_manage_service | bool
+  become: true
+  tags: node_exporter

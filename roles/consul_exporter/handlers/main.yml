@@ -1,15 +1,20 @@
 ---
 - name: reload consul_exporter
-  systemd:
-    name: consul_exporter
-    state: reloaded
   become: true
   tags: consul_exporter
-
+  when:
+  - _consul_exporter_service_policy.manage | default(false) | bool
+  - (_consul_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
+    name: consul_exporter
+    state: reloaded
 - name: restart consul_exporter
-  systemd:
+  become: true
+  tags: consul_exporter
+  when:
+  - _consul_exporter_service_policy.manage | default(false) | bool
+  - (_consul_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: consul_exporter
     state: restarted
-  become: true
-  tags: consul_exporter

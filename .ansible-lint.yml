@@ -4,9 +4,9 @@ exclude_paths:
 - .pre-commit-config.yaml
 - .github/
 - .gitea/
-
+- .venv-v2/
+- .ansible/
 use_default_rules: true
-
 enable_list:
 - no-changed-when
 - syntax-check
@@ -16,11 +16,9 @@ enable_list:
 - partial-become
 - load-failure
 - parser-error
-
 warn_list:
 - experimental
 - meta-no-info
-
 skip_list:
 - yaml
 - fqcn
@@ -56,5 +54,8 @@ skip_list:
 - meta-incorrect
 - meta-no-tags
 - meta-video-links
-
 verbosity: 1
+supported_ansible_also:
+- 2.20.
+- 2.21.
+profile: production

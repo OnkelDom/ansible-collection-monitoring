@@ -1,0 +1,165 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _loki_service_policy:
+      manage: '{{ loki_manage_service | bool }}'
+      state: '{{ loki_service_state }}'
+      enabled: '{{ loki_service_enabled | bool }}'
+- name: create system group
+  ansible.builtin.group:
+    name: '{{ loki_system_group }}'
+    system: true
+    state: present
+  when: loki_system_group != "root"
+  become: true
+  tags: loki
+- name: create system user
+  ansible.builtin.user:
+    name: '{{ loki_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ loki_system_group }}'
+    createhome: false
+    home: /
+  when: loki_system_user != "root"
+  become: true
+  tags: loki
+- name: check if loki is installed
+  ansible.builtin.stat:
+    path: '{{ loki_binary_install_dir }}/loki'
+  register: __loki_is_installed
+  become: true
+  tags: loki
+- name: gather currently installed version
+  ansible.builtin.shell: '{{ loki_binary_install_dir }}/loki --version 2>&1 || {{ loki_binary_install_dir }}/loki -version 2>&1'
+  args:
+    executable: /bin/bash
+  changed_when: false
+  register: __loki_current_version_output
+  when: __loki_is_installed.stat.exists
+  become: true
+  tags: loki
+- block:
+  - name: get latest release
+    ansible.builtin.uri:
+      url: https://api.github.com/repos/grafana/loki/releases/latest
+      method: GET
+      return_content: true
+      status_code: 200
+      body_format: json
+      validate_certs: true
+      user: '{{ lookup(''env'', ''GH_USER'') | default(omit) }}'
+      password: '{{ lookup(''env'', ''GH_TOKEN'') | default(omit) }}'
+    environment: '{{ proxy_env }}'
+    no_log: '{{ not lookup(''env'', ''MOLECULE_DEBUG'') | default(false, true) | bool }}'
+    register: _latest_release
+    until: _latest_release.status == 200
+    retries: 5
+  - name: set loki version to latest release
+    ansible.builtin.set_fact:
+      loki_resolved_version: '{{ _latest_release.json.tag_name[1:] }}'
+    delegate_facts: true
+  when: loki_version == "latest"
+  delegate_to: localhost
+  run_once: true
+  become: true
+  tags: loki
+- name: set effective loki version
+  ansible.builtin.set_fact:
+    _loki_effective_version: '{{ hostvars[''localhost''].loki_resolved_version | default(loki_version) }}'
+  tags: loki
+- name: Ensure ZIP extraction support is installed
+  ansible.builtin.package:
+    name: unzip
+    state: present
+  become: true
+- block:
+  - name: Download verified binary archive on target
+    ansible.builtin.get_url:
+      url: https://github.com/grafana/loki/releases/download/v{{ _loki_effective_version }}/loki-linux-{{ go_arch }}.zip
+      dest: /tmp/loki-{{ _loki_effective_version }}.linux-{{ go_arch }}.zip
+      checksum: '{{ ("sha256:" ~ loki_checksum) if loki_checksum is defined else ("sha256:https://github.com/grafana/loki/releases/download/v" ~ _loki_effective_version ~ "/SHA256SUMS") }}'
+      mode: '0644'
+    environment: '{{ proxy_env }}'
+    register: _download_binary
+    until: _download_binary is succeeded
+    retries: 5
+    delay: 2
+    check_mode: false
+    become: true
+    tags: loki
+  - name: Create versioned extraction directory
+    ansible.builtin.file:
+      path: /tmp/loki-{{ _loki_effective_version }}
+      state: directory
+      mode: '0755'
+    become: true
+  - name: unpack binary
+    ansible.builtin.unarchive:
+      src: /tmp/loki-{{ _loki_effective_version }}.linux-{{ go_arch }}.zip
+      dest: /tmp/loki-{{ _loki_effective_version }}
+      creates: /tmp/loki-{{ _loki_effective_version }}/loki-linux-{{ go_arch }}
+      remote_src: true
+    check_mode: false
+    become: true
+    tags: loki
+  - name: propagate binary
+    ansible.builtin.copy:
+      src: /tmp/loki-{{ _loki_effective_version }}/loki-linux-{{ go_arch }}
+      remote_src: true
+      dest: '{{ loki_binary_install_dir }}/loki'
+      mode: '0755'
+      owner: root
+      group: root
+    notify: restart loki
+    when: not ansible_check_mode
+    become: true
+    tags: loki
+  when: (not __loki_is_installed.stat.exists) or (_loki_effective_version not in (__loki_current_version_output.stdout | default('')))
+- name: create directories
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+    owner: '{{ item.owner | default(loki_system_user) }}'
+    group: '{{ item.group | default(loki_system_group) }}'
+    mode: '{{ item.mode | default(''0755'') }}'
+  loop:
+  - path: '{{ loki_config_dir }}'
+  - path: '{{ loki_data_dir }}'
+  - path: '{{ loki_data_dir }}/chunks'
+  - path: '{{ loki_data_dir }}/rules'
+  - path: '{{ loki_rule_path }}'
+  become: true
+  tags: loki
+- name: copy config file
+  ansible.builtin.template:
+    src: loki.config.yml.j2
+    dest: '{{ loki_config_dir }}/{{ loki_config_file }}'
+    owner: '{{ loki_system_user }}'
+    group: '{{ loki_system_group }}'
+    mode: '0644'
+  notify: restart loki
+  become: true
+  tags:
+  - loki
+  - loki_config
+- name: create systemd service unit
+  ansible.builtin.template:
+    src: loki.service.j2
+    dest: /etc/systemd/system/loki.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart loki
+  become: true
+  tags: loki
+- name: start and enable loki
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: loki
+    enabled: '{{ loki_service_enabled }}'
+    state: '{{ loki_service_state }}'
+  become: true
+  tags: loki
+  when:
+  - loki_manage_service | bool

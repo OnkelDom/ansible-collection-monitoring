@@ -1,59 +1,7 @@
 ---
-- name: create system group
-  group:
-    name: "{{ squid_exporter_system_group }}"
-    system: true
-    state: present
-  when: squid_exporter_system_group != "root"
-  become: true
-  tags: squid_exporter
-
-- name: create system user
-  user:
-    name: "{{ squid_exporter_system_user }}"
-    system: true
-    shell: "/sbin/nologin"
-    group: "{{ squid_exporter_system_group }}"
-    createhome: false
-  when: squid_exporter_system_user != "root"
-  become: true
-  tags: squid_exporter
-
-- name: check if is installed
-  stat:
-    path: "{{ squid_exporter_binary_local_dir }}/squid_exporter"
-  register: __squid_exporter_is_installed
-  become: true
-  tags: squid_exporter
-
-- name: copy binaries
-  copy:
-    src: "{{ role_path }}/files/squid_exporter_v{{ squid_exporter_version }}_{{ go_arch }}"
-    dest: "{{ squid_exporter_binary_local_dir }}/squid_exporter"
-    mode: 0755
-    owner: root
-    group: root
-  notify: restart squid_exporter
-  when: (not __squid_exporter_is_installed.stat.exists)
-  become: true
-  tags: squid_exporter
-
-- name: create systemd service unit
-  template:
-    src: squid_exporter.service.j2
-    dest: /etc/systemd/system/squid_exporter.service
-    owner: root
-    group: root
-    mode: 0644
-  notify: restart squid_exporter
-  become: true
-  tags: squid_exporter
-
-- name: ensure squid_exporter is enabled on boot
-  systemd:
-    daemon_reload: true
-    name: squid_exporter
-    enabled: true
-    state: started
-  become: true
+- name: Prepare facts and platform variables
+  ansible.builtin.import_tasks: preflight.yml
+  tags: always
+- name: Apply squid_exporter configuration
+  ansible.builtin.import_tasks: configuration.yml
   tags: squid_exporter

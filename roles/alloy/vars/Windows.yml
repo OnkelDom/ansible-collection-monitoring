@@ -1,7 +1,0 @@
----
-alloy_package_name: GrafanaLabs.Alloy
-alloy_service_name: Alloy
-alloy_config_dir: C:/ProgramData/GrafanaLabs/Alloy
-alloy_data_dir: C:/ProgramData/GrafanaLabs/Alloy/data
-alloy_log_dir: C:/ProgramData/GrafanaLabs/Alloy/logs
-alloy_config_file: C:/ProgramData/GrafanaLabs/Alloy/config.alloy

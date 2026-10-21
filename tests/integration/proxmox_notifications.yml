@@ -1,0 +1,161 @@
+---
+- name: Validate Proxmox inhibition with no notification destinations
+  hosts: lab
+  gather_facts: true
+  become: true
+  vars:
+    alertmanager_proxmox_enabled: true
+    alertmanager_routes: []
+    alertmanager_route:
+      receiver: blackhole
+      group_by:
+      - alertname
+  roles:
+  - degit.monitoring.alertmanager
+  post_tasks:
+  - name: Apply the validated isolated Alertmanager configuration
+    ansible.builtin.meta: flush_handlers
+  - name: Inject only isolated synthetic alerts into the blackhole route
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9093/api/v2/alerts
+      method: POST
+      body_format: json
+      body:
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeCpuHigh
+          severity: ERROR
+          alertname: ProxmoxValidation
+          validation_case: source
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeCpuHigh
+          severity: WARN
+          alertname: ProxmoxValidation
+          validation_case: same
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: b
+          node: pve
+          alert_family: ProxmoxNativeCpuHigh
+          severity: WARN
+          alertname: ProxmoxValidation
+          validation_case: other-cluster
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: other
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeCpuHigh
+          severity: WARN
+          alertname: ProxmoxValidation
+          validation_case: other-tenant
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve2
+          alert_family: ProxmoxNativeCpuHigh
+          severity: WARN
+          alertname: ProxmoxValidation
+          validation_case: other-node
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeMemoryHigh
+          severity: WARN
+          alertname: ProxmoxValidation
+          validation_case: other-family
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeStorageHigh
+          severity: ERROR
+          storage: data
+          alertname: ProxmoxValidation
+          validation_case: storage-source
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeStorageHigh
+          severity: WARN
+          storage: data
+          alertname: ProxmoxValidation
+          validation_case: same-storage
+        annotations:
+          summary: Isolated blackhole inhibition validation
+      - labels:
+          monitoring_profile: proxmox
+          tenant: validation
+          environment: lab
+          site: lab
+          cluster: a
+          node: pve
+          alert_family: ProxmoxNativeStorageHigh
+          severity: WARN
+          storage: backup
+          alertname: ProxmoxValidation
+          validation_case: other-storage
+        annotations:
+          summary: Isolated blackhole inhibition validation
+  - name: Read inhibition decisions
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9093/api/v2/alerts
+      return_content: true
+    register: inhibition
+    until: inhibition.json | selectattr('labels.validation_case', 'equalto', 'same') | map(attribute='status.inhibitedBy') | flatten | length > 0
+    retries: 12
+    delay: 2
+  - name: Verify tenant cluster node family and storage isolation
+    ansible.builtin.assert:
+      that:
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'same') | map(attribute='status.inhibitedBy') | flatten | length > 0
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'same-storage') | map(attribute='status.inhibitedBy') | flatten | length > 0
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'other-cluster') | map(attribute='status.inhibitedBy') | flatten | length == 0
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'other-tenant') | map(attribute='status.inhibitedBy') | flatten | length == 0
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'other-node') | map(attribute='status.inhibitedBy') | flatten | length == 0
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'other-family') | map(attribute='status.inhibitedBy') | flatten | length == 0
+      - inhibition.json | selectattr('labels.validation_case', 'equalto', 'other-storage') | map(attribute='status.inhibitedBy') | flatten | length == 0

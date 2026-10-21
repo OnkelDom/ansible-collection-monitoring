@@ -80,3 +80,18 @@ argument_specs:
         - Controls `pushgateway_config_flags_extra` for the `pushgateway` role.
         required: false
         type: dict
+      pushgateway_manage_service:
+        description:
+        - Controls `pushgateway_manage_service` for the `pushgateway` role.
+        required: false
+        type: bool
+      pushgateway_service_enabled:
+        description:
+        - Controls `pushgateway_service_enabled` for the `pushgateway` role.
+        required: false
+        type: bool
+      pushgateway_service_state:
+        description:
+        - Controls `pushgateway_service_state` for the `pushgateway` role.
+        required: false
+        type: str

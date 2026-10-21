@@ -1,0 +1,4 @@
+---
+node_exporter_selinux_packages:
+- policycoreutils-python-utils
+node_exporter_selinux_port_type: http_port_t

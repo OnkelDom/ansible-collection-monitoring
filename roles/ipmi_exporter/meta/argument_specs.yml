@@ -4,4 +4,19 @@ argument_specs:
     short_description: Entry point for the ipmi_exporter role.
     description:
     - Validate variables for the `ipmi_exporter` role.
-    options: {}
+    options:
+      ipmi_exporter_manage_service:
+        description:
+        - Controls `ipmi_exporter_manage_service` for the `ipmi_exporter` role.
+        required: false
+        type: bool
+      ipmi_exporter_service_enabled:
+        description:
+        - Controls `ipmi_exporter_service_enabled` for the `ipmi_exporter` role.
+        required: false
+        type: bool
+      ipmi_exporter_service_state:
+        description:
+        - Controls `ipmi_exporter_service_state` for the `ipmi_exporter` role.
+        required: false
+        type: str

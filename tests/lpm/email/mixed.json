@@ -1,0 +1,61 @@
+{
+  "Receiver": "mail",
+  "Status": "firing",
+  "GroupLabels": {
+    "alertname": "LPMDiskUsageMid_WARN"
+  },
+  "CommonLabels": {
+    "alertname": "LPMDiskUsageMid_WARN",
+    "instance": "host.example.invalid:9100",
+    "severity": "WARN",
+    "platform": "linux",
+    "path": "/srv"
+  },
+  "CommonAnnotations": {
+    "summary": "Wenig freier Speicher",
+    "description": "Belegt: 85 %. Alarmgrenze: über 80 % für mindestens 15 Minuten.",
+    "action": "Linux: df -h /srv; sudo du -xhd1 /srv prüfen.",
+    "pending_for": "15m"
+  },
+  "ExternalURL": "https://alertmanager.example.invalid",
+  "Alerts": [
+    {
+      "Status": "firing",
+      "Labels": {
+        "alertname": "LPMDiskUsageMid_WARN",
+        "instance": "host.example.invalid:9100",
+        "severity": "WARN",
+        "platform": "linux",
+        "path": "/srv"
+      },
+      "Annotations": {
+        "summary": "Wenig freier Speicher",
+        "description": "Belegt: 85 %. Alarmgrenze: über 80 % für mindestens 15 Minuten.",
+        "action": "Linux: df -h /srv; sudo du -xhd1 /srv prüfen.",
+        "pending_for": "15m"
+      },
+      "StartsAt": "2026-10-18T10:00:00Z",
+      "EndsAt": "0001-01-01T00:00:00Z",
+      "GeneratorURL": "https://prometheus.example.invalid/graph"
+    },
+    {
+      "Status": "resolved",
+      "Labels": {
+        "alertname": "LPMDiskUsageMid_WARN",
+        "instance": "host.example.invalid:9100",
+        "severity": "WARN",
+        "platform": "linux",
+        "path": "/srv"
+      },
+      "Annotations": {
+        "summary": "Wenig freier Speicher",
+        "description": "Belegt: 85 %. Alarmgrenze: über 80 % für mindestens 15 Minuten.",
+        "action": "Linux: df -h /srv; sudo du -xhd1 /srv prüfen.",
+        "pending_for": "15m"
+      },
+      "StartsAt": "2026-10-18T10:00:00Z",
+      "EndsAt": "2026-10-18T11:00:00Z",
+      "GeneratorURL": "https://prometheus.example.invalid/graph"
+    }
+  ]
+}

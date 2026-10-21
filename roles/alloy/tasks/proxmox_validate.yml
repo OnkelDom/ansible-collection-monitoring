@@ -1,0 +1,9 @@
+---
+- name: Validate the native Proxmox receiver configuration
+  ansible.builtin.assert:
+    that:
+    - not alloy_proxmox_enabled or alloy_proxmox_remote_write_url | length > 0
+    - not alloy_proxmox_enabled or alloy_proxmox_labels.keys() | intersect(['host', 'instance', 'job', 'platform', 'cluster', 'node', 'monitoring_profile']) | length == 0
+    - (alloy_proxmox_tls_cert_file | length > 0) == (alloy_proxmox_tls_key_file | length > 0)
+    - not alloy_proxmox_enabled or alloy_proxmox_endpoint.startswith('127.0.0.1:') or (alloy_proxmox_tls_cert_file | length > 0 and alloy_proxmox_htpasswd_file | length > 0)
+    fail_msg: Proxmox OTLP requires a destination, reserved source labels and TLS plus authentication unless bound to loopback behind a secured proxy.

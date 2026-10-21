@@ -1,0 +1,58 @@
+---
+- name: Create the dedicated native PVE dashboard directory
+  ansible.builtin.file:
+    path: '{{ grafana_data_dir }}/monitoring-proxmox'
+    state: directory
+    owner: root
+    group: grafana
+    mode: '0755'
+  become: true
+  when: grafana_proxmox_dashboard_enabled | bool
+- name: Provision the neutral native PVE dashboard
+  ansible.builtin.copy:
+    src: dashboards/proxmox-native.json
+    dest: '{{ grafana_data_dir }}/monitoring-proxmox/proxmox-native.json'
+    owner: root
+    group: grafana
+    mode: '0644'
+  become: true
+  when: grafana_proxmox_dashboard_enabled | bool
+- name: Install the dedicated native PVE dashboard provider
+  ansible.builtin.copy:
+    dest: /etc/grafana/provisioning/dashboards/monitoring-proxmox.yml
+    content: |
+      apiVersion: 1
+      providers:
+        - name: monitoring-proxmox
+          orgId: 1
+          folder: Infrastructure
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          options:
+            path: {{ grafana_data_dir }}/monitoring-proxmox
+    owner: root
+    group: grafana
+    mode: '0640'
+  become: true
+  when: grafana_proxmox_dashboard_enabled | bool
+  register: _grafana_proxmox_provider
+- name: Remove the disabled owned Proxmox dashboard files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+  - /etc/grafana/provisioning/dashboards/monitoring-proxmox.yml
+  - '{{ grafana_data_dir }}/monitoring-proxmox/proxmox-native.json'
+  become: true
+  when: not grafana_proxmox_dashboard_enabled | bool
+  register: _grafana_proxmox_removed
+- name: Apply a changed native PVE dashboard provider
+  ansible.builtin.systemd_service:
+    name: grafana-server
+    state: restarted
+  become: true
+  when:
+  - grafana_manage_service | bool
+  - grafana_service_state != 'stopped'
+  - _grafana_proxmox_provider is changed or _grafana_proxmox_removed is changed

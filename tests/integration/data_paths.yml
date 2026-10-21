@@ -1,0 +1,65 @@
+---
+- name: Verify local telemetry data paths in the disposable lab
+  hosts: monitoring_lab
+  gather_facts: false
+  become: true
+  tasks:
+  - name: Verify metrics delivered through Alloy remote write
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:9090/api/v1/query?query=node_uname_info%7Btenant%3D%22validation%22%2Cplatform%3D%22linux%22%7D'
+      return_content: true
+    register: metric
+    until: metric.json is defined and metric.json.data.result | length > 0
+    retries: 30
+    delay: 5
+  - name: Emit a unique real journal entry
+    ansible.builtin.command:
+      argv: [logger, -t, monitoring-validation, 'monitoring-v2-runtime-proof-{{ inventory_hostname }}']
+    changed_when: false
+  - name: Query the journal entry through Loki
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:3100/loki/api/v1/query_range?query=%7Btenant%3D%22validation%22%2Cplatform%3D%22linux%22%7D%20%7C%3D%20%22monitoring-v2-runtime-proof-{{ inventory_hostname }}%22'
+      return_content: true
+    register: log_result
+    until: log_result.json is defined and log_result.json.data.result | length > 0
+    retries: 30
+    delay: 5
+  - name: Obtain a timestamp for the isolated OTLP test span
+    ansible.builtin.command: date +%s%N
+    register: span_time
+    changed_when: false
+  - name: Send a real OTLP span to Tempo
+    ansible.builtin.uri:
+      url: http://127.0.0.1:4318/v1/traces
+      method: POST
+      body_format: json
+      body:
+        resourceSpans:
+        - resource:
+            attributes:
+            - key: service.name
+              value:
+                stringValue: monitoring-validation
+          scopeSpans:
+          - scope:
+              name: collection-validation
+            spans:
+            - traceId: '{{ (inventory_hostname | hash("sha256"))[:32] }}'
+              spanId: 0123456789abcdef
+              name: native-monitoring-test
+              kind: 1
+              startTimeUnixNano: '{{ span_time.stdout }}'
+              endTimeUnixNano: '{{ (span_time.stdout | int + 1000000) | string }}'
+  - name: Read back the trace from Tempo
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:3200/api/traces/{{ (inventory_hostname | hash("sha256"))[:32] }}'
+      headers:
+        Accept: application/json
+      return_content: true
+    register: trace
+    until: trace is succeeded
+    retries: 24
+    delay: 5
+  - name: Assert Tempo retained the test span
+    ansible.builtin.assert:
+      that: "'native-monitoring-test' in trace.content"

@@ -1,41 +1,38 @@
 ---
-- name: Restart alloy on Linux
+- name: Restart alloy
   ansible.builtin.systemd:
-    name: "{{ alloy_service_name }}"
+    name: '{{ alloy_service_name }}'
     state: restarted
     daemon_reload: true
   become: true
-  when: ansible_os_family != "Windows"
-  listen: restart alloy
-
-- name: Restart alloy on Windows
-  ansible.windows.win_service:
-    name: "{{ alloy_service_name }}"
-    state: restarted
-  when: ansible_os_family == "Windows"
-  listen: restart alloy
-
-- name: Reload alloy on Linux
+  when:
+  - _alloy_service_policy.manage | default(false) | bool
+  - (_alloy_service_policy.state | default('stopped')) != 'stopped'
+  - ansible_facts.os_family != 'Windows'
+- name: Reload alloy
   ansible.builtin.systemd:
-    name: "{{ alloy_service_name }}"
+    name: '{{ alloy_service_name }}'
     state: reloaded
   become: true
-  when: ansible_os_family != "Windows"
-  listen: reload alloy
-
-- name: Start alloy on Linux
+  when:
+  - _alloy_service_policy.manage | default(false) | bool
+  - (_alloy_service_policy.state | default('stopped')) != 'stopped'
+  - ansible_facts.os_family != 'Windows'
+- name: Start alloy
   ansible.builtin.systemd:
-    name: "{{ alloy_service_name }}"
+    name: '{{ alloy_service_name }}'
     state: started
-    enabled: "{{ alloy_service_enabled }}"
+    enabled: '{{ _alloy_service_policy.enabled | default(false) }}'
   become: true
-  when: ansible_os_family != "Windows"
-  listen: start alloy
-
-- name: Start alloy on Windows
+  when:
+  - _alloy_service_policy.manage | default(false) | bool
+  - (_alloy_service_policy.state | default('stopped')) != 'stopped'
+  - ansible_facts.os_family != 'Windows'
+- name: Restart alloy on Windows
   ansible.windows.win_service:
-    name: "{{ alloy_service_name }}"
-    state: started
-    start_mode: "{{ 'auto' if alloy_service_enabled else 'manual' }}"
-  when: ansible_os_family == "Windows"
-  listen: start alloy
+    name: '{{ alloy_service_name }}'
+    state: restarted
+  when:
+  - ansible_facts.os_family == 'Windows'
+  - _alloy_service_policy.manage | default(false) | bool
+  - (_alloy_service_policy.state | default('stopped')) != 'stopped'

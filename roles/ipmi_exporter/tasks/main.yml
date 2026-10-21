@@ -1,4 +1,7 @@
 ---
-- name: Placeholder for ipmi_exporter role implementation
-  ansible.builtin.debug:
-    msg: "The ipmi_exporter role was imported without tasks yet."
+- name: Prepare facts and platform variables
+  ansible.builtin.import_tasks: preflight.yml
+  tags: always
+- name: Apply ipmi_exporter configuration
+  ansible.builtin.import_tasks: configuration.yml
+  tags: ipmi_exporter

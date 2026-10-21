@@ -3,18 +3,22 @@ galaxy_info:
   author: Dominik Lenhardt
   description: Install and configure Grafana Alloy as a telemetry agent.
   license: MIT
-  min_ansible_version: '2.16'
+  min_ansible_version: '2.20'
   platforms:
   - name: Ubuntu
     versions:
     - jammy
     - noble
+    - resolute
   - name: Debian
     versions:
-    - bookworm
+    - trixie
   - name: EL
     versions:
     - '9'
+  - name: Windows
+    versions:
+    - all
   galaxy_tags:
   - linux
   - system

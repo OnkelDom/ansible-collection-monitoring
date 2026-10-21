@@ -20,3 +20,18 @@ argument_specs:
         - Controls `redis_exporter_config_flags_extra` for the `redis_exporter` role.
         required: false
         type: dict
+      redis_exporter_manage_service:
+        description:
+        - Controls `redis_exporter_manage_service` for the `redis_exporter` role.
+        required: false
+        type: bool
+      redis_exporter_service_enabled:
+        description:
+        - Controls `redis_exporter_service_enabled` for the `redis_exporter` role.
+        required: false
+        type: bool
+      redis_exporter_service_state:
+        description:
+        - Controls `redis_exporter_service_state` for the `redis_exporter` role.
+        required: false
+        type: str

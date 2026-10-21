@@ -1,12 +1,17 @@
 ---
 - name: restart vector
-  systemd:
+  tags: vector
+  when:
+  - _vector_service_policy.manage | default(false) | bool
+  - (_vector_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     name: vector
     state: reloaded
-  tags: vector
-
 - name: reload vector
-  systemd:
+  tags: vector
+  when:
+  - _vector_service_policy.manage | default(false) | bool
+  - (_vector_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     name: vector
     state: restarted
-  tags: vector

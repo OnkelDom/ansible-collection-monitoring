@@ -1,16 +1,21 @@
 ---
 - name: restart squid_exporter
-  systemd:
+  tags: squid_exporter
+  become: true
+  when:
+  - _squid_exporter_service_policy.manage | default(false) | bool
+  - (_squid_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: squid_exporter
     state: restarted
-  tags: squid_exporter
-  become: true
-
 - name: reload squid_exporter
-  systemd:
+  tags: squid_exporter
+  become: true
+  when:
+  - _squid_exporter_service_policy.manage | default(false) | bool
+  - (_squid_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: squid_exporter
     state: restarted
-  tags: squid_exporter
-  become: true

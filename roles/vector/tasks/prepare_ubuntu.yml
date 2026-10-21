@@ -1,7 +1,7 @@
 ---
 - name: Ensure necessary packages installed
-  apt:
-    name: "{{ vector_prepare_packages }}"
+  tags: vector
+  ansible.builtin.apt:
+    name: '{{ vector_prepare_packages }}'
     state: present
     cache_valid_time: 600
-  tags: vector

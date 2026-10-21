@@ -1,0 +1,91 @@
+---
+- name: Validate the Windows installation contract
+  ansible.builtin.assert:
+    that:
+    - alloy_windows_install_method in ['existing', 'url']
+    - alloy_windows_install_method != 'url' or (alloy_windows_installer_url | length > 0 and alloy_windows_installer_checksum is match('^[a-fA-F0-9]{64}$'))
+    - alloy_windows_install_method != 'url' or (alloy_manage_service | bool and alloy_service_state == 'started')
+    fail_msg: Use an existing installation, or supply an installer URL and SHA256 with explicit service start management.
+- name: Download Grafana Alloy installer
+  ansible.windows.win_get_url:
+    url: '{{ alloy_windows_installer_url }}'
+    dest: '{{ alloy_windows_installer_path }}'
+    checksum: '{{ alloy_windows_installer_checksum }}'
+    checksum_algorithm: sha256
+  when: alloy_windows_install_method == "url"
+  tags:
+  - alloy-install
+- name: Install Grafana Alloy from installer
+  ansible.windows.win_package:
+    path: '{{ alloy_windows_installer_path }}'
+    arguments: /S /CONFIG="{{ alloy_config_file }}"
+    creates_path: '{{ alloy_binary_path }}'
+    state: present
+  when: alloy_windows_install_method == "url"
+  tags:
+  - alloy-install
+- name: Create Alloy configuration directory
+  ansible.windows.win_file:
+    path: '{{ alloy_config_dir }}'
+    state: directory
+  tags:
+  - alloy-config
+- name: Create Alloy data directory
+  ansible.windows.win_file:
+    path: '{{ alloy_data_dir }}'
+    state: directory
+  tags:
+  - alloy-config
+- name: Create Windows Event Log bookmark directory
+  ansible.windows.win_file:
+    path: '{{ alloy_windows_bookmark_dir }}'
+    state: directory
+  when: alloy_windows_eventlog_enabled
+  tags:
+  - alloy-config
+- name: Generate alloy configuration file
+  ansible.windows.win_template:
+    src: config.alloy.j2
+    dest: '{{ alloy_config_file }}.candidate'
+    backup: true
+  tags:
+  - alloy-config
+  no_log: true
+- name: Validate alloy configuration
+  ansible.windows.win_command: '"{{ alloy_binary_path }}" validate "{{ alloy_config_file }}.candidate"'
+  changed_when: false
+  when:
+  - alloy_validate_config | bool
+  - not ansible_check_mode
+  tags:
+  - alloy-config
+  no_log: true
+- name: Activate the validated Windows Alloy configuration
+  ansible.windows.win_copy:
+    src: '{{ alloy_config_file }}.candidate'
+    dest: '{{ alloy_config_file }}'
+    remote_src: true
+    backup: true
+  when: not ansible_check_mode
+  notify: Restart alloy on Windows
+  no_log: true
+- name: Point the Windows service at the managed config and data paths
+  ansible.windows.win_regedit:
+    path: HKLM:\SOFTWARE\GrafanaLabs\Alloy
+    name: Arguments
+    type: multistring
+    data:
+    - run
+    - '{{ alloy_config_file }}'
+    - --storage.path={{ alloy_data_dir }}
+  when: alloy_manage_service | bool
+  notify: Restart alloy on Windows
+- name: Start and enable alloy service
+  ansible.windows.win_service:
+    name: '{{ alloy_service_name }}'
+    state: '{{ alloy_service_state }}'
+    start_mode: '{{ ''auto'' if alloy_service_enabled else ''manual'' }}'
+  tags:
+  - alloy-service
+  when:
+  - alloy_manage_service | bool

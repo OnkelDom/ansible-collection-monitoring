@@ -1,10 +1,10 @@
 # AGENTS.md
 
-Dieses Repository enthaelt die Ansible Collection `lenmail.monitoring`.
+Dieses Repository enthaelt die Ansible Collection `degit.monitoring`.
 
 ## Ziele
 
-- Rollen fuer Ubuntu 22.04+, Debian 12+ und RHEL 9+ konsistent halten
+- Rollen fuer Debian 13, Ubuntu 22.04/24.04/26.04 und Rocky/RHEL 9 konsistent halten
 - neue Rollen nur mit sauberem Standard-Geruest aufnehmen
 - lokale Checks auf macOS reproduzierbar halten
 
@@ -56,12 +56,16 @@ Dieses Repository enthaelt die Ansible Collection `lenmail.monitoring`.
 - `netplan`, `interfaces`, `ufw` nur Debian-Familie
 - `ifcfg`, `firewalld` nur RedHat-Familie
 - Rollen mit distributionsspezifischem Verhalten sollen das frueh validieren
-- Facts werden auf Play-Ebene gesammelt, nicht per `setup` pauschal in jeder Rolle
-- Rollen duerfen `ansible_*` Facts voraussetzen, muessen aber Syntax-/Beispiel-Playbooks mit `gather_facts: true` haben
+- Beispiele sammeln Facts auf Play-Ebene; Rollen laden nur fehlende benoetigte Facts nach
+- Rollen verwenden `ansible_facts`; Syntax-/Beispiel-Playbooks sammeln Facts mit `gather_facts: true`
 - Wenn eine Rolle nicht sinnvoll plattformuebergreifend ist, lieber klar eingrenzen als implizit brechen
 
 ## Doku- und Namespace-Regeln
 
-- Collection-Referenzen immer als `lenmail.monitoring.*`
+- Collection-Referenzen immer als `degit.monitoring.*`
 - keine neuen Verweise auf den alten Namespace oder alte Repository-Namen
 - Beispiel-Playbooks und Rollen-READMEs nach jeder Namespace-Aenderung regenerieren
+
+## Version 2 architecture
+
+Alloy and node_exporter are owned by this collection. Grafana Agent and Promtail are removed without migration. Use generated preflight/configuration entries, layered platform variables, ansible_facts, guarded service handlers and artifact-based tests. Linux targets are Debian 13, Ubuntu 22.04/24.04/26.04 and Rocky/RHEL 9. Windows Alloy is a separate implementation and test target. No production rollout is implied by this refactor.

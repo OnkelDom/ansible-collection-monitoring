@@ -1,56 +1,7 @@
 ---
-- name: create system group
-  ansible.builtin.group:
-    name: "prometheus"
-    system: true
-    state: present
-  become: true
-  tags: ilo5_exporter
-
-- name: create system user
-  ansible.builtin.user:
-    name: "prometheus"
-    system: true
-    shell: "/sbin/nologin"
-    group: "prometheus"
-    createhome: false
-  become: true
-  tags: ilo5_exporter
-
-- name: check if is installed
-  ansible.builtin.stat:
-    path: "/usr/local/bin/ilo5_exporter"
-  register: __ilo5_exporter_is_installed
-  become: true
-  tags: ilo5_exporter
-
-- name: propagate binaries
-  ansible.builtin.copy:
-    src: "files/ilo5_exporter"
-    dest: "/usr/local/bin/ilo5_exporter"
-    mode: 0755
-    owner: root
-    group: root
-  notify: restart ilo5_exporter
-  become: true
-  tags: ilo5_exporter
-
-- name: create systemd service unit
-  ansible.builtin.template:
-    src: ilo5_exporter.service.j2
-    dest: "/etc/systemd/system/ilo5_exporter.service"
-    owner: root
-    group: root
-    mode: 0644
-  notify: restart ilo5_exporter
-  become: true
-  tags: ilo5_exporter
-
-- name: ensure service is started and enabled
-  ansible.builtin.systemd:
-    daemon_reload: true
-    name: ilo5_exporter
-    enabled: true
-    state: started
-  become: true
+- name: Prepare facts and platform variables
+  ansible.builtin.import_tasks: preflight.yml
+  tags: always
+- name: Apply ilo5_exporter configuration
+  ansible.builtin.import_tasks: configuration.yml
   tags: ilo5_exporter

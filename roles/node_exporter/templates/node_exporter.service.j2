@@ -9,7 +9,7 @@ StartLimitInterval=0
 Type=simple
 User={{ node_exporter_system_user }}
 Group={{ node_exporter_system_group }}
-ExecStart={{ node_exporter_binary_install_dir }}/node_exporter \
+ExecStart={{ node_exporter_binary_path }} \
 {% for collector in node_exporter_enabled_collectors -%}
 {%   if not collector is mapping %}
   --collector.{{ collector }} \
@@ -40,11 +40,11 @@ SyslogIdentifier=node_exporter
 Restart=always
 RestartSec=30
 PrivateTmp=yes
-{% for m in ansible_mounts if m.mount == '/home' %}
+{% if ansible_facts.mounts | selectattr('mount', 'equalto', '/home') | list | length > 0 %}
 ProtectHome=read-only
 {% else %}
 ProtectHome=yes
-{% endfor %}
+{% endif %}
 NoNewPrivileges=yes
 
 [Install]

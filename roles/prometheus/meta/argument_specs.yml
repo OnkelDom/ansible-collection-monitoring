@@ -40,11 +40,6 @@ argument_specs:
         - Controls `prometheus_storage_retention_time` for the `prometheus` role.
         required: false
         type: str
-      prometheus_remote_write_reveicer:
-        description:
-        - Controls `prometheus_remote_write_reveicer` for the `prometheus` role.
-        required: false
-        type: bool
       prometheus_config_flags_extra:
         description:
         - Controls `prometheus_config_flags_extra` for the `prometheus` role.
@@ -54,17 +49,17 @@ argument_specs:
         description:
         - Controls `prometheus_config` for the `prometheus` role.
         required: false
-        type: str
+        type: dict
       prometheus_static_targets_files:
         description:
         - Controls `prometheus_static_targets_files` for the `prometheus` role.
         required: false
-        type: str
+        type: list
       prometheus_alert_rules_files:
         description:
         - Controls `prometheus_alert_rules_files` for the `prometheus` role.
         required: false
-        type: str
+        type: list
       prometheus_alert_rules_src_dir:
         description:
         - Controls `prometheus_alert_rules_src_dir` for the `prometheus` role.
@@ -80,8 +75,67 @@ argument_specs:
         - Controls `prometheus_platform_annotation_overrides` for the `prometheus` role.
         required: false
         type: list
-      defaults_prometheus_config:
+      prometheus_manage_service:
         description:
-        - Controls `defaults_prometheus_config` for the `prometheus` role.
+        - Controls `prometheus_manage_service` for the `prometheus` role.
         required: false
-        type: dict
+        type: bool
+      prometheus_service_enabled:
+        description:
+        - Controls `prometheus_service_enabled` for the `prometheus` role.
+        required: false
+        type: bool
+      prometheus_service_state:
+        description:
+        - Controls `prometheus_service_state` for the `prometheus` role.
+        required: false
+        type: str
+      prometheus_remote_write_receiver_enabled:
+        description:
+        - Controls `prometheus_remote_write_receiver_enabled` for the `prometheus` role.
+        required: false
+        type: bool
+      prometheus_lpm_enabled:
+        description:
+        - Controls `prometheus_lpm_enabled` for the `prometheus` role.
+        required: false
+        type: bool
+      prometheus_lpm_default_criticality:
+        description:
+        - Controls `prometheus_lpm_default_criticality` for the `prometheus` role.
+        required: false
+        type: str
+        choices:
+        - high
+        - mid
+        - low
+      prometheus_lpm_dashboard_url:
+        description:
+        - Controls `prometheus_lpm_dashboard_url` for the `prometheus` role.
+        required: false
+        type: str
+      prometheus_lpm_runbook_url:
+        description:
+        - Controls `prometheus_lpm_runbook_url` for the `prometheus` role.
+        required: false
+        type: str
+      prometheus_proxmox_enabled:
+        description:
+        - Controls `prometheus_proxmox_enabled` for the `prometheus` role.
+        required: false
+        type: bool
+      prometheus_proxmox_expected_nodes:
+        description:
+        - Controls `prometheus_proxmox_expected_nodes` for the `prometheus` role.
+        required: false
+        type: list
+      prometheus_proxmox_expected_guests:
+        description:
+        - Controls `prometheus_proxmox_expected_guests` for the `prometheus` role.
+        required: false
+        type: list
+      prometheus_proxmox_dashboard_url:
+        description:
+        - Controls `prometheus_proxmox_dashboard_url` for the `prometheus` role.
+        required: false
+        type: str

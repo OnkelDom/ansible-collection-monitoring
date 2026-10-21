@@ -20,3 +20,18 @@ argument_specs:
         - Controls `unbound_exporter_config_flags_extra` for the `unbound_exporter` role.
         required: false
         type: dict
+      unbound_exporter_manage_service:
+        description:
+        - Controls `unbound_exporter_manage_service` for the `unbound_exporter` role.
+        required: false
+        type: bool
+      unbound_exporter_service_enabled:
+        description:
+        - Controls `unbound_exporter_service_enabled` for the `unbound_exporter` role.
+        required: false
+        type: bool
+      unbound_exporter_service_state:
+        description:
+        - Controls `unbound_exporter_service_state` for the `unbound_exporter` role.
+        required: false
+        type: str

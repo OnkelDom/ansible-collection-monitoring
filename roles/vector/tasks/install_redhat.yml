@@ -1,36 +1,33 @@
 ---
 - name: Add yum repo
-  yum_repository:
-    name: "{{ item.name }}"
-    description: "{{ item.name }}"
-    baseurl: "{{ item.baseurl }}"
-    gpgcheck: yes
-    repo_gpgcheck: yes
-    gpgkey: "https://repositories.timber.io/public/vector/cfg/gpg/gpg.3543DB2D0A2BC4B8.key"
-    sslverify: yes
-    metadata_expire: "300"
-    state: present
-    file: timber-vector
   loop:
   - name: timber-vector
-    baseurl: "https://repositories.timber.io/public/vector/rpm/el/{{ ansible_distribution_major_version }}/$basearch"
+    baseurl: https://repositories.timber.io/public/vector/rpm/el/{{ ansible_facts.distribution_major_version }}/$basearch
   - name: timber-vector-noarch
-    baseurl: "https://repositories.timber.io/public/vector/rpm/el/{{ ansible_distribution_major_version }}/noarch"
+    baseurl: https://repositories.timber.io/public/vector/rpm/el/{{ ansible_facts.distribution_major_version }}/noarch
   - name: timber-vector-source
-    baseurl: "https://repositories.timber.io/public/vector/rpm/el/{{ ansible_distribution_major_version }}/SRPMS"
+    baseurl: https://repositories.timber.io/public/vector/rpm/el/{{ ansible_facts.distribution_major_version }}/SRPMS
   tags: vector
-
-- name: "Install vector fixed version"
-  yum:
-    name: "vector-{{ vector_install_version }}"
+  ansible.builtin.yum_repository:
+    name: '{{ item.name }}'
+    description: '{{ item.name }}'
+    baseurl: '{{ item.baseurl }}'
+    gpgcheck: true
+    repo_gpgcheck: true
+    gpgkey: https://repositories.timber.io/public/vector/cfg/gpg/gpg.3543DB2D0A2BC4B8.key
+    sslverify: true
+    metadata_expire: '300'
     state: present
+    file: timber-vector
+- name: Install vector fixed version
   when: vector_install_version is defined
   tags: vector
-
-- name: "Install vector"
-  yum:
-    name: vector
+  ansible.builtin.dnf:
+    name: vector-{{ vector_install_version }}
     state: present
-    #policy_rc_d: 101
+- name: Install vector
   when: vector_install_version is not defined
   tags: vector
+  ansible.builtin.dnf:
+    name: vector
+    state: present

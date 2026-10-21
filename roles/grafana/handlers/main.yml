@@ -1,42 +1,31 @@
 ---
 - name: restart grafana
-  service:
-    name: grafana-server
-    state: restarted
   become: true
   tags: grafana
-
+  when:
+  - _grafana_service_policy.manage | default(false) | bool
+  - (_grafana_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.service:
+    name: grafana-server
+    state: restarted
 - name: set privileges on provisioned dashboards
-  file:
-    path: "{{ grafana_data_dir }}/dashboards"
+  listen: provisioned dashboards changed
+  become: true
+  tags: grafana
+  ansible.builtin.file:
+    path: '{{ grafana_data_dir }}/dashboards'
     recurse: true
     owner: grafana
     group: grafana
-    mode: 0640
-  listen: "provisioned dashboards changed"
+    mode: '0640'
+  when: []
+- name: set privileges on provisioned dashboards directory
+  listen: provisioned dashboards changed
   become: true
   tags: grafana
-
-- name: set privileges on provisioned dashboards directory
-  file:
-    path: "{{ grafana_data_dir }}/dashboards"
+  ansible.builtin.file:
+    path: '{{ grafana_data_dir }}/dashboards'
     state: directory
     recurse: false
-    mode: 0755
-  listen: "provisioned dashboards changed"
-  become: true
-  tags: grafana
-
-- name: reload ufw
-  systemd:
-    name: ufw
-    state: restarted
-  tags: loki
-  become: true
-
-- name: reload firewalld
-  systemd:
-    name: firewalld
-    state: restarted
-  tags: loki
-  become: true
+    mode: '0755'
+  when: []

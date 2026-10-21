@@ -3,6 +3,9 @@ squid_exporter_version: 1.8.2
 squid_exporter_web_listen_address: 0.0.0.0
 squid_exporter_web_listen_port: 9301
 squid_exporter_binary_local_dir: /usr/local/bin
-squid_exporter_system_user: "{{ prometheus_user | default('prometheus') }}"
-squid_exporter_system_group: "{{ prometheus_group | default('prometheus') }}"
+squid_exporter_system_user: prometheus
+squid_exporter_system_group: prometheus
 squid_exporter_log_level: info
+squid_exporter_manage_service: true
+squid_exporter_service_enabled: true
+squid_exporter_service_state: started

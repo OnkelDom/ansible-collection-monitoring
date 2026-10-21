@@ -1,38 +1,13 @@
 ---
-# - name: Ensure necessary packages installed
-#   apt:
-#     name: "{{ vector_prepare_packages }}"
-#     state: present
-#     cache_valid_time: 600
-#   tags: vector
-
-# - name: Add apt key
-#   apt_key:
-#     url: https://repositories.timber.io/public/vector/cfg/gpg/gpg.3543DB2D0A2BC4B8.key
-#     state: present
-#   tags: vector
-
-# - name: Add apt repo
-#   apt_repository:
-#     repo: "{{ item }}"
-#     state: present
-#     filename: timber-vector
-#   loop:
-#     - "deb https://repositories.timber.io/public/vector/deb/ubuntu {{ ansible_distribution_release }} main"
-#     - "deb-src https://repositories.timber.io/public/vector/deb/ubuntu {{ ansible_distribution_release }} main"
-#   tags: vector
-
 - name: Install Vector using the official setup script
-  ansible.builtin.shell: "set -o pipefail && curl -L https://setup.vector.dev | bash"
+  ansible.builtin.shell: set -o pipefail && curl -L https://setup.vector.dev | bash
   args:
     executable: /bin/bash
   tags: vector
   changed_when: false
-
-- name: "Install vector"
-  apt:
+- name: Install vector
+  tags: vector
+  ansible.builtin.apt:
     name: vector
     state: present
     cache_valid_time: 600
-    #policy_rc_d: 101
-  tags: vector

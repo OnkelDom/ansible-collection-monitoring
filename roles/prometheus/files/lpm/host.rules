@@ -1,0 +1,935 @@
+groups:
+- name: lpm_recording_rules
+  interval: 30s
+  rules:
+  - record: lpm:system_uptime_seconds
+    labels:
+      platform: linux
+    expr: "max by (instance, hostname, host, system_name, tenant, environment, site) (\n  time() - node_boot_time_seconds\n\
+      )\n"
+  - record: lpm:system_uptime_seconds
+    labels:
+      platform: windows
+    expr: max by (instance, hostname, host, system_name, tenant, environment, site) (time() - (windows_system_boot_time_timestamp
+      or windows_system_boot_time_timestamp_seconds or windows_system_system_up_time))
+  - record: lpm:cpu_utilization:avg15m
+    labels:
+      platform: linux
+    expr: "avg by (instance, hostname, host, system_name, lpm_cpu_criticality, tenant, environment, site) (\n  100 * (1 -\
+      \ avg_over_time(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])[15m:]))\n)\n"
+  - record: lpm:cpu_utilization:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, lpm_cpu_criticality, tenant, environment, site) (\n  100 - (rate(windows_cpu_time_total{mode=\"\
+      idle\"}[15m]) * 100)\n)\n"
+  - record: lpm:mem_utilization:avg15m
+    labels:
+      platform: linux
+    expr: "avg by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time(((1\
+      \ - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100)[15m:])\n)\n"
+  - record: lpm:mem_utilization:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time((100\
+      \ - ((windows_memory_physical_free_bytes / windows_memory_physical_total_bytes) * 100))[15m:])\n)\nor\navg by (instance,\
+      \ hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time((100 - ((windows_os_physical_memory_free_bytes\
+      \ / windows_cs_physical_memory_bytes) * 100))[15m:])\n)\n"
+  - record: lpm:memory_available_bytes:avg15m
+    labels:
+      platform: linux
+    expr: "avg by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time(node_memory_MemAvailable_bytes[15m])\n\
+      )\n"
+  - record: lpm:memory_available_bytes:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time(windows_memory_physical_free_bytes[15m])\n\
+      )\nor\navg by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time(windows_os_physical_memory_free_bytes[15m])\n\
+      )\n"
+  - record: lpm:swap_utilization:avg15m
+    expr: "avg by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  avg_over_time(((1\
+      \ - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)) * 100)[15m:])\n  and on (instance, hostname, host, system_name,\
+      \ lpm_mem_criticality, tenant, environment, site)\n  node_memory_SwapTotal_bytes > 0\n)\n"
+    labels:
+      platform: linux
+  - record: lpm:swap_io_pages:rate15m
+    expr: "sum by (instance, hostname, host, system_name, lpm_mem_criticality, tenant, environment, site) (\n  rate(node_vmstat_pswpin[15m])\
+      \ + rate(node_vmstat_pswpout[15m])\n)\n"
+    labels:
+      platform: linux
+  - record: lpm:disk_used_percent:avg15m
+    labels:
+      platform: linux
+    expr: "(avg by (instance, hostname, host, system_name, path, device, fstype, lpm_dsk_criticality, tenant, environment,\
+      \ site) (\n  label_replace(\n    avg_over_time(((1 - (node_filesystem_avail_bytes{fstype!~\"tmpfs|devtmpfs|proc|sysfs|cgroup2?|devpts|securityfs|pstore|autofs|mqueue|hugetlbfs|debugfs|tracefs|configfs|fusectl|binfmt_misc|efivarfs|fuse\\\
+      \\.lxcfs|nsfs|overlay|squashfs\",mountpoint!~\"^/(run|proc|sys|dev)($|/)\"} / node_filesystem_size_bytes{fstype!~\"\
+      tmpfs|devtmpfs|proc|sysfs|cgroup2?|devpts|securityfs|pstore|autofs|mqueue|hugetlbfs|debugfs|tracefs|configfs|fusectl|binfmt_misc|efivarfs|fuse\\\
+      \\.lxcfs|nsfs|overlay|squashfs\",mountpoint!~\"^/(run|proc|sys|dev)($|/)\"})) * 100)[15m:]),\n    \"path\",\n    \"\
+      $1\",\n    \"mountpoint\",\n    \"(.*)\"\n  )\n))\nand on (tenant, environment, site, instance, hostname, host, system_name,\
+      \ device, path)\nlabel_replace(node_filesystem_size_bytes, \"path\", \"$1\", \"mountpoint\", \"(.*)\")"
+  - record: lpm:disk_used_percent:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, path, device, lpm_dsk_criticality, tenant, environment, site) (\n\
+      \  label_replace(label_replace(\n    avg_over_time((100 * (1 - windows_logical_disk_free_bytes{volume!~\"HarddiskVolume.+\"\
+      } / (windows_logical_disk_size_bytes{volume!~\"HarddiskVolume.+\"} > 0)))[15m:]),\n    \"path\", \"$1\", \"volume\"\
+      , \"(.*)\"), \"device\", \"$1\", \"volume\", \"(.*)\")\n)"
+  - record: lpm:disk_inodes_used_percent:avg15m
+    expr: "(avg by (instance, hostname, host, system_name, path, device, fstype, lpm_dsk_criticality, tenant, environment,\
+      \ site) (\n  label_replace(\n    avg_over_time(((1 - (node_filesystem_files_free{fstype!~\"tmpfs|devtmpfs|proc|sysfs|cgroup2?|devpts|securityfs|pstore|autofs|mqueue|hugetlbfs|debugfs|tracefs|configfs|fusectl|binfmt_misc|efivarfs|fuse\\\
+      \\.lxcfs|nsfs|overlay|squashfs\",mountpoint!~\"^/(run|proc|sys|dev)($|/)\"} / node_filesystem_files{fstype!~\"tmpfs|devtmpfs|proc|sysfs|cgroup2?|devpts|securityfs|pstore|autofs|mqueue|hugetlbfs|debugfs|tracefs|configfs|fusectl|binfmt_misc|efivarfs|fuse\\\
+      \\.lxcfs|nsfs|overlay|squashfs\",mountpoint!~\"^/(run|proc|sys|dev)($|/)\"})) * 100)[15m:]),\n    \"path\",\n    \"\
+      $1\",\n    \"mountpoint\",\n    \"(.*)\"\n  )\n))\nand on (tenant, environment, site, instance, hostname, host, system_name,\
+      \ device, path)\nlabel_replace(node_filesystem_files, \"path\", \"$1\", \"mountpoint\", \"(.*)\")"
+    labels:
+      platform: linux
+  - record: lpm:diskio_utilization:avg15m
+    labels:
+      platform: linux
+    expr: "avg by (instance, hostname, host, system_name, name, lpm_io_criticality, tenant, environment, site) (\n  label_replace(\n\
+      \    rate(node_disk_io_time_seconds_total{device!~\"^(dm-|loop|ram|fd|sr).*\"}[15m]),\n    \"name\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:diskio_utilization:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, name, lpm_io_criticality, tenant, environment, site) (\n  label_replace(\n\
+      \    (1 - clamp_min(rate(windows_logical_disk_idle_seconds_total{volume!~\"HarddiskVolume.+\"}[15m]), 0)),\n    \"name\"\
+      ,\n    \"$1\",\n    \"volume\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:diskio_await:avg15m
+    labels:
+      platform: linux
+    expr: "avg by (instance, hostname, host, system_name, name, lpm_io_criticality, tenant, environment, site) (\n  label_replace(\n\
+      \    (\n      rate(node_disk_read_time_seconds_total{device!~\"^(dm-|loop|ram|fd|sr).*\"}[15m])\n      + rate(node_disk_write_time_seconds_total{device!~\"\
+      ^(dm-|loop|ram|fd|sr).*\"}[15m])\n    )\n    /\n    clamp_min(\n      rate(node_disk_reads_completed_total{device!~\"\
+      ^(dm-|loop|ram|fd|sr).*\"}[15m])\n      + rate(node_disk_writes_completed_total{device!~\"^(dm-|loop|ram|fd|sr).*\"\
+      }[15m]),\n      0.001\n    ) * 1000,\n    \"name\",\n    \"$1\",\n    \"device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:diskio_await:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, name, lpm_io_criticality, tenant, environment, site) (\n  label_replace(\n\
+      \    (\n      (\n        rate(windows_logical_disk_read_seconds_total{volume!~\"HarddiskVolume.+\"}[15m])\n        +\n\
+      \        rate(windows_logical_disk_write_seconds_total{volume!~\"HarddiskVolume.+\"}[15m])\n      )\n      /\n     \
+      \ clamp_min(\n        rate(windows_logical_disk_reads_total{volume!~\"HarddiskVolume.+\"}[15m])\n        +\n       \
+      \ rate(windows_logical_disk_writes_total{volume!~\"HarddiskVolume.+\"}[15m]),\n        0.001\n      )\n    ) * 1000,\n\
+      \    \"name\",\n    \"$1\",\n    \"volume\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:diskio_queue:avg15m
+    labels:
+      platform: linux
+    expr: "avg by (instance, hostname, host, system_name, name, lpm_io_criticality, tenant, environment, site) (\n  label_replace(\n\
+      \    avg_over_time(node_disk_io_now{device!~\"^(dm-|loop|ram|fd|sr).*\"}[15m]),\n    \"name\",\n    \"$1\",\n    \"\
+      device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:diskio_queue:avg15m
+    labels:
+      platform: windows
+    expr: "avg by (instance, hostname, host, system_name, name, lpm_io_criticality, tenant, environment, site) (\n  label_replace(\n\
+      \    avg_over_time(windows_logical_disk_requests_queued{volume!~\"HarddiskVolume.+\"}[15m]),\n    \"name\",\n    \"\
+      $1\",\n    \"volume\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_bytes_recv:rate5m
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_net_criticality, tenant, environment, site) (\n \
+      \ label_replace(\n    rate(node_network_receive_bytes_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+    labels:
+      platform: linux
+  - record: lpm:net_bytes_sent:rate5m
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_net_criticality, tenant, environment, site) (\n \
+      \ label_replace(\n    rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+    labels:
+      platform: linux
+  - record: lpm:net_err_in:rate5m
+    labels:
+      platform: linux
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(node_network_receive_errs_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_err_in:rate5m
+    labels:
+      platform: windows
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(windows_net_packets_received_errors_total[5m]),\n    \"interface\",\n    \"$1\",\n    \"\
+      nic\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_err_out:rate5m
+    labels:
+      platform: linux
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(node_network_transmit_errs_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_err_out:rate5m
+    labels:
+      platform: windows
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(windows_net_packets_outbound_errors_total[5m]),\n    \"interface\",\n    \"$1\",\n    \"\
+      nic\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_drop_in:rate5m
+    labels:
+      platform: linux
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(node_network_receive_drop_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_drop_in:ratio5m
+    labels:
+      platform: linux
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(node_network_receive_drop_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n/\nclamp_min(\n  sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality,\
+      \ tenant, environment, site) (\n    label_replace(\n      rate(node_network_receive_packets_total{device!=\"lo\"}[5m]),\n\
+      \      \"interface\",\n      \"$1\",\n      \"device\",\n      \"(.*)\"\n    )\n  ),\n  1\n)\n"
+  - record: lpm:net_drop_in:rate5m
+    labels:
+      platform: windows
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(windows_net_packets_received_discarded_total[5m]),\n    \"interface\",\n    \"$1\",\n  \
+      \  \"nic\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_drop_out:rate5m
+    labels:
+      platform: linux
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(node_network_transmit_drop_total{device!=\"lo\"}[5m]),\n    \"interface\",\n    \"$1\",\n\
+      \    \"device\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:net_drop_out:rate5m
+    labels:
+      platform: windows
+    expr: "sum by (instance, hostname, host, system_name, interface, lpm_neterr_criticality, tenant, environment, site) (\n\
+      \  label_replace(\n    rate(windows_net_packets_outbound_discarded_total[5m]),\n    \"interface\",\n    \"$1\",\n  \
+      \  \"nic\",\n    \"(.*)\"\n  )\n)\n"
+  - record: lpm:conntrack_utilization
+    expr: "max by (instance, hostname, host, system_name, lpm_conntrack_criticality, tenant, environment, site) (\n  node_nf_conntrack_entries\
+      \ / node_nf_conntrack_entries_limit\n)\n"
+    labels:
+      platform: linux
+  - record: lpm:conntrack_invalid:rate5m
+    expr: "sum by (instance, hostname, host, system_name, lpm_conntrack_criticality, tenant, environment, site) (\n  rate(node_nf_conntrack_stat_invalid[5m])\n\
+      )\n"
+    labels:
+      platform: linux
+  - record: lpm:conntrack_drop:rate5m
+    expr: "sum by (instance, hostname, host, system_name, lpm_conntrack_criticality, tenant, environment, site) (\n  rate(node_nf_conntrack_stat_drop[5m])\n\
+      )\n"
+    labels:
+      platform: linux
+  - record: lpm:conntrack_early_drop:rate5m
+    expr: "sum by (instance, hostname, host, system_name, lpm_conntrack_criticality, tenant, environment, site) (\n  rate(node_nf_conntrack_stat_early_drop[5m])\n\
+      )\n"
+    labels:
+      platform: linux
+- name: lpm_alerts_cpu
+  rules:
+  - alert: LPMCpuPressure_ERROR
+    expr: "lpm:cpu_utilization:avg15m > 90\nand on (instance, tenant, environment, site)\n(\n  rate(node_pressure_cpu_waiting_seconds_total[15m])\
+      \ > 0.20\n  or\n  (\n    avg_over_time(windows_system_processor_queue_length[15m])\n    > on (instance, tenant, environment,\
+      \ site) group_left\n    count by (instance, tenant, environment, site) (windows_cpu_time_total{mode=\"idle\"})\n  )\n\
+      )\nand on (instance, tenant, environment, site) lpm:system_uptime_seconds > 1800\n"
+    for: 30m
+    keep_firing_for: 10m
+    labels:
+      severity: ERROR
+      category: cpu
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMCpuPressure
+    annotations:
+      summary: CPU-Auslastung und Wartezeit auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} zu hoch
+      description: "{{ if eq $labels.platform \"windows\" }}CPU-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\"\
+        \ }} %. Alarmgrenze: \xFCber 90 %, mindestens 30 Minuten. Zus\xE4tzlich ist die Prozessorwarteschlange gr\xF6\xDF\
+        er als die Anzahl der logischen CPUs.{{ else if eq $labels.platform \"linux\" }}CPU-Auslastung (15-Minuten-Mittel):\
+        \ {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 %, mindestens 30 Minuten. Zus\xE4tzlich wartet das System\
+        \ \xFCber 20 % der Zeit auf CPU-Zuteilung.{{ else }}CPU-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\"\
+        \ }} %. Alarmgrenze: \xFCber 90 %, mindestens 30 Minuten; zus\xE4tzlich ist die plattformspezifische Wartezeitbedingung\
+        \ erf\xFCllt. Betriebssystem anhand der Messreihe pr\xFCfen.{{ end }}"
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Task-Manager nach CPU-Auslastung sortieren und Prozessorwarteschlange\
+        \ im Leistungsmonitor pr\xFCfen. Bei VMs zus\xE4tzlich die CPU-Auslastung des Hypervisors mit dem Alarmzeitraum abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: top; ps -eo pid,comm,pcpu --sort=-pcpu | head. Bei VMs zus\xE4tzlich\
+        \ die CPU-Auslastung des Hypervisors mit dem Alarmzeitraum abgleichen.{{ else }}Betriebssystem des \xFCberwachten\
+        \ Hosts pr\xFCfen. CPU-Verbraucher und Wartezeiten mit Benutzerlast, Batch-Jobs und Hypervisor abgleichen.{{ end }}"
+      pending_for: 30m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: lpm_alerts_memory
+  rules:
+  - alert: LPMMemoryPressureLinux_ERROR
+    expr: 'lpm:mem_utilization:avg15m{platform="linux"} > 90
+
+      and on (instance, tenant, environment, site)
+
+      rate(node_pressure_memory_stalled_seconds_total[15m]) > 0.01
+
+      '
+    for: 15m
+    keep_firing_for: 10m
+    labels:
+      severity: ERROR
+      category: memory
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMMemoryPressureLinux
+    annotations:
+      summary: "Wenig RAM verf\xFCgbar; Prozesse warten auf Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if\
+        \ $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}"
+      description: "RAM-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 % f\xFC\
+        r mindestens 15 Minuten; zus\xE4tzlich ist die plattformspezifische Speicher-Druckbedingung erf\xFCllt."
+      action: "Linux: free -h; ps -eo pid,comm,rss --sort=-rss | head; journalctl -k auf OOM-Ereignisse pr\xFCfen. Verbrauch\
+        \ mit Benutzerzahl und Batch-Jobs abgleichen."
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMMemoryPressureWindows_ERROR
+    expr: "lpm:mem_utilization:avg15m{platform=\"windows\"} > 90\nand on (instance, tenant, environment, site)\n(\n  (windows_memory_committed_bytes\
+      \ / windows_memory_commit_limit) > 0.90\n  or\n  (\n    rate(windows_memory_swap_pages_written_total[15m]) > 100\n \
+      \   and on (instance, tenant, environment, site) rate(windows_memory_swap_pages_read_total[15m]) > 100\n  )\n)\n"
+    for: 15m
+    keep_firing_for: 10m
+    labels:
+      severity: ERROR
+      category: memory
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMMemoryPressureWindows
+    annotations:
+      summary: "Wenig RAM verf\xFCgbar; Auslagerung oder zugesicherter Speicher erh\xF6ht auf {{ if $labels.host }}{{ $labels.host\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }}"
+      description: "RAM-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 % f\xFC\
+        r mindestens 15 Minuten; zus\xE4tzlich ist die plattformspezifische Speicher-Druckbedingung erf\xFCllt."
+      action: "Windows: Task-Manager nach zugesicherter Speichergr\xF6\xDFe sortieren; Ressourcenmonitor auf Auslagerung und\
+        \ Ereignisprotokoll auf ID 2004 pr\xFCfen. Verbrauch mit Benutzerzahl und Batch-Jobs abgleichen."
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMMemoryReserveCritical_ERROR
+    expr: 'lpm:memory_available_bytes:avg15m < 268435456
+
+      and on (instance, tenant, environment, site) lpm:mem_utilization:avg15m > 97
+
+      '
+    for: 10m
+    keep_firing_for: 10m
+    labels:
+      severity: ERROR
+      category: memory
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMMemoryReserveCritical
+    annotations:
+      summary: "Weniger als 256 MiB RAM verf\xFCgbar auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname\
+        \ }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}"
+      description: "Verf\xFCgbarer RAM (15-Minuten-Mittel): {{ $value | humanize1024 }}B. Alarmgrenze: unter 256 MiB und weniger\
+        \ als 3 % RAM verf\xFCgbar; mindestens 10 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Task-Manager nach zugesicherter Speichergr\xF6\xDFe sortieren;\
+        \ Ressourcenmonitor auf Auslagerung und Ereignisprotokoll auf ID 2004 pr\xFCfen. Verbrauch mit Benutzerzahl und Batch-Jobs\
+        \ abgleichen.{{ else if eq $labels.platform \"linux\" }}Linux: free -h; ps -eo pid,comm,rss --sort=-rss | head; journalctl\
+        \ -k auf OOM-Ereignisse pr\xFCfen. Verbrauch mit Benutzerzahl und Batch-Jobs abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Verf\xFCgbaren RAM, zugesicherten Speicher und Auslagerung mit Benutzerzahl und\
+        \ Batch-Jobs abgleichen.{{ end }}"
+      pending_for: 10m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMMemoryCommitCritical_ERROR
+    expr: '100 * windows_memory_committed_bytes / windows_memory_commit_limit > 95
+
+      '
+    for: 10m
+    keep_firing_for: 10m
+    labels:
+      severity: ERROR
+      category: memory
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMMemoryCommitCritical
+      platform: windows
+    annotations:
+      summary: "Zugesicherter Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} nahezu ausgesch\xF6pft"
+      description: "Genutzter Anteil des Windows-Zusicherungslimits: {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber\
+        \ 95 %, mindestens 10 Minuten. Das Limit ber\xFCcksichtigt RAM und Auslagerungsdatei; der Wert ist keine reine RAM-Belegung."
+      action: "Windows: Task-Manager nach zugesicherter Speichergr\xF6\xDFe sortieren; Ressourcenmonitor auf Auslagerung und\
+        \ Ereignisprotokoll auf ID 2004 pr\xFCfen. Verbrauch mit Benutzerzahl und Batch-Jobs abgleichen."
+      pending_for: 10m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMMemoryOOMKilled_ERROR
+    expr: increase(node_vmstat_oom_kill[5m]) > 0
+    keep_firing_for: 15m
+    labels:
+      severity: ERROR
+      category: memory
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMMemoryOOMKilled
+      platform: linux
+    annotations:
+      summary: Linux hat Prozesse wegen Speichermangel beendet auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname
+        }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "In den letzten 5 Minuten wurden {{ $value | printf \"%.0f\" }} Prozessbeendigungen durch den Linux-OOM-Killer\
+        \ gez\xE4hlt. Ausl\xF6sung: mindestens ein Ereignis, ohne zus\xE4tzliche Verz\xF6gerung."
+      action: "journalctl -k --since \"15 minutes ago\" auf \"Out of memory\" und \"Killed process\" pr\xFCfen. Beendeten\
+        \ Prozess, Speicherverbrauch und Anwendungslimits bestimmen; Dienstzustand und Neustartverhalten kontrollieren."
+      pending_for: sofort
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: lpm_alerts_disk
+  rules:
+  - alert: LPMDiskUsageHigh_WARN
+    expr: lpm:disk_used_percent:avg15m{lpm_dsk_criticality="high"} > 70
+    for: 15m
+    labels:
+      severity: WARN
+      category: disk
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskUsageHigh
+    annotations:
+      summary: "Wenig freier Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 70 % belegt, mindestens\
+        \ 15 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List\
+        \ DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFC\
+        r {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else if eq $labels.platform \"\
+        linux\" }}Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4\
+        nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else }}Betriebssystem des \xFC\
+        berwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path\
+        \ }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern.{{ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskUsageHigh_ERROR
+    expr: lpm:disk_used_percent:avg15m{lpm_dsk_criticality="high"} > 85
+    for: 15m
+    labels:
+      severity: ERROR
+      category: disk
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskUsageHigh
+    annotations:
+      summary: "Wenig freier Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 85 % belegt, mindestens\
+        \ 15 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List\
+        \ DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFC\
+        r {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else if eq $labels.platform \"\
+        linux\" }}Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4\
+        nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else }}Betriebssystem des \xFC\
+        berwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path\
+        \ }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern.{{ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskUsageMid_WARN
+    expr: lpm:disk_used_percent:avg15m{lpm_dsk_criticality="mid"} > 80
+    for: 15m
+    labels:
+      severity: WARN
+      category: disk
+      lpm: mid
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskUsageMid
+    annotations:
+      summary: "Wenig freier Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 80 % belegt, mindestens\
+        \ 15 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List\
+        \ DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFC\
+        r {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else if eq $labels.platform \"\
+        linux\" }}Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4\
+        nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else }}Betriebssystem des \xFC\
+        berwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path\
+        \ }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern.{{ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskUsageMid_ERROR
+    expr: lpm:disk_used_percent:avg15m{lpm_dsk_criticality="mid"} > 90
+    for: 15m
+    labels:
+      severity: ERROR
+      category: disk
+      lpm: mid
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskUsageMid
+    annotations:
+      summary: "Wenig freier Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 % belegt, mindestens\
+        \ 15 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List\
+        \ DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFC\
+        r {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else if eq $labels.platform \"\
+        linux\" }}Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4\
+        nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else }}Betriebssystem des \xFC\
+        berwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path\
+        \ }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern.{{ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskUsageLow_WARN
+    expr: lpm:disk_used_percent:avg15m{lpm_dsk_criticality="low"} > 90
+    for: 60m
+    labels:
+      severity: WARN
+      category: disk
+      lpm: low
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskUsageLow
+    annotations:
+      summary: "Wenig freier Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 % belegt, mindestens\
+        \ 60 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List\
+        \ DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFC\
+        r {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else if eq $labels.platform \"\
+        linux\" }}Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4\
+        nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else }}Betriebssystem des \xFC\
+        berwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path\
+        \ }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern.{{ end }}"
+      pending_for: 60m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskUsageLow_ERROR
+    expr: lpm:disk_used_percent:avg15m{lpm_dsk_criticality="low"} > 95
+    for: 60m
+    labels:
+      severity: ERROR
+      category: disk
+      lpm: low
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskUsageLow
+    annotations:
+      summary: "Wenig freier Speicher auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 95 % belegt, mindestens\
+        \ 60 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List\
+        \ DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFC\
+        r {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else if eq $labels.platform \"\
+        linux\" }}Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4\
+        nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern.{{ else }}Betriebssystem des \xFC\
+        berwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path\
+        \ }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern.{{ end }}"
+      pending_for: 60m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskInodesHigh_ERROR
+    expr: lpm:disk_inodes_used_percent:avg15m{lpm_dsk_criticality="high"} > 85
+    for: 15m
+    labels:
+      severity: ERROR
+      category: disk
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskInodesHigh
+    annotations:
+      summary: "Wenige freie Dateieintr\xE4ge auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{\
+        \ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.path }}"
+      description: "Belegt (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 85 % belegt, mindestens\
+        \ 15 Minuten. Neue Dateien ben\xF6tigen freie Inodes auch bei verf\xFCgbarem Speicherplatz."
+      action: "df -i \"{{ $labels.path }}\" pr\xFCfen. Verzeichnisse mit vielen kleinen Dateien und deren Aufbewahrung ermitteln.\
+        \ Speichererweiterung nur nach Pr\xFCfung des Dateisystems und seiner Inode-Verwaltung."
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: lpm_alerts_io
+  rules:
+  - alert: LPMDiskAwaitHigh_WARN
+    expr: 'lpm:diskio_await:avg15m{lpm_io_criticality="high"} > 10
+
+      and on (instance, tenant, environment, site) lpm:system_uptime_seconds > 600
+
+      '
+    for: 15m
+    labels:
+      severity: WARN
+      category: io
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskAwaitHigh
+    annotations:
+      summary: "Datentr\xE4gerzugriffe auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} dauern zu lange \u2013 {{ $labels.name }}"
+      description: "Durchschnittliche Dauer abgeschlossener Lese-/Schreibzugriffe (15-Minuten-Mittel): {{ $value | printf\
+        \ \"%.1f\" }} ms. Alarmgrenze: \xFCber 10 ms, mindestens 15 Minuten. Ger\xE4t: {{ $labels.name }}."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Ressourcenmonitor unter Datentr\xE4ger auf Antwortzeit und\
+        \ verursachende Prozesse pr\xFCfen. Bei VMs Gastwerte mit Hypervisor und Storage abgleichen.{{ else if eq $labels.platform\
+        \ \"linux\" }}Linux: iostat -xz 1 5; Lese-/Schreiblast und wartende Zugriffe dem Ger\xE4t zuordnen. Bei VMs Gastwerte\
+        \ mit Hypervisor und Storage abgleichen.{{ else }}Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Datentr\xE4ger-Antwortzeiten\
+        \ und verursachende Prozesse mit Hypervisor und Storage abgleichen.{{ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskAwaitHigh_ERROR
+    expr: 'lpm:diskio_await:avg15m{lpm_io_criticality="high"} > 25
+
+      and on (instance, tenant, environment, site) lpm:system_uptime_seconds > 600
+
+      '
+    for: 15m
+    labels:
+      severity: ERROR
+      category: io
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskAwaitHigh
+    annotations:
+      summary: "Datentr\xE4gerzugriffe auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname\
+        \ }}{{ else }}{{ $labels.instance }}{{ end }} dauern zu lange \u2013 {{ $labels.name }}"
+      description: "Durchschnittliche Dauer abgeschlossener Lese-/Schreibzugriffe (15-Minuten-Mittel): {{ $value | printf\
+        \ \"%.1f\" }} ms. Alarmgrenze: \xFCber 25 ms, mindestens 15 Minuten. Ger\xE4t: {{ $labels.name }}."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Ressourcenmonitor unter Datentr\xE4ger auf Antwortzeit und\
+        \ verursachende Prozesse pr\xFCfen. Bei VMs Gastwerte mit Hypervisor und Storage abgleichen.{{ else if eq $labels.platform\
+        \ \"linux\" }}Linux: iostat -xz 1 5; Lese-/Schreiblast und wartende Zugriffe dem Ger\xE4t zuordnen. Bei VMs Gastwerte\
+        \ mit Hypervisor und Storage abgleichen.{{ else }}Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Datentr\xE4ger-Antwortzeiten\
+        \ und verursachende Prozesse mit Hypervisor und Storage abgleichen.{{ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMDiskQueueHigh_ERROR
+    expr: 'lpm:diskio_queue:avg15m{lpm_io_criticality="high"} > 5
+
+      and on (instance, tenant, environment, site) lpm:system_uptime_seconds > 600
+
+      '
+    for: 15m
+    labels:
+      severity: ERROR
+      category: io
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMDiskQueueHigh
+    annotations:
+      summary: "Viele wartende Datentr\xE4gerzugriffe auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname\
+        \ }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }} \u2013 {{ $labels.name }}"
+      description: "Durchschnittlich wartende/aktive Datentr\xE4gerzugriffe (15-Minuten-Mittel): {{ $value | printf \"%.1f\"\
+        \ }}. Alarmgrenze: \xFCber 5, mindestens 15 Minuten. Ger\xE4t: {{ $labels.name }}."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Ressourcenmonitor unter Datentr\xE4ger pr\xFCfen. Warteschlange\
+        \ mit Antwortzeiten, Durchsatz, Batch-Jobs und Storage-Last abgleichen.{{ else if eq $labels.platform \"linux\" }}Linux:\
+        \ iostat -xz 1 5. Warteschlange mit Antwortzeiten, Durchsatz, Batch-Jobs und Storage-Last abgleichen.{{ else }}Betriebssystem\
+        \ des \xFCberwachten Hosts pr\xFCfen. Warteschlange mit Antwortzeiten, Durchsatz, Batch-Jobs und Storage-Last abgleichen.{{\
+        \ end }}"
+      pending_for: 15m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: lpm_alerts_network
+  rules:
+  - alert: LPMNetErrInHigh_WARN
+    expr: lpm:net_err_in:rate5m{lpm_neterr_criticality="high"} > 0
+    for: 5m
+    labels:
+      severity: WARN
+      category: neterr
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMNetErrInHigh
+    annotations:
+      summary: Empfangsfehler an {{ $labels.interface }} auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname
+        }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "Gemessene Rate (5-Minuten-Mittel): {{ $value | printf \"%.2f\" }} Fehler/s. Alarmgrenze: \xFCber 0 Fehler/s,\
+        \ mindestens 5 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces\
+        \ {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface\
+        \ }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll\
+        \ abgleichen.{{ end }}"
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMNetErrInHigh_ERROR
+    expr: lpm:net_err_in:rate5m{lpm_neterr_criticality="high"} > 1
+    for: 5m
+    labels:
+      severity: ERROR
+      category: neterr
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMNetErrInHigh
+    annotations:
+      summary: Empfangsfehler an {{ $labels.interface }} auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname
+        }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "Gemessene Rate (5-Minuten-Mittel): {{ $value | printf \"%.2f\" }} Fehler/s. Alarmgrenze: \xFCber 1 Fehler/s,\
+        \ mindestens 5 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces\
+        \ {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface\
+        \ }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll\
+        \ abgleichen.{{ end }}"
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMNetDropInHigh_ERROR
+    expr: lpm:net_drop_in:rate5m{lpm_neterr_criticality="high"} > 1
+    for: 5m
+    labels:
+      severity: ERROR
+      category: neterr
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMNetDropInHigh
+    annotations:
+      summary: Verworfene Empfangspakete an {{ $labels.interface }} auf {{ if $labels.host }}{{ $labels.host }}{{ else if
+        $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "Gemessene Rate (5-Minuten-Mittel): {{ $value | printf \"%.2f\" }} verworfene Pakete/s. Alarmgrenze: \xFC\
+        ber 1 Paket/s f\xFCr mindestens 5 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces\
+        \ {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface\
+        \ }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll\
+        \ abgleichen.{{ end }}"
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMNetErrInMid_WARN
+    expr: lpm:net_err_in:rate5m{lpm_neterr_criticality="mid"} > 1
+    for: 5m
+    labels:
+      severity: WARN
+      category: neterr
+      lpm: mid
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMNetErrInMid
+    annotations:
+      summary: Empfangsfehler an {{ $labels.interface }} auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname
+        }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "Gemessene Rate (5-Minuten-Mittel): {{ $value | printf \"%.2f\" }} Fehler/s. Alarmgrenze: \xFCber 1 Fehler/s,\
+        \ mindestens 5 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces\
+        \ {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface\
+        \ }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll\
+        \ abgleichen.{{ end }}"
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMNetErrInMid_ERROR
+    expr: lpm:net_err_in:rate5m{lpm_neterr_criticality="mid"} > 5
+    for: 5m
+    labels:
+      severity: ERROR
+      category: neterr
+      lpm: mid
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMNetErrInMid
+    annotations:
+      summary: Empfangsfehler an {{ $labels.interface }} auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname
+        }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "Gemessene Rate (5-Minuten-Mittel): {{ $value | printf \"%.2f\" }} Fehler/s. Alarmgrenze: \xFCber 5 Fehler/s,\
+        \ mindestens 5 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces\
+        \ {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface\
+        \ }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll\
+        \ abgleichen.{{ end }}"
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMNetErrInLow_ERROR
+    expr: lpm:net_err_in:rate5m{lpm_neterr_criticality="low"} > 20
+    for: 10m
+    labels:
+      severity: ERROR
+      category: neterr
+      lpm: low
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMNetErrInLow
+    annotations:
+      summary: Empfangsfehler an {{ $labels.interface }} auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname
+        }}{{ $labels.hostname }}{{ else }}{{ $labels.instance }}{{ end }}
+      description: "Gemessene Rate (5-Minuten-Mittel): {{ $value | printf \"%.2f\" }} Fehler/s. Alarmgrenze: \xFCber 20 Fehler/s,\
+        \ mindestens 10 Minuten."
+      action: "{{ if eq $labels.platform \"windows\" }}Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces\
+        \ {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{\
+        \ else if eq $labels.platform \"linux\" }}Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface\
+        \ }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen.{{ else }}Betriebssystem des\
+        \ \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll\
+        \ abgleichen.{{ end }}"
+      pending_for: 10m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: lpm_alerts_conntrack
+  rules:
+  - alert: LPMConntrackUtilHigh_WARN
+    expr: lpm:conntrack_utilization{lpm_conntrack_criticality="high"} > 0.50
+    for: 5m
+    labels:
+      severity: WARN
+      category: conntrack
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMConntrackUtilHigh
+    annotations:
+      summary: Verbindungstabelle auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} stark belegt
+      description: "Belegte Conntrack-Eintr\xE4ge: {{ $value | humanizePercentage }}. Alarmgrenze: \xFCber 50 %, mindestens\
+        \ 5 Minuten."
+      action: "sysctl net.netfilter.nf_conntrack_count net.netfilter.nf_conntrack_max pr\xFCfen. Verbindungsquellen und Traffic-Anstieg\
+        \ ermitteln; Limits anhand RAM und ben\xF6tigter Verbindungszahl bewerten."
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMConntrackUtilHigh_ERROR
+    expr: lpm:conntrack_utilization{lpm_conntrack_criticality="high"} > 0.70
+    for: 5m
+    labels:
+      severity: ERROR
+      category: conntrack
+      lpm: high
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMConntrackUtilHigh
+    annotations:
+      summary: Verbindungstabelle auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} stark belegt
+      description: "Belegte Conntrack-Eintr\xE4ge: {{ $value | humanizePercentage }}. Alarmgrenze: \xFCber 70 %, mindestens\
+        \ 5 Minuten."
+      action: "sysctl net.netfilter.nf_conntrack_count net.netfilter.nf_conntrack_max pr\xFCfen. Verbindungsquellen und Traffic-Anstieg\
+        \ ermitteln; Limits anhand RAM und ben\xF6tigter Verbindungszahl bewerten."
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMConntrackUtilMid_WARN
+    expr: lpm:conntrack_utilization{lpm_conntrack_criticality="mid"} > 0.70
+    for: 5m
+    labels:
+      severity: WARN
+      category: conntrack
+      lpm: mid
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMConntrackUtilMid
+    annotations:
+      summary: Verbindungstabelle auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} stark belegt
+      description: "Belegte Conntrack-Eintr\xE4ge: {{ $value | humanizePercentage }}. Alarmgrenze: \xFCber 70 %, mindestens\
+        \ 5 Minuten."
+      action: "sysctl net.netfilter.nf_conntrack_count net.netfilter.nf_conntrack_max pr\xFCfen. Verbindungsquellen und Traffic-Anstieg\
+        \ ermitteln; Limits anhand RAM und ben\xF6tigter Verbindungszahl bewerten."
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMConntrackUtilMid_ERROR
+    expr: lpm:conntrack_utilization{lpm_conntrack_criticality="mid"} > 0.85
+    for: 5m
+    labels:
+      severity: ERROR
+      category: conntrack
+      lpm: mid
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMConntrackUtilMid
+    annotations:
+      summary: Verbindungstabelle auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} stark belegt
+      description: "Belegte Conntrack-Eintr\xE4ge: {{ $value | humanizePercentage }}. Alarmgrenze: \xFCber 85 %, mindestens\
+        \ 5 Minuten."
+      action: "sysctl net.netfilter.nf_conntrack_count net.netfilter.nf_conntrack_max pr\xFCfen. Verbindungsquellen und Traffic-Anstieg\
+        \ ermitteln; Limits anhand RAM und ben\xF6tigter Verbindungszahl bewerten."
+      pending_for: 5m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMConntrackUtilLow_WARN
+    expr: lpm:conntrack_utilization{lpm_conntrack_criticality="low"} > 0.85
+    for: 10m
+    labels:
+      severity: WARN
+      category: conntrack
+      lpm: low
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMConntrackUtilLow
+    annotations:
+      summary: Verbindungstabelle auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} stark belegt
+      description: "Belegte Conntrack-Eintr\xE4ge: {{ $value | humanizePercentage }}. Alarmgrenze: \xFCber 85 %, mindestens\
+        \ 10 Minuten."
+      action: "sysctl net.netfilter.nf_conntrack_count net.netfilter.nf_conntrack_max pr\xFCfen. Verbindungsquellen und Traffic-Anstieg\
+        \ ermitteln; Limits anhand RAM und ben\xF6tigter Verbindungszahl bewerten."
+      pending_for: 10m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+  - alert: LPMConntrackUtilLow_ERROR
+    expr: lpm:conntrack_utilization{lpm_conntrack_criticality="low"} > 0.95
+    for: 10m
+    labels:
+      severity: ERROR
+      category: conntrack
+      lpm: low
+      hostname: '{{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname }}{{ else }}{{ $labels.instance
+        }}{{ end }}'
+      monitoring_profile: lpm
+      alert_family: LPMConntrackUtilLow
+    annotations:
+      summary: Verbindungstabelle auf {{ if $labels.host }}{{ $labels.host }}{{ else if $labels.hostname }}{{ $labels.hostname
+        }}{{ else }}{{ $labels.instance }}{{ end }} stark belegt
+      description: "Belegte Conntrack-Eintr\xE4ge: {{ $value | humanizePercentage }}. Alarmgrenze: \xFCber 95 %, mindestens\
+        \ 10 Minuten."
+      action: "sysctl net.netfilter.nf_conntrack_count net.netfilter.nf_conntrack_max pr\xFCfen. Verbindungsquellen und Traffic-Anstieg\
+        \ ermitteln; Limits anhand RAM und ben\xF6tigter Verbindungszahl bewerten."
+      pending_for: 10m
+      resolved_action: "Die Alarmbedingung ist nicht mehr erf\xFCllt. Aktuelle Messwerte und den betroffenen Dienst pr\xFC\
+        fen; eine vollst\xE4ndige Anwendungspr\xFCfung wird durch diese Entwarnung nicht best\xE4tigt."
+- name: lpm_collection_health
+  rules:
+  - alert: LPMCollectorDown_ERROR
+    expr: up{monitoring_profile="lpm"} == 0
+    for: 5m
+    labels:
+      severity: ERROR
+      category: availability
+      monitoring_profile: lpm
+      alert_family: LPMCollectorDown
+    annotations:
+      summary: Host-Metriken werden nicht eingesammelt
+      description: "Der markierte Host-Scrape ist seit mindestens 5 Minuten nicht erfolgreich. Der Zustand des \xFCberwachten\
+        \ Hosts ist unbekannt."
+      impact: "Ressourcenalarme k\xF6nnen w\xE4hrend der Messl\xFCcke ausbleiben."
+      action: "Exporter-/Alloy-Dienst, Zieladresse, Port, TLS und Firewall vom Collector aus pr\xFCfen."
+      pending_for: 5m

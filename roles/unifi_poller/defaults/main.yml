@@ -11,7 +11,6 @@ unifi_poller_service_name: unifi-poller
 unifi_poller_manage_service: true
 unifi_poller_service_enabled: true
 unifi_poller_service_state: started
-# For detailed configuration see https://github.com/unpoller/unpoller/blob/master/examples/up.json.example
 unifi_poller_config:
   poller:
     quiet: false
@@ -19,42 +18,41 @@ unifi_poller_config:
     plugins: []
   prometheus:
     disable: false
-    http_listen: "0.0.0.0:9130"
-    ssl_cert_path: ""
-    ssl_key_path: ""
+    http_listen: 0.0.0.0:9130
+    ssl_cert_path: ''
+    ssl_key_path: ''
     report_errors: false
   loki:
-    url: "http://localhost:3100/api/v1/push"
-    # The rest of this is advanced & optional. See wiki.
-    user: ""
-    pass: ""
+    url: http://localhost:3100/api/v1/push
+    user: ''
+    pass: ''
     verify_ssl: false
-    tenant_id: ""
-    interval: "2m"
-    timeout: "10s"
+    tenant_id: ''
+    interval: 2m
+    timeout: 10s
   influxdb:
     disable: false
-    interval: "30s"
-    url: "http://127.0.0.1:8086"
-    user: ""
-    pass: ""
-    db: ""
+    interval: 30s
+    url: http://127.0.0.1:8086
+    user: ''
+    pass: ''
+    db: ''
     verify_ssl: false
     dead_ports: false
   webserver:
     enable: false
     port: 37288
-    html_path: "{{ unifi_poller_config_path }}/web"
-    ssl_cert_path: ""
-    ssl_key_path: ""
+    html_path: '{{ unifi_poller_config_path }}/web'
+    ssl_cert_path: ''
+    ssl_key_path: ''
     max_events: 200
     accounts: {}
   unifi:
     dynamic: false
     defaults:
-      url: "https://127.0.0.1:8443"
-      user: ""
-      pass: ""
+      url: https://127.0.0.1:8443
+      user: ''
+      pass: ''
       sites:
       - all
       save_ids: false
@@ -66,10 +64,9 @@ unifi_poller_config:
       hash_pii: false
       verify_ssl: false
     controllers:
-    # Repeat the following stanza to poll multiple controllers.
-    - url: "https://127.0.0.1:8443"
-      user: ""
-      pass: ""
+    - url: https://127.0.0.1:8443
+      user: ''
+      pass: ''
       sites:
       - all
       save_ids: false

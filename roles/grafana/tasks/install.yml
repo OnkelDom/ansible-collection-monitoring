@@ -1,93 +1,106 @@
 ---
 - block:
   - name: Update apt cache
-    apt:
-      update_cache: true
     register: _pre_update_apt_cache
     until: _pre_update_apt_cache is succeeded
-    when: ansible_pkg_mgr == "apt"
+    when: ansible_facts.pkg_mgr == "apt"
     tags: grafana
-
+    ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
   - name: Install dependencies
-    package:
-      name: "{{ grafana_dependencies }}"
-      state: present
     register: _install_dep_packages
     until: _install_dep_packages is succeeded
     retries: 5
     delay: 2
     tags: grafana
-
+    ansible.builtin.package:
+      name: '{{ grafana_dependencies }}'
+      state: present
 - name: Remove conflicting grafana packages
-  package:
-    name: grafana-data
-    state: absent
   register: _old_grafana_pkgs
   tags: grafana
-
+  ansible.builtin.package:
+    name: grafana-data
+    state: absent
 - name: Clean apt cache
   ansible.builtin.command: apt clean
   when:
   - _old_grafana_pkgs is changed
-  - ansible_pkg_mgr == "apt"
+  - ansible_facts.pkg_mgr == "apt"
   tags: grafana
   changed_when: false
-
-- name: Add Grafana repository file [RHEL/CentOS]
-  template:
-    src: "{{ grafana_yum_repo_template }}"
-    dest: "/etc/yum.repos.d/{{ grafana_yum_repo_template | basename | regex_replace('\\.j2$', '') }}"
-    force: true
-    backup: true
-    mode: "0644"
+- name: Configure signed Grafana RPM repository
   tags: grafana
   when:
-  - ansible_pkg_mgr in ['yum', 'dnf']
+  - ansible_facts.pkg_mgr in ['yum', 'dnf']
   - grafana_manage_repo
-
+  ansible.builtin.yum_repository:
+    name: grafana
+    description: Grafana stable packages
+    baseurl: https://rpm.grafana.com
+    gpgkey: https://rpm.grafana.com/gpg.key
+    gpgcheck: true
+    repo_gpgcheck: true
+    sslverify: true
+    enabled: true
 - block:
   - name: Ensure Grafana apt keyring directory exists [Debian/Ubuntu]
-    file:
+    tags: grafana
+    ansible.builtin.file:
       path: /etc/apt/keyrings
       state: directory
-      mode: "0755"
-    tags: grafana
-
+      mode: '0755'
   - name: Install Grafana GPG signing key [Debian/Ubuntu]
-    get_url:
-      url: "https://packages.grafana.com/gpg.key"
-      validate_certs: true
-      dest: /etc/apt/keyrings/grafana.gpg
-      mode: "0644"
     register: _install_apt_key
     until: _install_apt_key is succeeded
     retries: 5
     delay: 2
     tags: grafana
-
-  - name: Add Grafana repository [Debian/Ubuntu]
-    apt_repository:
-      repo: deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://packages.grafana.com/oss/deb stable main
+    ansible.builtin.get_url:
+      url: https://apt.grafana.com/gpg-full.key
+      validate_certs: true
+      dest: /etc/apt/keyrings/grafana.asc
+      mode: '0644'
+  - name: Install deb822 Python support
+    ansible.builtin.apt:
+      name: python3-debian
       state: present
-      update_cache: true
+  - name: Configure signed Grafana deb822 repository
     register: _update_apt_cache
     until: _update_apt_cache is succeeded
     retries: 5
     delay: 2
     tags: grafana
+    ansible.builtin.deb822_repository:
+      name: grafana
+      types:
+      - deb
+      uris:
+      - https://apt.grafana.com
+      suites:
+      - stable
+      components:
+      - main
+      signed_by: /etc/apt/keyrings/grafana.asc
+      state: present
+  - name: Refresh changed Grafana repository metadata
+    ansible.builtin.apt:
+      update_cache: true
+    when: _update_apt_cache is changed
   when:
-  - ansible_pkg_mgr == "apt"
+  - ansible_facts.pkg_mgr == "apt"
   - grafana_manage_repo
-  environment: "{{ grafana_environment }}"
+  environment: '{{ grafana_environment }}'
   tags: grafana
-
 - name: Install Grafana
-  package:
-    name: "{{ grafana_package }}"
-    state: "{{ (grafana_version == 'latest') | ternary('latest', 'present') }}"
   register: _install_packages
   until: _install_packages is succeeded
   retries: 5
   delay: 2
   notify: restart grafana
   tags: grafana
+  ansible.builtin.package:
+    name: '{{ grafana_package }}'
+    state: '{{ (grafana_version == ''latest'') | ternary(''latest'', ''present'') }}'
+    policy_rc_d: '{{ 101 if ansible_facts.os_family == ''Debian'' and not (grafana_manage_service | bool and grafana_service_state == ''started'') else omit }}'

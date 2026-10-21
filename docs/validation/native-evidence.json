@@ -1,0 +1,197 @@
+{
+  "native-final-artifact.log": {
+    "sha256": "e97293996709880a4c2c11211813b37c1e1953914fa42413e3ad4dd655e17a1f",
+    "recaps": [
+      "debian13                   : ok=109  changed=0    unreachable=0    failed=0    skipped=78   rescued=0    ignored=0   ",
+      "rocky9                     : ok=116  changed=0    unreachable=0    failed=0    skipped=69   rescued=0    ignored=0   ",
+      "ubuntu22                   : ok=116  changed=0    unreachable=0    failed=0    skipped=69   rescued=0    ignored=0   ",
+      "ubuntu24                   : ok=116  changed=0    unreachable=0    failed=0    skipped=69   rescued=0    ignored=0   ",
+      "ubuntu26                   : ok=116  changed=0    unreachable=0    failed=0    skipped=69   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "native-rocky-first.log": {
+    "sha256": "25337ed1907779111fc81dd11583e0945317369739076b5e7e4c229bdee39dfb",
+    "recaps": [
+      "rocky9                     : ok=139  changed=73   unreachable=0    failed=0    skipped=58   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "grafana.log": {
+    "sha256": "42b97bd5d1bde48d0a38e9472d88ae08ff1f490f960dbd1b5ee76ba2699a5de9",
+    "recaps": [
+      "debian13                   : ok=36   changed=12   unreachable=0    failed=0    skipped=22   rescued=0    ignored=0   ",
+      "ubuntu22                   : ok=37   changed=12   unreachable=0    failed=0    skipped=18   rescued=0    ignored=0   ",
+      "ubuntu24                   : ok=37   changed=12   unreachable=0    failed=0    skipped=18   rescued=0    ignored=0   ",
+      "ubuntu26                   : ok=37   changed=12   unreachable=0    failed=0    skipped=18   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "grafana-rocky.log": {
+    "sha256": "f80f3ada9c1746c189fca6f426b7f62bde2a74a8467583123206b10c02056c06",
+    "recaps": [
+      "rocky9                     : ok=35   changed=13   unreachable=0    failed=0    skipped=24   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "data-paths-proof.log": {
+    "sha256": "1a61d355e2c3fd79f7114d36bacc08b9e86257388733eec577bceec7ac2241c2",
+    "recaps": [
+      "debian13                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+      "ubuntu22                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+      "ubuntu24                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+      "ubuntu26                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "data-paths-rocky.log": {
+    "sha256": "1164c777e45b559e8773a1310846fd8bec03e05ed8466427fd8fcbc32a6b4e99",
+    "recaps": [
+      "rocky9                     : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "lifecycle-acceptance2.log": {
+    "sha256": "84d2a68abab34d218a93022bcddce16a917e1198474900c559c34f6c2dcadbf4",
+    "recaps": [
+      "debian13                   : ok=104  changed=7    unreachable=0    failed=0    skipped=114  rescued=1    ignored=0   ",
+      "ubuntu22                   : ok=110  changed=7    unreachable=0    failed=0    skipped=108  rescued=1    ignored=0   ",
+      "ubuntu24                   : ok=110  changed=7    unreachable=0    failed=0    skipped=108  rescued=1    ignored=0   ",
+      "ubuntu26                   : ok=110  changed=7    unreachable=0    failed=0    skipped=108  rescued=1    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "lifecycle-rocky.log": {
+    "sha256": "a09c414e1d4e624a17b286498c37d230fc847b25762c429d41c9648225987a07",
+    "recaps": [
+      "rocky9                     : ok=106  changed=11   unreachable=0    failed=0    skipped=114  rescued=1    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "reboot.log": {
+    "sha256": "121206f5205537b406292e74c617e4dbe227f2c49fa93960e5ba3146ae50a486",
+    "recaps": [
+      "debian13                   : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+      "ubuntu22                   : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+      "ubuntu24                   : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+      "ubuntu26                   : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "reboot-rocky.log": {
+    "sha256": "253edc310156ea6778946f416568436216658ead8b8a5bc00b8e84f76372d566",
+    "recaps": [
+      "rocky9                     : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "windows-first2.log": {
+    "sha256": "6fbf2ffac53bf56e0192c1b12ace0ce2fb36c8200a342786e1f8da357f2152b2",
+    "recaps": [
+      "windows11                  : ok=19   changed=8    unreachable=0    failed=0    skipped=22   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "windows-repeat.log": {
+    "sha256": "a42df42e15a142f0a4e0aedf0774cebe2e6b18b3d69266168577fc8dc665f0f0",
+    "recaps": [
+      "windows11                  : ok=18   changed=0    unreachable=0    failed=0    skipped=22   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "windows-data-paths.log": {
+    "sha256": "8c9104ab4a64a0a32fb96f55c09cb1dc954fdcf2e89f3f526da7219a59361feb",
+    "recaps": [
+      "debian13                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "windows-lifecycle.log": {
+    "sha256": "2cda54f34d53e803bb3b4a14a7dfc257bb3cc36c75d584b0868b85bd2d14472c",
+    "recaps": [
+      "windows11                  : ok=62   changed=11   unreachable=0    failed=0    skipped=100  rescued=1    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "lint-last.log": {
+    "sha256": "8bba94c89e4e28572f753481e35d0773ce49e00482a8ea3f7defa3b04bb4a7fd",
+    "recaps": [],
+    "last_lines": [
+      "INFO     Executing syntax check on role roles/victoriametrics (0.32s)",
+      "",
+      "Passed: 0 failure(s), 0 warning(s) in 590 files processed of 665 encountered. Profile 'production' was required, and it passed."
+    ]
+  },
+  "unit-final.log": {
+    "sha256": "0155572e24fce9bd5e4e50ff078d77d7e9e7e7888c0a407ae677ebfa8842ab03",
+    "recaps": [],
+    "last_lines": [
+      "......................                                                   [100%]",
+      "22 passed in 0.50s"
+    ]
+  },
+  "syntax220.log": {
+    "sha256": "a9f9c329685da0a4567408f13e2848d22f4528bd162e49a94f371f7e04084ed8",
+    "recaps": [],
+    "last_lines": [
+      "playbook: roles/vector/tests/test.yml",
+      "",
+      "playbook: roles/victoriametrics/tests/test.yml"
+    ]
+  },
+  "sanity-final.log": {
+    "sha256": "7a626d91fd8bec297e91714eb6eedd7520ff9c670ba504bc5a5f5501bd1e51e7",
+    "recaps": [],
+    "last_lines": [
+      "Running sanity test \"compile\" on Python 3.12",
+      "Running sanity test \"import\" on Python 3.12"
+    ]
+  },
+  "windows-final-artifact.log": {
+    "sha256": "a42df42e15a142f0a4e0aedf0774cebe2e6b18b3d69266168577fc8dc665f0f0",
+    "recaps": [
+      "windows11                  : ok=18   changed=0    unreachable=0    failed=0    skipped=22   rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "windows-final-data-paths.log": {
+    "sha256": "15f9738fce49ff85470c4ef50a9bf9a8f1ccc179e833cc6f5e792187efbe350e",
+    "recaps": [
+      "debian13                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "syntax220-final.log": {
+    "sha256": "a9f9c329685da0a4567408f13e2848d22f4528bd162e49a94f371f7e04084ed8",
+    "recaps": [],
+    "last_lines": [
+      "playbook: roles/vector/tests/test.yml",
+      "",
+      "playbook: roles/victoriametrics/tests/test.yml"
+    ]
+  },
+  "preflight-final.log": {
+    "sha256": "af6f6cb7c52a4aea962dbedbf890fb3fb26a58912f72c50a7f83a7e6d1ec764d",
+    "recaps": [
+      "debian13                   : ok=15   changed=0    unreachable=0    failed=0    skipped=7    rescued=0    ignored=0   ",
+      "rhel9                      : ok=15   changed=0    unreachable=0    failed=0    skipped=7    rescued=0    ignored=0   ",
+      "rocky9                     : ok=18   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   ",
+      "ubuntu22                   : ok=18   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   ",
+      "ubuntu24                   : ok=18   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   ",
+      "ubuntu26                   : ok=18   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   ",
+      "unimplemented              : ok=3    changed=0    unreachable=0    failed=0    skipped=1    rescued=1    ignored=0   ",
+      "unsupported                : ok=5    changed=0    unreachable=0    failed=0    skipped=2    rescued=1    ignored=0   ",
+      "windows                    : ok=6    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   "
+    ],
+    "last_lines": []
+  },
+  "cleanup.log": {
+    "sha256": "1e2cffba95720eeeff03bf9b968b798b52ffd3b6a74d98d9932288fa647b0ff7",
+    "recaps": [],
+    "last_lines": [
+      "purging VM 3395 from related configurations..",
+      "Removed owned monitoring test VM 3395",
+      "{\"owned_vms_removed\": [3390, 3391, 3392, 3393, 3394, 3395], \"test_seed_isos_removed\": true, \"images_and_credentials_removed\": true, \"existing_guests_preserved\": 14}"
+    ]
+  }
+}

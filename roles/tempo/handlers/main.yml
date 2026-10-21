@@ -4,4 +4,7 @@
     name: tempo
     daemon_reload: true
     state: restarted
-  when: tempo_service_enabled | bool
+  when:
+  - tempo_service_enabled | bool
+  - _tempo_service_policy.manage | default(false) | bool
+  - (_tempo_service_policy.state | default('stopped')) != 'stopped'

@@ -4,4 +4,19 @@ argument_specs:
     short_description: Entry point for the postfix_exporter role.
     description:
     - Validate variables for the `postfix_exporter` role.
-    options: {}
+    options:
+      postfix_exporter_manage_service:
+        description:
+        - Controls `postfix_exporter_manage_service` for the `postfix_exporter` role.
+        required: false
+        type: bool
+      postfix_exporter_service_enabled:
+        description:
+        - Controls `postfix_exporter_service_enabled` for the `postfix_exporter` role.
+        required: false
+        type: bool
+      postfix_exporter_service_state:
+        description:
+        - Controls `postfix_exporter_service_state` for the `postfix_exporter` role.
+        required: false
+        type: str

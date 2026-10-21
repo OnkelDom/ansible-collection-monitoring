@@ -1,0 +1,4 @@
+---
+- name: Placeholder for keepalived_exporter role implementation
+  ansible.builtin.debug:
+    msg: The keepalived_exporter role was imported without tasks yet.

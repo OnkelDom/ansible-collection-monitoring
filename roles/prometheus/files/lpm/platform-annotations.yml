@@ -1,0 +1,61 @@
+---
+- alertname: LPMCpuPressure_ERROR
+  annotations:
+    action:
+      linux: "Linux: top; ps -eo pid,comm,pcpu --sort=-pcpu | head. Bei VMs zus\xE4tzlich die CPU-Auslastung des Hypervisors mit dem Alarmzeitraum abgleichen."
+      windows: "Windows: Task-Manager nach CPU-Auslastung sortieren und Prozessorwarteschlange im Leistungsmonitor pr\xFCfen. Bei VMs zus\xE4tzlich die CPU-Auslastung des Hypervisors mit dem Alarmzeitraum abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. CPU-Verbraucher und Wartezeiten mit Benutzerlast, Batch-Jobs und Hypervisor abgleichen."
+    description:
+      linux: "CPU-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 %, mindestens 30 Minuten. Zus\xE4tzlich wartet das System \xFCber 20 % der Zeit auf CPU-Zuteilung."
+      windows: "CPU-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 %, mindestens 30 Minuten. Zus\xE4tzlich ist die Prozessorwarteschlange gr\xF6\xDFer als die Anzahl der logischen CPUs."
+      unknown: "CPU-Auslastung (15-Minuten-Mittel): {{ $value | printf \"%.1f\" }} %. Alarmgrenze: \xFCber 90 %, mindestens 30 Minuten; zus\xE4tzlich ist die plattformspezifische Wartezeitbedingung erf\xFCllt. Betriebssystem anhand der Messreihe pr\xFCfen."
+- alertname: LPMMemory(PressureLinux|PressureWindows|ReserveCritical|CommitCritical)_ERROR
+  annotations:
+    action: &id001
+      linux: "Linux: free -h; ps -eo pid,comm,rss --sort=-rss | head; journalctl -k auf OOM-Ereignisse pr\xFCfen. Verbrauch mit Benutzerzahl und Batch-Jobs abgleichen."
+      windows: "Windows: Task-Manager nach zugesicherter Speichergr\xF6\xDFe sortieren; Ressourcenmonitor auf Auslagerung und Ereignisprotokoll auf ID 2004 pr\xFCfen. Verbrauch mit Benutzerzahl und Batch-Jobs abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Verf\xFCgbaren RAM, zugesicherten Speicher und Auslagerung mit Benutzerzahl und Batch-Jobs abgleichen."
+- alertname: LPMMemoryPressureLinux_ERROR
+  platform: linux
+  annotations:
+    action: *id001
+- alertname: LPMMemory(PressureWindows|CommitCritical)_ERROR
+  platform: windows
+  annotations:
+    action: *id001
+- alertname: LPMDiskUsage(High|Mid|Low)_(WARN|ERROR)
+  annotations:
+    action:
+      linux: "Linux: df -h \"{{ $labels.path }}\"; sudo du -xhd1 \"{{ $labels.path }}\" | sort -h. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern."
+      windows: "Windows: Get-Volume -FilePath '{{ $labels.path }}\\' | Format-List DriveLetter,FileSystemLabel,Size,SizeRemaining,HealthStatus. Gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path }} pr\xFCfen; bei weiter ben\xF6tigten Daten Volume erweitern."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Freien Speicher, gr\xF6\xDFte Datenbest\xE4nde und Aufbewahrung f\xFCr {{ $labels.path }} kontrollieren; bei weiter ben\xF6tigten Daten Volume erweitern."
+- alertname: LPMDiskAwaitHigh_(WARN|ERROR)
+  annotations:
+    action:
+      linux: "Linux: iostat -xz 1 5; Lese-/Schreiblast und wartende Zugriffe dem Ger\xE4t zuordnen. Bei VMs Gastwerte mit Hypervisor und Storage abgleichen."
+      windows: "Windows: Ressourcenmonitor unter Datentr\xE4ger auf Antwortzeit und verursachende Prozesse pr\xFCfen. Bei VMs Gastwerte mit Hypervisor und Storage abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Datentr\xE4ger-Antwortzeiten und verursachende Prozesse mit Hypervisor und Storage abgleichen."
+- alertname: LPMDiskQueueHigh_ERROR
+  annotations:
+    action:
+      linux: 'Linux: iostat -xz 1 5. Warteschlange mit Antwortzeiten, Durchsatz, Batch-Jobs und Storage-Last abgleichen.'
+      windows: "Windows: Ressourcenmonitor unter Datentr\xE4ger pr\xFCfen. Warteschlange mit Antwortzeiten, Durchsatz, Batch-Jobs und Storage-Last abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Warteschlange mit Antwortzeiten, Durchsatz, Batch-Jobs und Storage-Last abgleichen."
+- alertname: LPMNet(ErrIn|DropIn)(High|Mid|Low)_(WARN|ERROR)
+  annotations:
+    action:
+      linux: "Linux: ip -s link show \"{{ $labels.interface }}\"; ethtool -S \"{{ $labels.interface }}\". Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen."
+      windows: "Windows: Get-NetAdapterStatistics. Betroffenen Adapter anhand des Alarm-Interfaces {{ $labels.interface }} zuordnen. Z\xE4hleranstieg mit Switchport, Linkzustand und Treiberprotokoll abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Fehlerz\xE4hler f\xFCr {{ $labels.interface }} mit Switchport, Linkzustand und Treiberprotokoll abgleichen."
+- alertname: LPMPortcheck(High|Mid|Low)_ERROR
+  annotations:
+    action:
+      linux: "Linux: Zieladresse, DNS-Aufl\xF6sung und Portfreigabe vom \xFCberwachten Host pr\xFCfen. Bei TCP nc -vz ZIEL PORT verwenden. Ziel-Dienst und Firewall mit dem Ergebnis abgleichen."
+      windows: "Windows: Zieladresse, DNS-Aufl\xF6sung und Portfreigabe vom \xFCberwachten Host pr\xFCfen. Bei TCP Test-NetConnection ZIEL -Port PORT verwenden. Ziel-Dienst und Firewall mit dem Ergebnis abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. Zieladresse, DNS-Aufl\xF6sung und Portfreigabe vom \xFCberwachten Host testen; Ziel-Dienst und Firewall mit dem Ergebnis abgleichen."
+- alertname: LPMHttpcheck(High|Mid|Low)_ERROR
+  annotations:
+    action:
+      linux: "Linux: URL vom \xFCberwachten Host mit curl -v pr\xFCfen. DNS, TLS-Zertifikat, HTTP-Status und Antwort mit der Healthcheck-Konfiguration abgleichen."
+      windows: "Windows: URL vom \xFCberwachten Host mit Invoke-WebRequest -Uri 'URL' pr\xFCfen. DNS, TLS-Zertifikat, HTTP-Status und Antwort mit der Healthcheck-Konfiguration abgleichen."
+      unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. URL, DNS, TLS-Zertifikat, HTTP-Status und Antwort vom \xFCberwachten Host mit der Healthcheck-Konfiguration abgleichen."

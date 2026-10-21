@@ -1,7 +1,0 @@
----
-- name: Syntax test for promtail
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-  - role: ..

@@ -35,6 +35,11 @@ argument_specs:
         - Controls `loki_grpc_listen_address` for the `loki` role.
         required: false
         type: str
+      loki_instance_addr:
+        description:
+        - Controls `loki_instance_addr` for the `loki` role.
+        required: false
+        type: str
       loki_binary_install_dir:
         description:
         - Controls `loki_binary_install_dir` for the `loki` role.
@@ -95,3 +100,18 @@ argument_specs:
         - Controls `loki_config` for the `loki` role.
         required: false
         type: dict
+      loki_manage_service:
+        description:
+        - Controls `loki_manage_service` for the `loki` role.
+        required: false
+        type: bool
+      loki_service_enabled:
+        description:
+        - Controls `loki_service_enabled` for the `loki` role.
+        required: false
+        type: bool
+      loki_service_state:
+        description:
+        - Controls `loki_service_state` for the `loki` role.
+        required: false
+        type: str

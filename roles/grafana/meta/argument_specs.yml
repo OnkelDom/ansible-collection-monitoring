@@ -205,3 +205,23 @@ argument_specs:
         - Controls `grafana_panels` for the `grafana` role.
         required: false
         type: dict
+      grafana_manage_service:
+        description:
+        - Controls `grafana_manage_service` for the `grafana` role.
+        required: false
+        type: bool
+      grafana_service_enabled:
+        description:
+        - Controls `grafana_service_enabled` for the `grafana` role.
+        required: false
+        type: bool
+      grafana_service_state:
+        description:
+        - Controls `grafana_service_state` for the `grafana` role.
+        required: false
+        type: str
+      grafana_proxmox_dashboard_enabled:
+        description:
+        - Controls `grafana_proxmox_dashboard_enabled` for the `grafana` role.
+        required: false
+        type: bool

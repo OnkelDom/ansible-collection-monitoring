@@ -1,5 +1,0 @@
----
-{{ ansible_managed | comment }}
-{% if promtail_config | length > 0 %}
-{{ promtail_config | to_nice_yaml(indent=2) }}
-{% endif %}

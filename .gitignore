@@ -7,3 +7,6 @@
 __pycache__/
 *.pyc
 *.retry
+
+.venv-v2/
+*.tar.gz

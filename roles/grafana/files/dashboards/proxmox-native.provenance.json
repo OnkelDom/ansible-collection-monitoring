@@ -1,0 +1,15 @@
+{
+  "source": "https://grafana.com/grafana/dashboards/23855-proxmox-ve-dashboard/",
+  "author": "spagno",
+  "revision": 1,
+  "upstream_sha256": "83baeae99a21d79dfe4328646ee520f177d549d30fa1d282ad5b733dc931d376",
+  "adaptations": [
+    "Explicit tenant/environment/site/cluster/node selectors",
+    "Stable metric names without inferred unit suffixes",
+    "Guest table identity across clusters",
+    "IO-wait as counter rate ratio",
+    "Disk/network rates instead of cumulative/lifetime averages",
+    "Expected/fresh/missing nodes and active alerts",
+    "No customer branding"
+  ]
+}

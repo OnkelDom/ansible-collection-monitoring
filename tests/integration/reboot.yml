@@ -1,0 +1,26 @@
+---
+- name: Verify native services survive a disposable guest reboot
+  hosts: monitoring_lab
+  become: true
+  gather_facts: false
+  tasks:
+  - name: Reboot the disposable guest
+    ansible.builtin.reboot:
+      reboot_timeout: 180
+      post_reboot_delay: 10
+  - name: Verify native service readiness after reboot
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:{{ item }}'
+    register: endpoint
+    until: endpoint is succeeded
+    retries: 24
+    delay: 5
+    loop:
+    - '9100/metrics'
+    - '9090/-/ready'
+    - '9093/-/ready'
+    - '9115/metrics'
+    - '3100/ready'
+    - '3200/ready'
+    - '12345/-/ready'
+    - '3000/api/health'

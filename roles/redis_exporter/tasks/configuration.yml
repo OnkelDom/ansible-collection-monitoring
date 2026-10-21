@@ -1,0 +1,91 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _redis_exporter_service_policy:
+      manage: '{{ redis_exporter_manage_service | bool }}'
+      state: '{{ redis_exporter_service_state }}'
+      enabled: '{{ redis_exporter_service_enabled | bool }}'
+- name: create system group
+  ansible.builtin.group:
+    name: prometheus
+    system: true
+    state: present
+  become: true
+  tags: redis_exporter
+- name: create system user
+  ansible.builtin.user:
+    name: prometheus
+    system: true
+    shell: /sbin/nologin
+    group: prometheus
+    createhome: false
+  become: true
+  tags: redis_exporter
+- name: check if is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/redis_exporter
+  register: __redis_exporter_is_installed
+  become: true
+  tags: redis_exporter
+- name: gather currently installed version (if any)
+  ansible.builtin.command: /usr/local/bin/redis_exporter -version
+  changed_when: false
+  register: __redis_exporter_current_version_output
+  when: __redis_exporter_is_installed.stat.exists
+  become: true
+  tags: redis_exporter
+- name: download binary to local folder
+  ansible.builtin.get_url:
+    url: https://github.com/oliver006/redis_exporter/releases/download/v{{ redis_exporter_version }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    dest: /tmp/redis_exporter-{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    mode: '0644'
+  register: _download_binary
+  until: _download_binary is succeeded
+  retries: 5
+  delay: 2
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: redis_exporter
+  when: (not __redis_exporter_is_installed.stat.exists) or (__redis_exporter_current_version_output.stdout_lines[0].split(" ")[4].replace('v', '') != redis_exporter_version)
+- name: unpack binary
+  ansible.builtin.unarchive:
+    src: /tmp/redis_exporter-{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    dest: /tmp
+    creates: /tmp/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: redis_exporter
+  when: (not __redis_exporter_is_installed.stat.exists) or (__redis_exporter_current_version_output.stdout_lines[0].split(" ")[4].replace('v', '') != redis_exporter_version)
+- name: propagate binaries
+  ansible.builtin.copy:
+    src: /tmp/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter
+    dest: /usr/local/bin/redis_exporter
+    mode: '0755'
+    owner: root
+    group: root
+  notify: restart redis_exporter
+  become: true
+  tags: redis_exporter
+  when: (not __redis_exporter_is_installed.stat.exists) or (__redis_exporter_current_version_output.stdout_lines[0].split(" ")[4].replace('v', '') != redis_exporter_version)
+- name: create systemd service unit
+  ansible.builtin.template:
+    src: redis_exporter.service.j2
+    dest: /etc/systemd/system/redis_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart redis_exporter
+  become: true
+  tags: redis_exporter
+- name: ensure service is started and enabled
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: redis_exporter
+    enabled: '{{ redis_exporter_service_enabled }}'
+    state: '{{ redis_exporter_service_state }}'
+  become: true
+  tags: redis_exporter
+  when:
+  - redis_exporter_manage_service | bool

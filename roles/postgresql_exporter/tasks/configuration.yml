@@ -1,0 +1,91 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _postgres_exporter_service_policy:
+      manage: '{{ postgres_exporter_manage_service | bool }}'
+      state: '{{ postgres_exporter_service_state }}'
+      enabled: '{{ postgres_exporter_service_enabled | bool }}'
+- name: Validate postgres_exporter platform and architecture
+  ansible.builtin.assert:
+    that:
+    - ansible_facts.os_family in ["Debian", "RedHat"]
+    - go_arch in postgres_exporter_checksums
+    fail_msg: postgresql_exporter supports Debian/RedHat on architectures with a configured checksum.
+- name: Create postgres_exporter system group
+  ansible.builtin.group:
+    name: '{{ postgres_exporter_system_group }}'
+    system: true
+    state: present
+- name: Create postgres_exporter system user
+  ansible.builtin.user:
+    name: '{{ postgres_exporter_system_user }}'
+    system: true
+    shell: /usr/sbin/nologin
+    group: '{{ postgres_exporter_system_group }}'
+    create_home: false
+    state: present
+- name: Create postgres_exporter configuration directory
+  ansible.builtin.file:
+    path: '{{ postgres_exporter_config_dir }}'
+    state: directory
+    owner: root
+    group: '{{ postgres_exporter_system_group }}'
+    mode: '0750'
+- name: Check installed postgres_exporter version
+  ansible.builtin.command: '{{ postgres_exporter_install_dir }}/postgres_exporter --version'
+  changed_when: false
+  failed_when: false
+  register: postgres_exporter_current_version
+- name: Download postgres_exporter archive
+  ansible.builtin.get_url:
+    url: '{{ postgres_exporter_download_url }}'
+    dest: /tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    checksum: sha256:{{ postgres_exporter_checksums[go_arch] }}
+    mode: '0644'
+  environment: '{{ postgres_exporter_proxy_env }}'
+  register: postgres_exporter_download
+  retries: 5
+  delay: 2
+  until: postgres_exporter_download is succeeded
+  when: postgres_exporter_current_version.rc != 0 or postgres_exporter_version not in postgres_exporter_current_version.stdout
+- name: Create postgres_exporter extraction directory
+  ansible.builtin.file:
+    path: /tmp/postgres_exporter-{{ postgres_exporter_version }}
+    state: directory
+    mode: '0755'
+  when: postgres_exporter_current_version.rc != 0 or postgres_exporter_version not in postgres_exporter_current_version.stdout
+- name: Extract postgres_exporter archive
+  ansible.builtin.unarchive:
+    src: /tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    dest: /tmp/postgres_exporter-{{ postgres_exporter_version }}
+    remote_src: true
+  when: postgres_exporter_current_version.rc != 0 or postgres_exporter_version not in postgres_exporter_current_version.stdout
+- name: Install postgres_exporter binary
+  ansible.builtin.copy:
+    src: /tmp/postgres_exporter-{{ postgres_exporter_version }}/postgres_exporter-{{ postgres_exporter_version }}.linux-{{ go_arch }}/postgres_exporter
+    dest: '{{ postgres_exporter_install_dir }}/postgres_exporter'
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart postgres_exporter
+  when: postgres_exporter_current_version.rc != 0 or postgres_exporter_version not in postgres_exporter_current_version.stdout
+- name: Install postgres_exporter systemd service
+  ansible.builtin.template:
+    src: postgres_exporter.service.j2
+    dest: /etc/systemd/system/postgres_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart postgres_exporter
+- name: Validate postgres_exporter systemd service
+  ansible.builtin.command: systemd-analyze verify /etc/systemd/system/postgres_exporter.service
+  changed_when: false
+- name: Start and enable postgres_exporter service
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: postgres_exporter
+    enabled: '{{ postgres_exporter_service_enabled }}'
+    state: '{{ postgres_exporter_service_state }}'
+  when:
+  - postgres_exporter_manage_service | bool

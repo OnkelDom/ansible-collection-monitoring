@@ -4,3 +4,6 @@
     daemon_reload: true
     name: postgres_exporter
     state: restarted
+  when:
+  - _postgres_exporter_service_policy.manage | default(false) | bool
+  - (_postgres_exporter_service_policy.state | default('stopped')) != 'stopped'

@@ -1,0 +1,72 @@
+---
+- name: Verify transferred agents honour lifecycle and reject invalid configuration
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  tasks:
+  - name: Stop and disable both agents through their public role API
+    ansible.builtin.include_role:
+      name: '{{ item }}'
+    vars:
+      alloy_log_level: error
+      node_exporter_log_level: error
+      alloy_service_state: stopped
+      alloy_service_enabled: false
+      node_exporter_service_state: stopped
+      node_exporter_service_enabled: false
+    loop: [degit.monitoring.alloy, degit.monitoring.node_exporter]
+  - name: Flush stop-state handlers
+    ansible.builtin.meta: flush_handlers
+  - name: Query stopped agents
+    ansible.builtin.service_facts:
+  - name: Assert neither agent was restarted by handlers
+    ansible.builtin.assert:
+      that:
+      - ansible_facts.services['alloy.service'].state in ['stopped', 'inactive']
+      - ansible_facts.services['node_exporter.service'].state in ['stopped', 'inactive']
+  - name: Read active Alloy configuration checksum
+    ansible.builtin.stat:
+      path: /etc/alloy/config.alloy
+      checksum_algorithm: sha256
+    register: before_invalid
+  - name: Reject a syntactically invalid configuration
+    block:
+    - name: Attempt invalid Alloy configuration
+      ansible.builtin.include_role:
+        name: degit.monitoring.alloy
+      vars:
+        alloy_manage_service: false
+        alloy_custom_blocks: ['this is invalid {']
+    - name: Fail if Alloy accepted invalid configuration
+      ansible.builtin.fail:
+        msg: Invalid configuration unexpectedly accepted
+    rescue:
+    - name: Assert validation was the source of rejection
+      ansible.builtin.assert:
+        that:
+        - ansible_failed_task.name is search('Generate alloy configuration file$')
+  - name: Query protected configuration checksum
+    ansible.builtin.stat:
+      path: /etc/alloy/config.alloy
+      checksum_algorithm: sha256
+    register: after_invalid
+  - name: Assert rejected configuration never replaced the active file
+    ansible.builtin.assert:
+      that: before_invalid.stat.checksum == after_invalid.stat.checksum
+  - name: Change valid configuration with service management disabled
+    ansible.builtin.include_role:
+      name: degit.monitoring.alloy
+    vars:
+      alloy_manage_service: false
+      alloy_log_level: warn
+  - name: Flush handlers while service management is disabled
+    ansible.builtin.meta: flush_handlers
+  - name: Query unmanaged agents
+    ansible.builtin.service_facts:
+  - name: Assert unmanaged Alloy remained stopped
+    ansible.builtin.assert:
+      that: ansible_facts.services['alloy.service'].state in ['stopped', 'inactive']
+  - name: Restore both agents through their public role API
+    ansible.builtin.include_role:
+      name: '{{ item }}'
+    loop: [degit.monitoring.alloy, degit.monitoring.node_exporter]

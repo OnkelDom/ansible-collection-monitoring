@@ -1,0 +1,184 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _alertmanager_service_policy:
+      manage: '{{ alertmanager_manage_service | bool }}'
+      state: '{{ alertmanager_service_state }}'
+      enabled: '{{ alertmanager_service_enabled | bool }}'
+  tags:
+  - always
+- name: create system group
+  ansible.builtin.group:
+    name: alertmanager
+    system: true
+    state: present
+  become: true
+  tags: alertmanager
+- name: create system user
+  ansible.builtin.user:
+    name: alertmanager
+    system: true
+    shell: /usr/sbin/nologin
+    group: alertmanager
+    createhome: false
+  become: true
+  tags: alertmanager
+- name: create directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: '0755'
+  with_items:
+  - /etc/alertmanager
+  - '{{ alertmanager_config_dir }}/templates'
+  - /etc/jiralert
+  - '{{ alertmanager_data_dir }}'
+  become: true
+  tags: alertmanager
+- name: check if is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/alertmanager
+  register: __alertmanager_is_installed
+  become: true
+  tags: alertmanager
+- name: gather currently installed version (if any)
+  ansible.builtin.command: /usr/local/bin/alertmanager --version
+  changed_when: false
+  register: __alertmanager_current_version_output
+  when: __alertmanager_is_installed.stat.exists
+  become: true
+  tags: alertmanager
+- name: installed version
+  ansible.builtin.debug:
+    var: __alertmanager_current_version_output.stdout_lines[0].split(" ")[2]
+  when: __alertmanager_is_installed.stat.exists
+  tags: alertmanager
+- name: Download the verified alertmanager archive on the target
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}.tar.gz
+    dest: /tmp/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}.tar.gz
+    mode: '0644'
+    checksum: sha256:https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/sha256sums.txt
+  register: _download_archive
+  until: _download_archive is succeeded
+  retries: 5
+  delay: 2
+  check_mode: false
+  become: true
+  tags: alertmanager
+  when: (not __alertmanager_is_installed.stat.exists) or ((__alertmanager_current_version_output.stdout_lines[0].split(" ")[2] != alertmanager_version) and (alertmanager_localinstall is not defined))
+- name: unpack binaries
+  ansible.builtin.unarchive:
+    src: /tmp/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}.tar.gz
+    dest: /tmp
+    creates: /tmp/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}/alertmanager
+    remote_src: true
+  check_mode: false
+  become: true
+  tags: alertmanager
+  when: (not __alertmanager_is_installed.stat.exists) or ((__alertmanager_current_version_output.stdout_lines[0].split(" ")[2] != alertmanager_version) and (alertmanager_localinstall is not defined))
+- name: copy binary
+  ansible.builtin.copy:
+    src: /tmp/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}/{{ item }}
+    dest: /usr/local/bin/
+    mode: '0755'
+    owner: root
+    group: root
+    remote_src: true
+  with_items:
+  - alertmanager
+  - amtool
+  notify: restart alertmanager
+  become: true
+  tags: alertmanager
+  when: (not __alertmanager_is_installed.stat.exists) or ((__alertmanager_current_version_output.stdout_lines[0].split(" ")[2] != alertmanager_version) and (alertmanager_localinstall is not defined))
+- name: Install the neutral standard email template
+  ansible.builtin.copy:
+    src: monitoring-email.tmpl
+    dest: '{{ alertmanager_config_dir }}/templates/monitoring-email.tmpl'
+    owner: alertmanager
+    group: alertmanager
+    mode: '0644'
+  when: alertmanager_lpm_enabled | bool
+  become: true
+  notify: reload alertmanager
+  tags:
+  - alertmanager
+  - alertmanager_config
+  - alertmanager_template
+- name: Remove disabled standard email template
+  ansible.builtin.file:
+    path: '{{ alertmanager_config_dir }}/templates/monitoring-email.tmpl'
+    state: absent
+  when: not alertmanager_lpm_enabled | bool
+  become: true
+  notify: reload alertmanager
+  tags:
+  - alertmanager
+  - alertmanager_config
+  - alertmanager_template
+- name: generate config file
+  ansible.builtin.template:
+    src: alertmanager.config.j2
+    dest: '{{ alertmanager_config_dir }}/config.yml'
+    owner: alertmanager
+    group: alertmanager
+    mode: '0644'
+    validate: /usr/local/bin/amtool --alertmanager.url=  check-config %s
+  notify: reload alertmanager
+  become: true
+  tags:
+  - alertmanager
+  - alertmanager_config
+- name: generate webconfig file
+  ansible.builtin.copy:
+    content: '{{ alertmanager_webconfig | to_nice_yaml(indent=2, sort_keys=False) }}
+
+      '
+    dest: '{{ alertmanager_config_dir }}/web-config.yml'
+    owner: alertmanager
+    group: alertmanager
+    mode: '0644'
+  notify: restart alertmanager
+  become: true
+  when: alertmanager_webconfig | length > 0
+  tags:
+  - alertmanager
+  - alertmanager_config
+- name: copy template files
+  ansible.builtin.copy:
+    src: '{{ alertmanager_template_src_dir }}/{{ item }}'
+    dest: '{{ alertmanager_config_dir }}/templates/{{ item }}'
+    force: true
+    owner: alertmanager
+    group: alertmanager
+    mode: '0644'
+  with_items: '{{ alertmanager_template_files }}'
+  notify: reload alertmanager
+  become: true
+  when: alertmanager_template_files | length > 0
+  tags:
+  - alertmanager
+  - alertmanager_template
+- name: create systemd service unit
+  ansible.builtin.template:
+    src: alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart alertmanager
+  become: true
+  tags: alertmanager
+- name: start and enable alertmanager service
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: alertmanager
+    state: '{{ alertmanager_service_state }}'
+    enabled: '{{ alertmanager_service_enabled }}'
+  become: true
+  tags: alertmanager
+  when:
+  - alertmanager_manage_service | bool

@@ -4,4 +4,19 @@ argument_specs:
     short_description: Entry point for the keepalived_exporter role.
     description:
     - Validate variables for the `keepalived_exporter` role.
-    options: {}
+    options:
+      keepalived_exporter_manage_service:
+        description:
+        - Controls `keepalived_exporter_manage_service` for the `keepalived_exporter` role.
+        required: false
+        type: bool
+      keepalived_exporter_service_enabled:
+        description:
+        - Controls `keepalived_exporter_service_enabled` for the `keepalived_exporter` role.
+        required: false
+        type: bool
+      keepalived_exporter_service_state:
+        description:
+        - Controls `keepalived_exporter_service_state` for the `keepalived_exporter` role.
+        required: false
+        type: str

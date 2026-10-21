@@ -1,0 +1,172 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _process_exporter_service_policy:
+      manage: '{{ process_exporter_manage_service | bool }}'
+      state: '{{ process_exporter_service_state }}'
+      enabled: '{{ process_exporter_service_enabled | bool }}'
+- name: create system group
+  when: process_exporter_system_group != "root"
+  become: true
+  tags: process_exporter
+  ansible.builtin.group:
+    name: '{{ process_exporter_system_group }}'
+    system: true
+    state: present
+- name: create system user
+  when: process_exporter_system_user != "root"
+  become: true
+  tags: process_exporter
+  ansible.builtin.user:
+    name: '{{ process_exporter_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ process_exporter_system_group }}'
+    createhome: false
+- name: create data directory
+  become: true
+  tags: process_exporter
+  ansible.builtin.file:
+    path: '{{ process_exporter_config_dir }}'
+    state: directory
+    owner: '{{ process_exporter_system_user }}'
+    group: '{{ process_exporter_system_group }}'
+    mode: '0755'
+- name: check if process_exporter is installed
+  register: __process_exporter_is_installed
+  become: true
+  tags: process_exporter
+  ansible.builtin.stat:
+    path: '{{ process_exporter_binary_install_dir }}/process_exporter'
+- name: gather currently installed process_exporter version (if any)
+  args:
+    warn: false
+  changed_when: false
+  register: __process_exporter_current_version_output
+  when: __process_exporter_is_installed.stat.exists
+  become: true
+  tags: process_exporter
+  ansible.builtin.command: '{{ process_exporter_binary_install_dir }}/process_exporter -version'
+- block:
+  - name: get latest release
+    environment: '{{ proxy_env }}'
+    no_log: true
+    register: _latest_release
+    until: _latest_release.status == 200
+    retries: 5
+    become: true
+    tags: process_exporter
+    ansible.builtin.uri:
+      url: https://api.github.com/repos/ncabatoff/process-exporter/releases/latest
+      method: GET
+      return_content: true
+      status_code: 200
+      body_format: json
+      validate_certs: true
+      user: '{{ lookup(''env'', ''GH_USER'') | default(omit) }}'
+      password: '{{ lookup(''env'', ''GH_TOKEN'') | default(omit) }}'
+  - name: set version to {{ _latest_release.json.tag_name[1:] }}
+    become: true
+    tags: process_exporter
+    ansible.builtin.set_fact:
+      process_exporter_version: '{{ _latest_release.json.tag_name[1:] }}'
+  when: process_exporter_version == "latest"
+  delegate_to: localhost
+  run_once: true
+- block:
+  - name: get checksum list from github
+    environment: '{{ proxy_env }}'
+    run_once: true
+    become: true
+    tags: process_exporter
+    ansible.builtin.set_fact:
+      _checksums: '{{ lookup(''url'', ''https://github.com/ncabatoff/process-exporter/releases/download/v'' + process_exporter_version + ''/'' + ''process-exporter_'' + process_exporter_version + ''_checksums.txt'', wantlist=True) | list }}'
+  - name: get checksum for {{ go_arch }} architecture
+    with_items: '{{ _checksums }}'
+    when: ('linux-' + go_arch + '.tar.gz') in item
+    become: true
+    tags: process_exporter
+    ansible.builtin.set_fact:
+      process_exporter_checksum: '{{ item.split('' '')[0] }}'
+  - name: download binary to local folder
+    environment: '{{ proxy_env }}'
+    register: _download_binary
+    until: _download_binary is succeeded
+    retries: 5
+    delay: 2
+    delegate_to: localhost
+    check_mode: false
+    become: true
+    tags: process_exporter
+    ansible.builtin.get_url:
+      url: https://github.com/ncabatoff/process-exporter/releases/download/v{{ process_exporter_version }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
+      dest: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
+      checksum: sha256:{{ process_exporter_checksum }}
+      mode: '0644'
+  - name: unpack binary
+    delegate_to: localhost
+    check_mode: false
+    become: true
+    tags: process_exporter
+    ansible.builtin.unarchive:
+      src: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
+      dest: /tmp
+      creates: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter
+  - name: propagate binaries
+    notify: restart process_exporter
+    when: not ansible_check_mode
+    become: true
+    tags: process_exporter
+    ansible.builtin.copy:
+      src: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter
+      dest: '{{ process_exporter_binary_install_dir }}/process_exporter'
+      mode: '0755'
+      owner: root
+      group: root
+  when: (not __process_exporter_is_installed.stat.exists) or (__process_exporter_current_version_output.stderr_lines[0].split(" ")[2] != process_exporter_version)
+- name: create/update configuration file
+  when: process_exporter_names != []
+  notify: reload process_exporter
+  become: true
+  tags: process_exporter
+  ansible.builtin.copy:
+    dest: '{{ process_exporter_config_dir }}/config.yml'
+    content: 'process_names:
+
+      {{ process_exporter_names }}
+
+      '
+    backup: false
+    owner: '{{ process_exporter_system_user }}'
+    group: '{{ process_exporter_system_group }}'
+    mode: '0644'
+- name: copy consul-agent service json
+  when: process_exporter_create_consul_agent_service
+  notify: reload consul
+  become: true
+  tags: process_exporter
+  ansible.builtin.template:
+    src: consul_agent_service.json.j2
+    dest: /etc/consul/process_exporter.json
+    owner: consul
+    group: consul
+    mode: '0644'
+- name: copy systemd service file
+  notify: restart process_exporter
+  become: true
+  tags: process_exporter
+  ansible.builtin.template:
+    src: process_exporter.service.j2
+    dest: /etc/systemd/system/process_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+- name: ensure process_exporter is enabled on boot
+  become: true
+  tags: process_exporter
+  when:
+  - process_exporter_manage_service | bool
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: process_exporter
+    enabled: true

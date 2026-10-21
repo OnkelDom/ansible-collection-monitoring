@@ -6,10 +6,15 @@
     state: restarted
   become: true
   tags: prometheus
-
+  when:
+  - _prometheus_service_policy.manage | default(false) | bool
+  - (_prometheus_service_policy.state | default('stopped')) != 'stopped'
 - name: reload prometheus
   ansible.builtin.systemd:
     name: prometheus
     state: reloaded
   become: true
   tags: prometheus
+  when:
+  - _prometheus_service_policy.manage | default(false) | bool
+  - (_prometheus_service_policy.state | default('stopped')) != 'stopped'

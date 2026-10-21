@@ -1,0 +1,22 @@
+---
+- name: Verify Windows-labelled telemetry reaches the isolated Linux sink
+  hosts: monitoring_lab
+  gather_facts: false
+  become: true
+  tasks:
+  - name: Query real Windows metrics delivered by Alloy
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:9090/api/v1/query?query=count(%7B__name__%3D~%22windows_.%2B%22%2Cplatform%3D%22windows%22%2Ctenant%3D%22validation%22%7D)'
+      return_content: true
+    register: metric
+    until: metric.json is defined and metric.json.data.result | length > 0 and metric.json.data.result[0].value[1] | float > 0
+    retries: 24
+    delay: 5
+  - name: Query the Windows Application event through Loki
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:3100/loki/api/v1/query_range?query=%7Btenant%3D%22validation%22%2Cplatform%3D%22windows%22%7D%20%7C%3D%20%22monitoring-v2-windows-runtime-proof%22'
+      return_content: true
+    register: event
+    until: event.json is defined and event.json.data.result | length > 0
+    retries: 24
+    delay: 5

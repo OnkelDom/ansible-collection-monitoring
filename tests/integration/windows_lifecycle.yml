@@ -1,0 +1,89 @@
+---
+- name: Verify Windows Alloy lifecycle and configuration protection
+  hosts: monitoring_windows_lab
+  gather_facts: true
+  vars:
+    alloy_pipeline_enabled: true
+    alloy_labels:
+      tenant: validation
+      environment: lab
+    alloy_prometheus_remote_write_url: 'http://{{ monitoring_lab_sink }}:9090/api/v1/write'
+    alloy_loki_endpoint: 'http://{{ monitoring_lab_sink }}:3100/loki/api/v1/push'
+  tasks:
+  - name: Stop Alloy and set manual startup through its role API
+    ansible.builtin.include_role:
+      name: degit.monitoring.alloy
+    vars:
+      alloy_service_state: stopped
+      alloy_service_enabled: false
+      alloy_log_level: error
+  - name: Flush handlers with an explicit stop policy
+    ansible.builtin.meta: flush_handlers
+  - name: Inspect stopped service
+    ansible.windows.win_service_info:
+      name: Alloy
+    register: stopped
+  - name: Assert stop policy survived deferred handlers
+    ansible.builtin.assert:
+      that:
+      - stopped.services[0].state == 'stopped'
+      - stopped.services[0].start_mode == 'manual'
+  - name: Read active Windows Alloy configuration checksum
+    ansible.windows.win_stat:
+      path: C:/ProgramData/GrafanaLabs/Alloy/config.alloy
+      checksum_algorithm: sha256
+    register: before_invalid
+  - name: Reject invalid Windows configuration
+    block:
+    - name: Try an invalid candidate
+      ansible.builtin.include_role:
+        name: degit.monitoring.alloy
+      vars:
+        alloy_manage_service: false
+        alloy_extra_config: 'this is invalid {'
+    - name: Fail if invalid configuration was accepted
+      ansible.builtin.fail:
+        msg: Invalid Windows configuration unexpectedly accepted
+    rescue:
+    - name: Assert native Alloy validation rejected the candidate
+      ansible.builtin.assert:
+        that: ansible_failed_task.name is search('Validate alloy configuration$')
+  - name: Read protected Windows configuration checksum
+    ansible.windows.win_stat:
+      path: C:/ProgramData/GrafanaLabs/Alloy/config.alloy
+      checksum_algorithm: sha256
+    register: after_invalid
+  - name: Assert active configuration survived rejection
+    ansible.builtin.assert:
+      that: before_invalid.stat.checksum == after_invalid.stat.checksum
+  - name: Apply a valid configuration with service management disabled
+    ansible.builtin.include_role:
+      name: degit.monitoring.alloy
+    vars:
+      alloy_manage_service: false
+      alloy_log_level: warn
+  - name: Flush handlers with service management disabled
+    ansible.builtin.meta: flush_handlers
+  - name: Inspect unmanaged service
+    ansible.windows.win_service_info:
+      name: Alloy
+    register: unmanaged
+  - name: Assert unmanaged service remained stopped
+    ansible.builtin.assert:
+      that: unmanaged.services[0].state == 'stopped'
+  - name: Restore Windows Alloy
+    ansible.builtin.include_role:
+      name: degit.monitoring.alloy
+  - name: Apply pending restore handler
+    ansible.builtin.meta: flush_handlers
+  - name: Reboot the disposable Windows guest
+    ansible.windows.win_reboot:
+      reboot_timeout: 300
+      post_reboot_delay: 10
+  - name: Verify Alloy readiness after reboot
+    ansible.windows.win_uri:
+      url: http://127.0.0.1:12345/-/ready
+    register: ready
+    until: ready is succeeded
+    retries: 24
+    delay: 5

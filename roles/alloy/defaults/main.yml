@@ -1,26 +1,42 @@
 ---
-# Service-Konfiguration
+alloy_manage_repository: true
+alloy_manage_service: true
 alloy_service_enabled: true
 alloy_service_state: started
-
-# Installation
-alloy_linux_install_package: true
-alloy_windows_install_method: winget
-alloy_windows_installer_url: ""
-alloy_windows_installer_path: C:/Windows/Temp/alloy-installer-windows-amd64.exe
-alloy_windows_product_id: GrafanaLabs.Alloy
-alloy_windows_binary_path: C:/Program Files/GrafanaLabs/Alloy/alloy.exe
-
-# Konfiguration
-alloy_config_file: ""
-alloy_config_dir: ""
-alloy_data_dir: ""
+alloy_repository_url: https://apt.grafana.com
+alloy_repository_key_url: https://apt.grafana.com/gpg-full.key
+alloy_repository_keyring: /etc/apt/keyrings/grafana.asc
+alloy_config_file: '{{ alloy_config_dir }}/config.alloy'
 alloy_user: alloy
 alloy_group: alloy
 alloy_log_level: info
+alloy_loki_endpoint: ''
+alloy_normal_logs_tenant: logs
+alloy_audit_logs_tenant: audit
+alloy_config:
+  logging:
+    level: '{{ alloy_log_level }}'
+    format: logfmt
+alloy_custom_blocks: []
+alloy_custom_blocks_group_vars: []
+alloy_custom_blocks_host_vars: []
+alloy_custom_blocks_playbook: []
+alloy_manage_firewall: false
+alloy_firewall_enabled: false
+alloy_firewall_zone: public
+alloy_manage_selinux: true
+alloy_firewall_ports: []
+alloy_selinux_ports: '{{ alloy_firewall_ports }}'
+alloy_service_override: {}
+alloy_linux_install_package: true
+alloy_windows_install_method: existing
+alloy_windows_installer_url: ''
+alloy_windows_installer_path: C:/Windows/Temp/alloy-installer-windows-amd64.exe
+alloy_windows_product_id: GrafanaLabs.Alloy
+alloy_windows_binary_path: C:/Program Files/GrafanaLabs/Alloy/alloy-windows-amd64.exe
+alloy_config_dir: '{{ _alloy_platform_config_dir | default(''/etc/alloy'') }}'
+alloy_data_dir: '{{ _alloy_platform_data_dir | default(''/var/lib/alloy'') }}'
 alloy_validate_config: true
-
-# Einheitliche Labels fuer Metriken und Logs.
 alloy_labels:
   tenant: default
   environment: prod
@@ -29,22 +45,15 @@ alloy_labels:
   system_role: server
   component_type: compute
   managed_by: ansible
-
-# Loki-Ausgabe. Leer lassen, wenn der Host keine Logs senden soll.
-alloy_loki_endpoint: ""
-alloy_loki_tenant_id: ""
+alloy_loki_tenant_id: ''
 alloy_loki_external_labels: {}
-
-# Prometheus Remote Write. Leer lassen, wenn Metriken nur lokal gescraped werden.
-alloy_prometheus_remote_write_url: ""
+alloy_prometheus_remote_write_url: ''
 alloy_prometheus_remote_write_headers: {}
 alloy_prometheus_external_labels: {}
-
-# Linux-Metriken und Logs
 alloy_linux_metrics_enabled: true
 alloy_linux_metrics_collectors_disabled: []
 alloy_linux_metrics_collectors_enabled: []
-alloy_linux_metrics_textfile_directory: ""
+alloy_linux_metrics_textfile_directory: ''
 alloy_linux_journal_enabled: true
 alloy_linux_journal_max_age: 24h
 alloy_linux_file_logs_enabled: true
@@ -69,8 +78,6 @@ alloy_linux_file_log_targets:
   job: audit
   log_type: security
   service: audit
-
-# Windows-Metriken und Eventlogs
 alloy_windows_metrics_enabled: true
 alloy_windows_enabled_collectors:
 - cpu
@@ -80,6 +87,7 @@ alloy_windows_enabled_collectors:
 - os
 - service
 - system
+- memory
 alloy_windows_eventlog_enabled: true
 alloy_windows_eventlogs:
 - name: Application
@@ -95,13 +103,30 @@ alloy_windows_eventlogs:
   log_type: security
   service: security
 alloy_windows_bookmark_dir: C:/ProgramData/GrafanaLabs/Alloy/bookmarks
-
-# Freie Alloy-Bloecke fuer Spezialquellen, z. B. Proxmox/Ceph Scrapes.
-alloy_extra_config: ""
-
-# Firewall-Konfiguration
-alloy_firewall_enabled: false
-alloy_firewall_ports: []
-
-# Systemd-Service-Optionen
-alloy_service_override: {}
+alloy_extra_config: ''
+alloy_pipeline_enabled: false
+alloy_windows_installer_checksum: ''
+alloy_binary_path: '{{ _alloy_platform_binary_path | default(''/usr/bin/alloy'') }}'
+alloy_package_name: '{{ _alloy_platform_package_name | default(''alloy'') }}'
+alloy_service_name: '{{ _alloy_platform_service_name | default(''alloy'') }}'
+alloy_log_dir: '{{ _alloy_platform_log_dir | default(''/var/log/alloy'') }}'
+alloy_selinux_packages: '{{ _alloy_platform_selinux_packages | default([]) }}'
+alloy_selinux_port_type: '{{ _alloy_platform_selinux_port_type | default(''http_port_t'') }}'
+alloy_rpm_repository_url: https://rpm.grafana.com
+alloy_rpm_repository_key_url: https://rpm.grafana.com/gpg.key
+alloy_lpm_enabled: true
+# Central PVE native OTLP/HTTP receiver; separate from local host telemetry.
+alloy_proxmox_enabled: false
+alloy_proxmox_endpoint: 127.0.0.1:14318
+alloy_proxmox_htpasswd_file: ''
+alloy_proxmox_tls_cert_file: ''
+alloy_proxmox_tls_key_file: ''
+alloy_proxmox_remote_write_url: ''
+alloy_proxmox_remote_write_headers: {}
+alloy_proxmox_labels:
+  tenant: default
+  environment: prod
+  site: default
+# Exclude audited aliases at collection time; retain canonical mounts and submounts.
+alloy_linux_filesystem_mount_points_exclude: ^/(dev|proc|run|sys)($|/)
+alloy_linux_filesystem_mount_points_exclude_extra: []

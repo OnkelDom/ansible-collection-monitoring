@@ -1,0 +1,134 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _systemd_exporter_service_policy:
+      manage: '{{ systemd_exporter_manage_service | bool }}'
+      state: '{{ systemd_exporter_service_state }}'
+      enabled: '{{ systemd_exporter_service_enabled | bool }}'
+- name: create system group
+  when: systemd_exporter_system_group != "root"
+  become: true
+  tags: systemd_exporter
+  ansible.builtin.group:
+    name: '{{ systemd_exporter_system_group }}'
+    system: true
+    state: present
+- name: create system user
+  when: systemd_exporter_system_user != "root"
+  become: true
+  tags: systemd_exporter
+  ansible.builtin.user:
+    name: '{{ systemd_exporter_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ systemd_exporter_system_group }}'
+    groups: '{{ systemd_exporter_user_additional_groups }}'
+    home: /
+    createhome: false
+- name: check if is installed
+  register: __systemd_exporter_is_installed
+  become: true
+  tags: systemd_exporter
+  ansible.builtin.stat:
+    path: '{{ systemd_exporter_binary_install_dir }}/systemd_exporter'
+- name: gather currently installed version (if any)
+  args:
+    warn: false
+  changed_when: false
+  register: __systemd_exporter_current_version_output
+  when: __systemd_exporter_is_installed.stat.exists
+  become: true
+  tags: systemd_exporter
+  ansible.builtin.command: '{{ systemd_exporter_binary_install_dir }}/systemd_exporter --version'
+- block:
+  - name: get latest release
+    environment: '{{ proxy_env }}'
+    no_log: '{{ not lookup(''env'', ''MOLECULE_DEBUG'') | bool }}'
+    register: _latest_release
+    until: _latest_release.status == 200
+    retries: 5
+    ansible.builtin.uri:
+      url: https://api.github.com/repos/povilasv/systemd_exporter/releases/latest
+      method: GET
+      return_content: true
+      status_code: 200
+      body_format: json
+      validate_certs: true
+      user: '{{ lookup(''env'', ''GH_USER'') | default(omit) }}'
+      password: '{{ lookup(''env'', ''GH_TOKEN'') | default(omit) }}'
+  - name: set systemd_exporter version to {{ _latest_release.json.tag_name[1:] }}
+    ansible.builtin.set_fact:
+      systemd_exporter_version: '{{ _latest_release.json.tag_name[1:] }}'
+  when: systemd_exporter_version == "latest"
+  delegate_to: localhost
+  run_once: true
+  become: true
+  tags: systemd_exporter
+- block:
+  - name: get checksum list from github
+    environment: '{{ proxy_env }}'
+    run_once: true
+    become: true
+    tags: systemd_exporter
+    ansible.builtin.set_fact:
+      _checksums: '{{ lookup(''url'', ''https://github.com/povilasv/systemd_exporter/releases/download/v'' + systemd_exporter_version + ''/sha256sums.txt'', wantlist=True) | list }}'
+  - name: get checksum for {{ go_arch }} architecture
+    with_items: '{{ _checksums }}'
+    when: ('linux-' + go_arch + '.tar.gz') in item
+    become: true
+    tags: systemd_exporter
+    ansible.builtin.set_fact:
+      systemd_exporter_checksum: '{{ item.split('' '')[0] }}'
+  - name: download binary to local folder
+    environment: '{{ proxy_env }}'
+    register: _download_binary
+    until: _download_binary is success
+    retries: 5
+    delay: 2
+    delegate_to: localhost
+    check_mode: false
+    become: true
+    tags: systemd_exporter
+    ansible.builtin.get_url:
+      url: https://github.com/povilasv/systemd_exporter/releases/download/v{{ systemd_exporter_version }}/systemd_exporter-{{ systemd_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+      dest: /tmp
+      checksum: sha256:{{ systemd_exporter_checksum }}
+      mode: '0644'
+  - name: unpack binary
+    delegate_to: localhost
+    check_mode: false
+    become: true
+    tags: systemd_exporter
+    ansible.builtin.unarchive:
+      src: /tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+      dest: /tmp
+      creates: /tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}/systemd_exporter
+  - name: propagate binaries
+    notify: restart systemd_exporter
+    become: true
+    tags: systemd_exporter
+    ansible.builtin.copy:
+      src: /tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}/systemd_exporter
+      dest: '{{ systemd_exporter_binary_install_dir }}/systemd_exporter'
+      mode: '0755'
+  when: (not __systemd_exporter_is_installed.stat.exists) or (__systemd_exporter_current_version_output.stderr_lines[0].split(" ")[2] != systemd_exporter_version)
+- name: create systemd service unit
+  notify: restart systemd_exporter
+  become: true
+  tags: systemd_exporter
+  ansible.builtin.template:
+    src: systemd_exporter.service.j2
+    dest: /etc/systemd/system/systemd_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+- name: ensure service is started and enabled
+  become: true
+  tags: systemd_exporter
+  when:
+  - systemd_exporter_manage_service | bool
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: systemd_exporter
+    state: '{{ systemd_exporter_service_state }}'
+    enabled: '{{ systemd_exporter_service_enabled }}'

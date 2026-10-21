@@ -1,15 +1,20 @@
 ---
 - name: restart pushgateway
-  systemd:
+  become: true
+  tags: pushgateway
+  when:
+  - _pushgateway_service_policy.manage | default(false) | bool
+  - (_pushgateway_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: pushgateway
     state: restarted
+- name: reload pushgateway
   become: true
   tags: pushgateway
-
-- name: reload pushgateway
-  systemd:
+  when:
+  - _pushgateway_service_policy.manage | default(false) | bool
+  - (_pushgateway_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     name: pushgateway
     state: reloaded
-  become: true
-  tags: pushgateway

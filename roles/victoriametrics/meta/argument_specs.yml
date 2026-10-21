@@ -75,3 +75,18 @@ argument_specs:
         - Controls `victoriametrics_config` for the `victoriametrics` role.
         required: false
         type: dict
+      victoriametrics_manage_service:
+        description:
+        - Controls `victoriametrics_manage_service` for the `victoriametrics` role.
+        required: false
+        type: bool
+      victoriametrics_service_enabled:
+        description:
+        - Controls `victoriametrics_service_enabled` for the `victoriametrics` role.
+        required: false
+        type: bool
+      victoriametrics_service_state:
+        description:
+        - Controls `victoriametrics_service_state` for the `victoriametrics` role.
+        required: false
+        type: str

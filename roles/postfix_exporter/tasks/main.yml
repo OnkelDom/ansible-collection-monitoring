@@ -1,4 +1,7 @@
 ---
-- name: Placeholder for postfix_exporter role implementation
-  ansible.builtin.debug:
-    msg: "The postfix_exporter role was imported without tasks yet."
+- name: Prepare facts and platform variables
+  ansible.builtin.import_tasks: preflight.yml
+  tags: always
+- name: Apply postfix_exporter configuration
+  ansible.builtin.import_tasks: configuration.yml
+  tags: postfix_exporter

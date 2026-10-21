@@ -1,48 +1,82 @@
 ---
 name: CI
-
-on:
-  pull_request:
-  push:
-    branches:
-    - main
-
+permissions:
+  contents: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   validate:
-    name: Validate Collection
-    runs-on: ubuntu-latest
-
+    name: Validate / core ${{ matrix.core }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        core:
+        - '2.20'
+        - '2.21'
+    env:
+      ANSIBLE_HOME: ${{ github.workspace }}/.ansible
+      ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        python-version: "3.12"
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: '3.12'
         cache: pip
-        cache-dependency-path: requirements-test.txt
+    - name: Install controller dependencies
+      run: 'python -m pip install -r requirements-test.txt
 
-    - name: Install Python test dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-test.txt
+        python -m pip install ''ansible-core~=${{ matrix.core }}.0''
 
-    - name: Install Ansible collection dependencies
-      run: ansible-galaxy collection install -r requirements.yml
+        ansible-galaxy collection install -r requirements.yml
 
-    - name: Check generated role scaffold
-      run: python tools/generate_role_scaffold.py --check
+        '
+    - name: Check role contracts and unit tests
+      run: 'python tools/generate_role_scaffold.py --check
 
-    - name: Run unit tests
-      run: pytest -q tests/unit
+        pytest tests/unit -q
 
-    - name: Run role syntax checks
-      run: bash tests/run_role_syntax_checks.sh
+        yamllint .
 
-    - name: Run ansible-lint
-      run: ansible-lint
+        '
+    - name: Build and install collection
+      run: 'ansible-galaxy collection build --force
+
+        python tools/check_collection_artifact.py degit-monitoring-*.tar.gz
+
+        ansible-galaxy collection install degit-monitoring-*.tar.gz --force
+
+        '
+    - name: Run collection sanity checks
+      run: bash tests/run_collection_sanity.sh degit-monitoring-*.tar.gz monitoring
+    - name: Exercise installed platform contracts without host changes
+      run: python tests/run_preflight_checks.py
+    - name: Validate neutral LPM and native PVE rules
+      run: 'python tests/install_monitoring_test_tools.py --dest "$RUNNER_TEMP/monitoring-tools"
+
+        python tests/run_lpm_checks.py --promtool "$RUNNER_TEMP/monitoring-tools/promtool" --amtool "$RUNNER_TEMP/monitoring-tools/amtool"
+
+        PROMTOOL="$RUNNER_TEMP/monitoring-tools/promtool" python tests/run_proxmox_checks.py
+
+        '
+    - name: Check syntax and Ansible lint
+      run: 'bash tests/run_role_syntax_checks.sh
+
+        ansible-lint --offline
+
+        '
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+      if: matrix.core == '2.21'
+      with:
+        name: collection
+        path: degit-monitoring-*.tar.gz
+        retention-days: 14
+'on':
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:

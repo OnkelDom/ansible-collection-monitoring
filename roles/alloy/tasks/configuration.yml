@@ -1,0 +1,15 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _alloy_service_policy:
+      manage: '{{ alloy_manage_service | bool }}'
+      state: '{{ alloy_service_state }}'
+      enabled: '{{ alloy_service_enabled | bool }}'
+- name: Validate native Proxmox receiver settings
+  ansible.builtin.import_tasks: proxmox_validate.yml
+- name: Configure the Linux Alloy agent
+  ansible.builtin.import_tasks: linux.yml
+  when: ansible_facts.os_family != 'Windows'
+- name: Configure the Windows Alloy agent
+  ansible.builtin.import_tasks: windows.yml
+  when: ansible_facts.os_family == 'Windows'

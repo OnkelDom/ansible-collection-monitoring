@@ -70,3 +70,18 @@ argument_specs:
         - Controls `snmp_exporter_limit_nofile` for the `snmp_exporter` role.
         required: false
         type: int
+      snmp_exporter_manage_service:
+        description:
+        - Controls `snmp_exporter_manage_service` for the `snmp_exporter` role.
+        required: false
+        type: bool
+      snmp_exporter_service_enabled:
+        description:
+        - Controls `snmp_exporter_service_enabled` for the `snmp_exporter` role.
+        required: false
+        type: bool
+      snmp_exporter_service_state:
+        description:
+        - Controls `snmp_exporter_service_state` for the `snmp_exporter` role.
+        required: false
+        type: str

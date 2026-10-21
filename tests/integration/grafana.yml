@@ -1,0 +1,29 @@
+---
+- name: Verify native Grafana installation on disposable Linux guests
+  hosts: monitoring_lab
+  gather_facts: true
+  become: true
+  vars:
+    grafana_security:
+      admin_user: validation
+      admin_password: '{{ lookup("ansible.builtin.env", "MONITORING_LAB_GRAFANA_PASSWORD") }}'
+    grafana_address: 127.0.0.1
+    grafana_alerting:
+      enabled: false
+    grafana_analytics:
+      reporting_enabled: false
+      check_for_updates: false
+  roles:
+  - degit.monitoring.grafana
+  post_tasks:
+  - name: Verify Grafana health
+    ansible.builtin.uri:
+      url: http://127.0.0.1:3000/api/health
+      return_content: true
+    register: health
+    until: health is succeeded
+    retries: 12
+    delay: 5
+  - name: Verify Grafana database health
+    ansible.builtin.assert:
+      that: health.json.database == 'ok'

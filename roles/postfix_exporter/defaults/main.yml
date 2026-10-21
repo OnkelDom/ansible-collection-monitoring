@@ -1,1 +1,4 @@
---- {}
+---
+postfix_exporter_manage_service: true
+postfix_exporter_service_enabled: true
+postfix_exporter_service_state: started

@@ -1,21 +1,14 @@
 ---
 proxy_env: {}
-process_exporter_binary_install_dir: "/usr/local/bin"
+process_exporter_binary_install_dir: /usr/local/bin
 process_exporter_version: 0.7.5
-process_exporter_web_listen_address: "0.0.0.0"
+process_exporter_web_listen_address: 0.0.0.0
 process_exporter_web_listen_port: 9256
-process_exporter_config_dir: '/etc/process_exporter'
-process_exporter_system_user: "{{ prometheus_user | default('process_exporter') }}"
-process_exporter_system_group: "{{ prometheus_group | default('process_exporter') }}"
-#process_exporter_log_level: warn
-#process_exporter_log_format: json
+process_exporter_config_dir: /etc/process_exporter
+process_exporter_system_user: process_exporter
+process_exporter_system_group: process_exporter
 process_exporter_create_consul_agent_service: true
-# Process names
-# "raw" section is needed to avoid attempted interpretation
-# of process-exporter Template varables (like {{.Comm}})
-process_exporter_names: |
-  {% raw %}
-    - name: "{{.Comm}}"
-      cmdline:
-        - '.+'
-  {% endraw %}
+process_exporter_names: "{% raw %}\n  - name: \"{{.Comm}}\"\n    cmdline:\n      - '.+'\n{% endraw %}\n"
+process_exporter_manage_service: true
+process_exporter_service_enabled: true
+process_exporter_service_state: started

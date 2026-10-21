@@ -25,11 +25,58 @@ argument_specs:
         - Controls `node_exporter_binary_install_dir` for the `node_exporter` role.
         required: false
         type: str
+      node_exporter_binary_path:
+        description:
+        - Controls `node_exporter_binary_path` for the `node_exporter` role.
+        required: false
+        type: str
       node_exporter_web_listen_port:
         description:
         - Controls `node_exporter_web_listen_port` for the `node_exporter` role.
         required: false
         type: int
+      node_exporter_manage_service:
+        description:
+        - Controls `node_exporter_manage_service` for the `node_exporter` role.
+        required: false
+        type: bool
+      node_exporter_service_enabled:
+        description:
+        - Controls `node_exporter_service_enabled` for the `node_exporter` role.
+        required: false
+        type: bool
+      node_exporter_service_state:
+        description:
+        - Controls `node_exporter_service_state` for the `node_exporter` role.
+        required: false
+        type: str
+      node_exporter_manage_firewall:
+        description:
+        - Controls `node_exporter_manage_firewall` for the `node_exporter` role.
+        required: false
+        type: bool
+      node_exporter_firewall_zone:
+        description:
+        - Controls `node_exporter_firewall_zone` for the `node_exporter` role.
+        required: false
+        type: str
+      node_exporter_manage_selinux:
+        description:
+        - Controls `node_exporter_manage_selinux` for the `node_exporter` role.
+        required: false
+        type: bool
+      node_exporter_firewall_ports:
+        description:
+        - Controls `node_exporter_firewall_ports` for the `node_exporter` role.
+        required: false
+        type: list
+        elements: str
+      node_exporter_selinux_ports:
+        description:
+        - Controls `node_exporter_selinux_ports` for the `node_exporter` role.
+        required: false
+        type: list
+        elements: str
       node_exporter_system_user:
         description:
         - Controls `node_exporter_system_user` for the `node_exporter` role.
@@ -112,3 +159,8 @@ argument_specs:
         - Controls `node_exporter_webconfig` for the `node_exporter` role.
         required: false
         type: list
+      node_exporter_checksum:
+        description:
+        - Controls `node_exporter_checksum` for the `node_exporter` role.
+        required: false
+        type: str

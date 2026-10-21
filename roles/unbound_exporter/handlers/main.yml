@@ -6,3 +6,6 @@
     state: restarted
   become: true
   tags: unbound_exporter
+  when:
+  - _unbound_exporter_service_policy.manage | default(false) | bool
+  - (_unbound_exporter_service_policy.state | default('stopped')) != 'stopped'

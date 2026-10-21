@@ -4,9 +4,14 @@
     name: loki
     state: restarted
   become: true
-
+  when:
+  - _loki_service_policy.manage | default(false) | bool
+  - (_loki_service_policy.state | default('stopped')) != 'stopped'
 - name: reload loki
   ansible.builtin.systemd:
     name: loki
     state: reloaded
   become: true
+  when:
+  - _loki_service_policy.manage | default(false) | bool
+  - (_loki_service_policy.state | default('stopped')) != 'stopped'

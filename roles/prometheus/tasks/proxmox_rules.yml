@@ -1,0 +1,53 @@
+---
+- name: Validate expected native PVE metric sources
+  ansible.builtin.assert:
+    that:
+    - prometheus_proxmox_expected_nodes | length > 0
+    fail_msg: Native PVE monitoring needs explicit expected nodes to detect missing senders.
+  when: prometheus_proxmox_enabled | bool
+- name: Validate complete native PVE identities
+  ansible.builtin.assert:
+    that:
+    - item.tenant | default('') | length > 0
+    - item.environment | default('') | length > 0
+    - item.site | default('') | length > 0
+    - item.cluster | default('') | length > 0
+    - item.node | default('') | length > 0
+  loop: '{{ prometheus_proxmox_expected_nodes }}'
+  when: prometheus_proxmox_enabled | bool
+- name: Validate expected guest identities
+  ansible.builtin.assert:
+    that:
+    - item.tenant | default('') | length > 0
+    - item.environment | default('') | length > 0
+    - item.site | default('') | length > 0
+    - item.cluster | default('') | length > 0
+    - item.vmid | default(0) | int >= 100
+  loop: '{{ prometheus_proxmox_expected_guests }}'
+  when: prometheus_proxmox_enabled | bool
+- name: Create dedicated native PVE rules directory
+  ansible.builtin.file:
+    path: /etc/prometheus/proxmox
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  become: true
+- name: Install native PVE rules with explicit expected nodes
+  ansible.builtin.template:
+    src: proxmox.rules.j2
+    dest: /etc/prometheus/proxmox/native.rules
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+    validate: /usr/local/bin/promtool check rules %s
+  when: prometheus_proxmox_enabled | bool
+  become: true
+  notify: reload prometheus
+- name: Remove only the disabled native PVE rules
+  ansible.builtin.file:
+    path: /etc/prometheus/proxmox/native.rules
+    state: absent
+  when: not prometheus_proxmox_enabled | bool
+  become: true
+  notify: reload prometheus

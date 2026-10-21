@@ -1,0 +1,24 @@
+---
+- name: Require Linux for scoped existing receiver adoption
+  ansible.builtin.assert:
+    that: ansible_facts.os_family != 'Windows'
+    fail_msg: Scoped adoption of an existing Proxmox receiver is supported on Linux only.
+- name: Capture the requested scoped receiver service policy
+  ansible.builtin.set_fact:
+    _alloy_service_policy:
+      manage: '{{ alloy_manage_service | bool }}'
+      state: '{{ alloy_service_state }}'
+      enabled: '{{ alloy_service_enabled | bool }}'
+- name: Validate the dedicated Proxmox receiver
+  ansible.builtin.import_tasks: proxmox_validate.yml
+- name: Reconcile the dedicated Proxmox receiver in an existing Alloy configuration
+  ansible.builtin.blockinfile:
+    path: '{{ alloy_config_file }}'
+    marker: '// {mark} ANSIBLE MANAGED PROXMOX OTLP'
+    block: '{{ lookup("ansible.builtin.template", "proxmox-otlp.alloy.j2") if alloy_proxmox_enabled else "" }}'
+    state: '{{ "present" if alloy_proxmox_enabled else "absent" }}'
+    backup: true
+    validate: '{{ alloy_binary_path ~ " validate %s" if alloy_validate_config else omit }}'
+  become: true
+  no_log: true
+  notify: Restart alloy

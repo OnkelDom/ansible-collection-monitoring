@@ -9,9 +9,10 @@ global:
 
 time_intervals:
 {{ alertmanager_time_intervals | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
-{% if alertmanager_inhibit_rules | length > 0 %}
+{% set effective_inhibits = (alertmanager_lpm_inhibit_rules | default([]) if alertmanager_lpm_enabled | default(true) else []) + alertmanager_inhibit_rules + (alertmanager_proxmox_inhibit_rules | default([]) if alertmanager_proxmox_enabled is defined and alertmanager_proxmox_enabled else []) %}
+{% if effective_inhibits | length > 0 %}
 inhibit_rules:
-{{ alertmanager_inhibit_rules | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
+{{ effective_inhibits | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
 {% endif %}
 templates:
 - '{{ alertmanager_config_dir }}/templates/*.tmpl'
@@ -19,7 +20,7 @@ templates:
 receivers:
 - name: blackhole
 {# STANDARD RECEIVERS #}
-{% set receivers = alertmanager_routes | selectattr('config','defined') %}{% for receiver in receivers %}
+{% set receivers = alertmanager_routes | degit.monitoring.monitoring_email_routes(alertmanager_lpm_enabled | default(true)) | selectattr('config','defined') %}{% for receiver in receivers %}
 - name: {{ receiver.receiver }}
 {{ receiver.config | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
 {%- endfor %}

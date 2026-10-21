@@ -1,0 +1,72 @@
+---
+- name: Install and exercise native monitoring services on disposable VMs
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    prometheus_remote_write_receiver_enabled: true
+    prometheus_config:
+      global:
+        scrape_interval: 5s
+      scrape_configs:
+      - job_name: node
+        static_configs:
+        - targets: ['127.0.0.1:9100']
+          labels:
+            platform: linux
+    alloy_pipeline_enabled: true
+    alloy_labels:
+      tenant: validation
+      environment: lab
+    alloy_prometheus_remote_write_url: http://127.0.0.1:9090/api/v1/write
+    alloy_loki_endpoint: http://127.0.0.1:3100/loki/api/v1/push
+  pre_tasks:
+  - name: Wait for cloud initialization
+    ansible.builtin.command: cloud-init status --wait
+    changed_when: false
+    failed_when: false
+  - name: Install native archive tools
+    ansible.builtin.package:
+      name: [unzip, tar]
+      state: present
+  roles:
+  - degit.monitoring.node_exporter
+  - degit.monitoring.prometheus
+  - degit.monitoring.alertmanager
+  - degit.monitoring.blackbox_exporter
+  - degit.monitoring.loki
+  - degit.monitoring.tempo
+  - degit.monitoring.alloy
+  post_tasks:
+  - name: Apply pending handlers before acceptance
+    ansible.builtin.meta: flush_handlers
+  - name: Check native HTTP endpoints
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:{{ item }}'
+      status_code: 200
+    register: endpoint
+    until: endpoint is succeeded
+    retries: 24
+    delay: 5
+    loop:
+    - '9100/metrics'
+    - '9090/-/ready'
+    - '9093/-/ready'
+    - '9115/metrics'
+    - '3100/ready'
+    - '3200/ready'
+    - '12345/-/ready'
+  - name: Verify real node metric ingestion
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:9090/api/v1/query?query=node_uname_info'
+      return_content: true
+    register: metric
+    until: metric.json.data.result | length > 0
+    retries: 20
+    delay: 5
+  - name: Exercise the local blackbox HTTP probe
+    ansible.builtin.uri:
+      url: 'http://127.0.0.1:9115/probe?module=http_2xx&target=http%3A%2F%2F127.0.0.1%3A9090%2F-%2Fready'
+      return_content: true
+    register: probe
+    failed_when: "'probe_success 1' not in probe.content"

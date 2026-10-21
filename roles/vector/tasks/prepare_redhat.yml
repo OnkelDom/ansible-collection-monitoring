@@ -1,6 +1,6 @@
 ---
 - name: Ensure necessary packages installed
-  yum:
-    name: "{{ vector_prepare_packages }}"
-    state: present
   tags: vector
+  ansible.builtin.dnf:
+    name: '{{ vector_prepare_packages }}'
+    state: present

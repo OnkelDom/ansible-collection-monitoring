@@ -1,15 +1,20 @@
 ---
 - name: reload systemd_exporter
-  systemd:
-    name: systemd_exporter
-    state: reloaded
   become: true
   tags: systemd_exporter
-
+  when:
+  - _systemd_exporter_service_policy.manage | default(false) | bool
+  - (_systemd_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
+    name: systemd_exporter
+    state: reloaded
 - name: restart systemd_exporter
-  systemd:
+  become: true
+  tags: systemd_exporter
+  when:
+  - _systemd_exporter_service_policy.manage | default(false) | bool
+  - (_systemd_exporter_service_policy.state | default('stopped')) != 'stopped'
+  ansible.builtin.systemd_service:
     daemon_reload: true
     name: systemd_exporter
     state: restarted
-  become: true
-  tags: systemd_exporter

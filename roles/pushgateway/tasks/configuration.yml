@@ -1,0 +1,119 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _pushgateway_service_policy:
+      manage: '{{ pushgateway_manage_service | bool }}'
+      state: '{{ pushgateway_service_state }}'
+      enabled: '{{ pushgateway_service_enabled | bool }}'
+- name: create system group
+  when: pushgateway_system_group != "root"
+  become: true
+  tags: pushgateway
+  ansible.builtin.group:
+    name: '{{ pushgateway_system_group }}'
+    system: true
+    state: present
+- name: create system user
+  when: pushgateway_system_user != "root"
+  become: true
+  tags: pushgateway
+  ansible.builtin.user:
+    name: '{{ pushgateway_system_user }}'
+    system: true
+    shell: /sbin/nologin
+    group: '{{ pushgateway_system_group }}'
+    createhome: false
+- name: check if pushgateway is installed
+  register: __pushgateway_is_installed
+  become: true
+  tags: pushgateway
+  ansible.builtin.stat:
+    path: '{{ pushgateway_binary_local_dir }}/pushgateway'
+- name: gather currently installed pushgateway version (if any)
+  args:
+    warn: false
+  changed_when: false
+  register: __pushgateway_current_version_output
+  when: __pushgateway_is_installed.stat.exists
+  become: true
+  tags: pushgateway
+  ansible.builtin.command: '{{ pushgateway_binary_local_dir }}/pushgateway --version'
+- name: download pushgateway binary to local folder
+  environment: '{{proxy_env}}'
+  register: _download_binary
+  until: _download_binary is succeeded
+  retries: 5
+  delay: 2
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: pushgateway
+  when: (not __pushgateway_is_installed.stat.exists) or (__pushgateway_current_version_output.stderr_lines[0].split(" ")[2] != pushgateway_version)
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/pushgateway/releases/download/v{{ pushgateway_version }}/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+    dest: /tmp/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+    mode: '0644'
+- name: unpack pushgateway binary
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: pushgateway
+  when: (not __pushgateway_is_installed.stat.exists) or (__pushgateway_current_version_output.stderr_lines[0].split(" ")[2] != pushgateway_version)
+  ansible.builtin.unarchive:
+    src: /tmp/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}.tar.gz
+    dest: /tmp
+    creates: /tmp/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}/pushgateway
+- name: propagate pushgateway binaries
+  notify: restart pushgateway
+  become: true
+  tags: pushgateway
+  when:
+  - not ansible_check_mode
+  - (not __pushgateway_is_installed.stat.exists) or (__pushgateway_current_version_output.stderr_lines[0].split(" ")[2] != pushgateway_version)
+  ansible.builtin.copy:
+    src: /tmp/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}/pushgateway
+    dest: '{{ pushgateway_binary_local_dir }}/pushgateway'
+    mode: '0755'
+    owner: '{{ pushgateway_system_user }}'
+    group: '{{ pushgateway_system_group }}'
+- name: copy the pushgateway systemd service file
+  notify: restart pushgateway
+  become: true
+  tags: pushgateway
+  ansible.builtin.template:
+    src: pushgateway.service.j2
+    dest: /etc/systemd/system/pushgateway.service
+    owner: root
+    group: root
+    mode: '0644'
+- block:
+  - name: create persistence file dir
+    become: true
+    tags: pushgateway
+    ansible.builtin.file:
+      path: '{{ pushgateway_persistence_dir }}'
+      state: directory
+      owner: '{{ pushgateway_system_user }}'
+      group: '{{ pushgateway_system_group }}'
+      mode: '0755'
+  - name: create persistence file
+    register: touch_log
+    changed_when: touch_log.diff.before.state != "file"
+    become: true
+    tags: pushgateway
+    ansible.builtin.file:
+      path: '{{ pushgateway_persistence_dir }}/persistence'
+      state: touch
+      owner: '{{ pushgateway_system_user }}'
+      group: '{{ pushgateway_system_group }}'
+      mode: '0640'
+  when: pushgateway_persistence
+- name: ensure service is started and enabled
+  become: true
+  tags: pushgateway
+  when:
+  - pushgateway_manage_service | bool
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: pushgateway
+    enabled: true

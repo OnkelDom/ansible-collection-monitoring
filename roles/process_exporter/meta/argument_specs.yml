@@ -55,3 +55,18 @@ argument_specs:
         - Controls `process_exporter_names` for the `process_exporter` role.
         required: false
         type: str
+      process_exporter_manage_service:
+        description:
+        - Controls `process_exporter_manage_service` for the `process_exporter` role.
+        required: false
+        type: bool
+      process_exporter_service_enabled:
+        description:
+        - Controls `process_exporter_service_enabled` for the `process_exporter` role.
+        required: false
+        type: bool
+      process_exporter_service_state:
+        description:
+        - Controls `process_exporter_service_state` for the `process_exporter` role.
+        required: false
+        type: str

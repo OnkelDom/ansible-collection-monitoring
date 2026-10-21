@@ -95,3 +95,18 @@ argument_specs:
         - Controls `systemd_exporter_collector_unit_blacklist` for the `systemd_exporter` role.
         required: false
         type: str
+      systemd_exporter_manage_service:
+        description:
+        - Controls `systemd_exporter_manage_service` for the `systemd_exporter` role.
+        required: false
+        type: bool
+      systemd_exporter_service_enabled:
+        description:
+        - Controls `systemd_exporter_service_enabled` for the `systemd_exporter` role.
+        required: false
+        type: bool
+      systemd_exporter_service_state:
+        description:
+        - Controls `systemd_exporter_service_state` for the `systemd_exporter` role.
+        required: false
+        type: str

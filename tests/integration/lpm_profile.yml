@@ -1,0 +1,196 @@
+---
+- name: Verify the bundled LPM profile on an isolated guest
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    prometheus_remote_write_receiver_enabled: true
+    prometheus_config:
+      global:
+        scrape_interval: 5s
+        evaluation_interval: 5s
+      rule_files:
+      - /etc/prometheus/extra/custom.rules
+      scrape_configs:
+      - job_name: standalone-node
+        static_configs:
+        - targets:
+          - 127.0.0.1:9100
+          labels:
+            monitoring_profile: lpm
+      alerting:
+        alertmanagers:
+        - static_configs:
+          - targets:
+            - 127.0.0.1:9093
+    alloy_labels:
+      tenant: validation
+      environment: lab
+    alloy_pipeline_enabled: true
+    alloy_prometheus_remote_write_url: http://127.0.0.1:9090/api/v1/write
+    alertmanager_smtp:
+      smarthost: 127.0.0.1:2525
+      from: monitoring@example.invalid
+      require_tls: false
+    alertmanager_routes:
+    - receiver: mail-validation
+      config:
+        email_configs:
+        - to: ops@example.invalid
+      routes:
+      - matchers:
+        - test_delivery="never"
+  pre_tasks:
+  - name: Wait for disposable cloud initialization
+    ansible.builtin.command: cloud-init status --wait
+    changed_when: false
+  - name: Create a separately owned rules directory
+    ansible.builtin.file:
+      path: /etc/prometheus/extra
+      state: directory
+      mode: '0755'
+  - name: Place an independently managed rule
+    ansible.builtin.copy:
+      content: 'groups: [{name: custom, rules: [{record: custom_validation, expr: "vector(1)"}]}]'
+      dest: /etc/prometheus/extra/custom.rules
+      mode: '0644'
+  roles:
+  - degit.monitoring.node_exporter
+  - degit.monitoring.prometheus
+  - degit.monitoring.alertmanager
+  - degit.monitoring.alloy
+  post_tasks:
+  - name: Apply pending service handlers
+    ansible.builtin.meta: flush_handlers
+  - name: Verify loaded rule groups
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9090/api/v1/rules
+      return_content: true
+    register: rules
+    until: rules.json is defined and rules.json.data.groups | length == (9 if prometheus_lpm_enabled else 1) and rules.json.data.groups | map(attribute='rules') | flatten | selectattr('health', 'ne', 'ok') | list | length == 0
+    retries: 24
+    delay: 5
+  - name: Assert every loaded rule is healthy
+    ansible.builtin.assert:
+      that:
+      - rules.json.data.groups | map(attribute='rules') | flatten | selectattr('health', 'ne', 'ok') | list | length == 0
+  - name: Verify direct exporter records without custom criticality labels
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9090/api/v1/query?query=lpm%3Adisk_used_percent%3Aavg15m%7Binstance%3D%22127.0.0.1%3A9100%22%2Clpm_dsk_criticality%3D%22mid%22%7D
+      return_content: true
+    register: disk
+    until: disk.json is defined and disk.json.data.result | length > 0
+    retries: 24
+    delay: 5
+    when: prometheus_lpm_enabled | bool
+  - name: Read the generated Alertmanager config
+    ansible.builtin.slurp:
+      src: /etc/alertmanager/config.yml
+    register: am_config
+  - name: Assert neutral mail defaults and inhibition are configured
+    ansible.builtin.assert:
+      that:
+      - '''monitoring.mail.html'' in (am_config.content | b64decode)'
+      - '''monitoring.mail.subject'' in (am_config.content | b64decode)'
+      - (am_config.content | b64decode | from_yaml).inhibit_rules | length > 0
+    when: alertmanager_lpm_enabled | bool
+  - name: Check native rule semantics and template rendering in the guest
+    ansible.builtin.command: /usr/local/bin/amtool check-config /etc/alertmanager/config.yml
+    changed_when: false
+  - name: Inspect the owned LPM rules file
+    ansible.builtin.stat:
+      path: /etc/prometheus/lpm/host.rules
+    register: lpm_file
+  - name: Inspect the owned standard email template
+    ansible.builtin.stat:
+      path: /etc/alertmanager/templates/monitoring-email.tmpl
+    register: mail_file
+  - name: Assert profile toggles manage only their owned files
+    ansible.builtin.assert:
+      that:
+      - lpm_file.stat.exists == (prometheus_lpm_enabled | bool)
+      - mail_file.stat.exists == (alertmanager_lpm_enabled | bool)
+      - rules.json.data.groups | selectattr('name', 'equalto', 'custom') | list | length == 1
+  - name: Inject isolated inhibition test alerts into the blackhole route
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9093/api/v2/alerts
+      method: POST
+      body_format: json
+      body:
+      - labels:
+          alertname: LPMValidation_ERROR
+          severity: ERROR
+          category: disk
+          monitoring_profile: lpm
+          instance: validation-target
+          tenant: validation
+          path: /data
+          validation_case: source
+          alert_family: LPMValidation
+        annotations:
+          summary: Isolated LPM inhibition validation
+      - labels:
+          alertname: LPMValidation_WARN
+          severity: WARN
+          category: disk
+          monitoring_profile: lpm
+          instance: validation-target
+          tenant: validation
+          path: /data
+          validation_case: suppressed
+          alert_family: LPMValidation
+        annotations:
+          summary: Isolated LPM inhibition validation
+      - labels:
+          alertname: LPMValidation_WARN
+          severity: WARN
+          category: disk
+          monitoring_profile: lpm
+          instance: validation-target
+          tenant: other
+          path: /data
+          validation_case: other-tenant
+          alert_family: LPMValidation
+        annotations:
+          summary: Isolated LPM inhibition validation
+      - labels:
+          alertname: LPMValidation_WARN
+          severity: WARN
+          category: disk
+          monitoring_profile: lpm
+          instance: validation-target
+          tenant: validation
+          path: /other
+          validation_case: other-path
+          alert_family: LPMValidation
+        annotations:
+          summary: Isolated LPM inhibition validation
+      - labels:
+          alertname: LPMOther_WARN
+          severity: WARN
+          category: disk
+          monitoring_profile: lpm
+          instance: validation-target
+          tenant: validation
+          path: /data
+          validation_case: other-family
+          alert_family: LPMOther
+        annotations:
+          summary: Separate alert family
+    when: alertmanager_lpm_enabled | bool
+  - name: Read isolated inhibition results
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9093/api/v2/alerts
+      return_content: true
+    register: inhibition
+    until: inhibition.json is defined and (inhibition.json | selectattr('labels.validation_case', 'defined') | selectattr('labels.validation_case', 'equalto', 'suppressed') | map(attribute='status.inhibitedBy') | flatten | length > 0)
+    retries: 12
+    delay: 2
+    when: alertmanager_lpm_enabled | bool
+  - name: Assert inhibition respects both tenant and resource boundaries
+    ansible.builtin.assert:
+      that:
+      - inhibition.json | selectattr('labels.validation_case', 'defined') | selectattr('labels.validation_case', 'equalto', 'other-tenant') | map(attribute='status.inhibitedBy') | flatten | length == 0
+      - inhibition.json | selectattr('labels.validation_case', 'defined') | selectattr('labels.validation_case', 'equalto', 'other-path') | map(attribute='status.inhibitedBy') | flatten | length == 0
+      - inhibition.json | selectattr('labels.validation_case', 'defined') | selectattr('labels.validation_case', 'equalto', 'other-family') | map(attribute='status.inhibitedBy') | flatten | length == 0
+    when: alertmanager_lpm_enabled | bool

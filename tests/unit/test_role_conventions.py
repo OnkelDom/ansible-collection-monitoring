@@ -12,6 +12,8 @@ REQUIRED_FILES = (
     Path("README.md"),
     Path("defaults/main.yml"),
     Path("tasks/main.yml"),
+    Path("tasks/preflight.yml"),
+    Path("tasks/configuration.yml"),
     Path("meta/main.yml"),
     Path("meta/argument_specs.yml"),
     Path("tests/test.yml"),
@@ -85,8 +87,8 @@ def test_role_readmes_include_core_sections_and_examples() -> None:
         if "```yaml" not in text:
             invalid.append(f"{role_dir.name}: README.md must contain at least one YAML example block")
 
-        if f"lenmail.monitoring.{role_dir.name}" not in text:
-            invalid.append(f"{role_dir.name}: README.md example playbook must reference lenmail.monitoring.{role_dir.name}")
+        if f"degit.monitoring.{role_dir.name}" not in text:
+            invalid.append(f"{role_dir.name}: README.md example playbook must reference degit.monitoring.{role_dir.name}")
 
     assert not invalid, "\n".join(invalid)
 

@@ -45,3 +45,8 @@ argument_specs:
         - Controls `tempo_config` for the `tempo` role.
         required: false
         type: dict
+      tempo_manage_service:
+        description:
+        - Controls `tempo_manage_service` for the `tempo` role.
+        required: false
+        type: bool

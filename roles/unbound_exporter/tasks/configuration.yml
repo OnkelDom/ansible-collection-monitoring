@@ -1,0 +1,59 @@
+---
+- name: Capture the requested service policy for deferred handlers
+  ansible.builtin.set_fact:
+    _unbound_exporter_service_policy:
+      manage: '{{ unbound_exporter_manage_service | bool }}'
+      state: '{{ unbound_exporter_service_state }}'
+      enabled: '{{ unbound_exporter_service_enabled | bool }}'
+- name: create system group
+  ansible.builtin.group:
+    name: prometheus
+    system: true
+    state: present
+  become: true
+  tags: unbound_exporter
+- name: create system user
+  ansible.builtin.user:
+    name: prometheus
+    system: true
+    shell: /sbin/nologin
+    group: prometheus
+    createhome: false
+  become: true
+  tags: unbound_exporter
+- name: check if is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/unbound_exporter
+  register: __unbound_exporter_is_installed
+  become: true
+  tags: unbound_exporter
+- name: propagate binaries
+  ansible.builtin.copy:
+    src: files/unbound-exporter
+    dest: /usr/local/bin/unbound_exporter
+    mode: '0755'
+    owner: root
+    group: root
+  notify: restart unbound_exporter
+  become: true
+  tags: unbound_exporter
+- name: create systemd service unit
+  ansible.builtin.template:
+    src: unbound_exporter.service.j2
+    dest: /etc/systemd/system/unbound_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart unbound_exporter
+  become: true
+  tags: unbound_exporter
+- name: ensure service is started and enabled
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: unbound_exporter
+    enabled: '{{ unbound_exporter_service_enabled }}'
+    state: '{{ unbound_exporter_service_state }}'
+  become: true
+  tags: unbound_exporter
+  when:
+  - unbound_exporter_manage_service | bool

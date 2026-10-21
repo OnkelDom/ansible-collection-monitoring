@@ -1,17 +1,22 @@
 ---
-- name: restart node_exporter
-  systemd:
+- name: Restart node_exporter
+  ansible.builtin.systemd:
     daemon_reload: true
     name: node_exporter
     state: restarted
   become: true
   tags: node_exporter
-
-- name: reload cron
-  systemd:
+  when:
+  - _node_exporter_service_policy.manage | default(false) | bool
+  - (_node_exporter_service_policy.state | default('stopped')) != 'stopped'
+- name: Reload cron
+  ansible.builtin.systemd:
     daemon_reload: true
-    name: "textfile-collector-{{ item.src | basename }}.timer"
+    name: textfile-collector-{{ item.src | basename }}.timer
     state: restarted
-  with_items: "{{ node_exporter_textfile_collectors }}"
+  with_items: '{{ node_exporter_textfile_collectors }}'
   become: true
   tags: node_exporter
+  when:
+  - _node_exporter_service_policy.manage | default(false) | bool
+  - (_node_exporter_service_policy.state | default('stopped')) != 'stopped'

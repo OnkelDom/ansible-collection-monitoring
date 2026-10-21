@@ -1,4 +1,7 @@
 ---
-- name: Placeholder for dovecot_exporter role implementation
-  ansible.builtin.debug:
-    msg: "The dovecot_exporter role was imported without tasks yet."
+- name: Prepare facts and platform variables
+  ansible.builtin.import_tasks: preflight.yml
+  tags: always
+- name: Apply dovecot_exporter configuration
+  ansible.builtin.import_tasks: configuration.yml
+  tags: dovecot_exporter

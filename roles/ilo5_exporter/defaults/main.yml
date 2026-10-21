@@ -1,5 +1,8 @@
 ---
 proxy_env: {}
 ilo5_exporter_config_flags_extra:
-  api.username: "{{ ilo5_user }}"
-  api.password: "{{ ilo5_pass }}"
+  api.username: '{{ ilo5_user }}'
+  api.password: '{{ ilo5_pass }}'
+ilo5_exporter_manage_service: true
+ilo5_exporter_service_enabled: true
+ilo5_exporter_service_state: started

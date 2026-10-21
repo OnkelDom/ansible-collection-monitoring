@@ -15,3 +15,18 @@ argument_specs:
         - Controls `ilo5_exporter_config_flags_extra` for the `ilo5_exporter` role.
         required: false
         type: dict
+      ilo5_exporter_manage_service:
+        description:
+        - Controls `ilo5_exporter_manage_service` for the `ilo5_exporter` role.
+        required: false
+        type: bool
+      ilo5_exporter_service_enabled:
+        description:
+        - Controls `ilo5_exporter_service_enabled` for the `ilo5_exporter` role.
+        required: false
+        type: bool
+      ilo5_exporter_service_state:
+        description:
+        - Controls `ilo5_exporter_service_state` for the `ilo5_exporter` role.
+        required: false
+        type: str

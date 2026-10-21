@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-19",
+  "collection": "degit.monitoring",
+  "version": "2.0.0",
+  "role_count": 25,
+  "command": "bash tests/run_checks.sh",
+  "controller": {
+    "python": "3.12",
+    "ansible_core": "2.21.5",
+    "ansible_lint": "26.10.1"
+  },
+  "unit_tests_passed": 30,
+  "checks_passed": [
+    "scaffold --check",
+    "pytest tests/unit",
+    "yamllint",
+    "role syntax with play facts",
+    "ansible-lint production offline",
+    "collection build, identity/content check and installation",
+    "ansible-test sanity compile/import"
+  ],
+  "artifact_sha256": "1022af9b2739f259241c6e399e749ba2c5901673b4bbfa3e11d7273cdf98c949",
+  "scope": "Local shared tooling and static contract; no new blanket runtime acceptance of all roles.",
+  "github_ci_executed": false,
+  "published": false
+}
