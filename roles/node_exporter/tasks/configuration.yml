@@ -236,7 +236,7 @@
   tags: node_exporter
 - name: Manage node_exporter ports through the firewall role
   ansible.builtin.include_role:
-    name: degit.infrastructure.firewall
+    name: degitag.infrastructure.firewall
     apply:
       tags: node_exporter
   vars:

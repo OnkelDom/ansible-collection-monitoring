@@ -8,7 +8,7 @@ StartLimitInterval=0
 Type=simple
 User={{ squid_exporter_system_user }}
 Group={{ squid_exporter_system_group }}
-ExecStart=/usr/local/bin/squid_exporter \
+ExecStart={{ squid_exporter_binary_local_dir }}/squid_exporter \
   -listen={{ squid_exporter_web_listen_address }}:{{ squid_exporter_web_listen_port }}
 
 SyslogIdentifier=squid_exporter

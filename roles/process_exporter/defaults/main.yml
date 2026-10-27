@@ -7,7 +7,7 @@ process_exporter_web_listen_port: 9256
 process_exporter_config_dir: /etc/process_exporter
 process_exporter_system_user: process_exporter
 process_exporter_system_group: process_exporter
-process_exporter_create_consul_agent_service: true
+process_exporter_create_consul_agent_service: false
 process_exporter_names: "{% raw %}\n  - name: \"{{.Comm}}\"\n    cmdline:\n      - '.+'\n{% endraw %}\n"
 process_exporter_manage_service: true
 process_exporter_service_enabled: true

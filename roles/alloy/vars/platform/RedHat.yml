@@ -7,5 +7,6 @@ _alloy_platform_log_dir: /var/log/alloy
 _alloy_platform_selinux_packages:
 - policycoreutils-python-utils
 _alloy_platform_selinux_port_type: http_port_t
-
 _alloy_platform_binary_path: /usr/bin/alloy
+_alloy_platform_package_version_separator: '-'
+_alloy_platform_package_release: '-1'

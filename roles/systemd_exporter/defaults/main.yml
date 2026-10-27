@@ -4,12 +4,12 @@ systemd_exporter_version: 0.4.0
 systemd_exporter_web_listen_address: 0.0.0.0
 systemd_exporter_web_listen_port: 9558
 systemd_exporter_log_level: warn
-systemd_exporter_log_format: logger:stdout?json=true
+systemd_exporter_log_format: "{{ 'json' if systemd_exporter_version is version('0.5.0', '>=') else 'logger:stdout?json=true' }}"
 systemd_exporter_binary_install_dir: /usr/local/bin
 systemd_exporter_create_consul_agent_service: false
-systemd_exporter_system_user: prometheus
-systemd_exporter_system_group: prometheus
-systemd_exporter_user_additional_groups: adm
+systemd_exporter_system_user: systemd_exporter
+systemd_exporter_system_group: systemd_exporter
+systemd_exporter_user_additional_groups: []
 systemd_exporter_collector_private: false
 systemd_exporter_ccollector_user: false
 systemd_exporter_ccollector_enable_restart_count: false

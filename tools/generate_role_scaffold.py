@@ -160,7 +160,7 @@ def build_meta_main(config: dict[str, Any], role_name: str, description: str) ->
         "galaxy_info": {
             "author": "Dominik Lenhardt",
             "description": description,
-            "license": "MIT",
+            "license": config.get("role_licenses", {}).get(role_name, "MIT"),
             "min_ansible_version": config["min_ansible_version"],
             "platforms": [
                 {

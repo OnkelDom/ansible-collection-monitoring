@@ -13,7 +13,7 @@
     alloy_prometheus_remote_write_url: 'http://{{ monitoring_lab_sink }}:9090/api/v1/write'
     alloy_loki_endpoint: 'http://{{ monitoring_lab_sink }}:3100/loki/api/v1/push'
   roles:
-  - degit.monitoring.alloy
+  - degitag.monitoring.alloy
   post_tasks:
   - name: Apply pending Windows service handler
     ansible.builtin.meta: flush_handlers

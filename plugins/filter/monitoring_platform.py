@@ -2,6 +2,8 @@
 from copy import deepcopy
 import re
 
+import yaml
+
 
 def monitoring_platform_text(variants, platform=""):
     """Select a known platform, or defer selection to Prometheus alert labels."""
@@ -25,6 +27,11 @@ def monitoring_platform_annotations(document, overrides):
     A platform hint refers to the monitored workload, never to the Prometheus
     server's Ansible facts. Expressions, labels and timing remain untouched.
     """
+    raw_yaml = isinstance(document, str)
+    if raw_yaml:
+        document = yaml.safe_load(document)
+    if isinstance(overrides, str):
+        overrides = yaml.safe_load(overrides)
     result = deepcopy(document)
     for group in result.get("groups", []):
         for rule in group.get("rules", []):
@@ -37,6 +44,8 @@ def monitoring_platform_annotations(document, overrides):
                         raise ValueError("Platform must be linux, windows or empty")
                     for key, value in override["annotations"].items():
                         rule.setdefault("annotations", {})[key] = monitoring_platform_text(value, platform)
+    if raw_yaml:
+        return yaml.safe_dump(result, sort_keys=False, allow_unicode=True, indent=2)
     return result
 
 

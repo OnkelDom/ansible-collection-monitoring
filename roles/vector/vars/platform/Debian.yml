@@ -1,1 +1,2 @@
---- {}
+---
+_vector_platform_package: 'vector_{{ vector_version }}-1_{{ {"x86_64": "amd64", "aarch64": "arm64"}[ansible_facts.architecture] }}.deb'

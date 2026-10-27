@@ -31,7 +31,7 @@ snmp_exporter_log_level: warn
 snmp_exporter_log_format: json
 snmp_exporter_binary_local_dir: /usr/local/bin
 snmp_exporter_config_dir: /etc/snmp_exporter
-snmp_exporter_create_consul_agent_service: true
+snmp_exporter_create_consul_agent_service: false
 snmp_exporter_config_file: ''
 snmp_exporter_system_user: snmp_exporter
 snmp_exporter_system_group: snmp_exporter
@@ -49,7 +49,7 @@ snmp_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.snmp_exporter
+    - role: degitag.monitoring.snmp_exporter
 ```
 
 ## Testing

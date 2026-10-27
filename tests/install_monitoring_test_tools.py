@@ -29,10 +29,11 @@ def main():
         if hashlib.sha256(archive.read_bytes()).hexdigest() != digest:
             raise ValueError('Upstream checksum mismatch: ' + name)
         with tarfile.open(archive) as handle:
-            member = handle.getmember(name.removesuffix('.tar.gz') + '/' + binary)
-            with handle.extractfile(member) as source, (root / binary).open('wb') as target:
-                shutil.copyfileobj(source, target)
-        (root / binary).chmod(0o755)
+            for executable in ([binary, 'alertmanager'] if project == 'alertmanager' else [binary]):
+                member = handle.getmember(name.removesuffix('.tar.gz') + '/' + executable)
+                with handle.extractfile(member) as source, (root / executable).open('wb') as target:
+                    shutil.copyfileobj(source, target)
+                (root / executable).chmod(0o755)
         print(binary + ' ' + version + ': upstream SHA256 verified')
 
 

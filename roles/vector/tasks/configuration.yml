@@ -5,24 +5,40 @@
       manage: '{{ vector_manage_service | bool }}'
       state: '{{ vector_service_state }}'
       enabled: '{{ vector_service_enabled | bool }}'
-- name: Include vars with any tags
-  block:
-  - name: Include os-specific variables
-    ansible.builtin.include_vars: '{{ ansible_facts.distribution | lower }}.yml'
-  tags:
-  - always
-- name: Install Vector using the official setup script
-  ansible.builtin.shell: set -o pipefail && curl -L https://setup.vector.dev | bash
-  args:
-    executable: /bin/bash
-  tags: vector
-  changed_when: '''already installed'' not in (vector_install_script.stdout | default(''''))'
-  register: vector_install_script
-- name: Install vector
-  ansible.builtin.package:
-    name: vector
-    state: latest
-  tags: vector
+- name: Create Vector package cache
+  ansible.builtin.file:
+    path: /var/cache/degitag/vector
+    state: directory
+    mode: '0755'
+  when: vector_install | bool
+- name: Download the pinned and checksum-verified Vector package
+  ansible.builtin.get_url:
+    url: https://github.com/vectordotdev/vector/releases/download/v{{ vector_version }}/{{ _vector_platform_package }}
+    dest: /var/cache/degitag/vector/{{ _vector_platform_package }}
+    checksum: sha256:https://github.com/vectordotdev/vector/releases/download/v{{ vector_version }}/vector-{{ vector_version }}-SHA256SUMS
+    mode: '0644'
+  when: vector_install | bool
+- name: Install the verified Debian package without an automatic service start
+  ansible.builtin.apt:
+    deb: /var/cache/degitag/vector/{{ _vector_platform_package }}
+    policy_rc_d: 101
+  when:
+  - vector_install | bool
+  - ansible_facts.os_family == 'Debian'
+- name: Install the verified RPM package
+  ansible.builtin.dnf:
+    name: /var/cache/degitag/vector/{{ _vector_platform_package }}
+    disable_gpg_check: true
+  when:
+  - vector_install | bool
+  - ansible_facts.os_family == 'RedHat'
+- name: Create the Vector data directory
+  ansible.builtin.file:
+    path: '{{ vector_configure_data_dir }}'
+    state: directory
+    owner: vector
+    group: vector
+    mode: '0750'
 - name: Remove default vector config
   when: vector_configure_rm_default | bool
   tags: vector
@@ -45,6 +61,7 @@
     src: vector.yaml.j2
     dest: '{{ vector_configure_config_path }}'
     mode: '0644'
+    validate: vector validate --no-environment --skip-healthchecks %s
 - name: Start and enable service
   tags: vector
   when:

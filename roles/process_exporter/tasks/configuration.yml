@@ -1,4 +1,8 @@
 ---
+- name: Reject the upstream release with a broken listener
+  ansible.builtin.assert:
+    that: process_exporter_version != '0.8.0'
+    fail_msg: Process Exporter 0.8.0 cannot start its HTTP listener; use 0.7.5 or 0.8.1 and qualify the selected version.
 - name: Capture the requested service policy for deferred handlers
   ansible.builtin.set_fact:
     _process_exporter_service_policy:
@@ -32,98 +36,39 @@
     owner: '{{ process_exporter_system_user }}'
     group: '{{ process_exporter_system_group }}'
     mode: '0755'
-- name: check if process_exporter is installed
-  register: __process_exporter_is_installed
-  become: true
-  tags: process_exporter
-  ansible.builtin.stat:
-    path: '{{ process_exporter_binary_install_dir }}/process_exporter'
-- name: gather currently installed process_exporter version (if any)
-  args:
-    warn: false
-  changed_when: false
-  register: __process_exporter_current_version_output
-  when: __process_exporter_is_installed.stat.exists
-  become: true
-  tags: process_exporter
-  ansible.builtin.command: '{{ process_exporter_binary_install_dir }}/process_exporter -version'
-- block:
-  - name: get latest release
-    environment: '{{ proxy_env }}'
-    no_log: true
-    register: _latest_release
-    until: _latest_release.status == 200
-    retries: 5
-    become: true
-    tags: process_exporter
-    ansible.builtin.uri:
-      url: https://api.github.com/repos/ncabatoff/process-exporter/releases/latest
-      method: GET
-      return_content: true
-      status_code: 200
-      body_format: json
-      validate_certs: true
-      user: '{{ lookup(''env'', ''GH_USER'') | default(omit) }}'
-      password: '{{ lookup(''env'', ''GH_TOKEN'') | default(omit) }}'
-  - name: set version to {{ _latest_release.json.tag_name[1:] }}
-    become: true
-    tags: process_exporter
-    ansible.builtin.set_fact:
-      process_exporter_version: '{{ _latest_release.json.tag_name[1:] }}'
-  when: process_exporter_version == "latest"
-  delegate_to: localhost
-  run_once: true
-- block:
-  - name: get checksum list from github
-    environment: '{{ proxy_env }}'
-    run_once: true
-    become: true
-    tags: process_exporter
-    ansible.builtin.set_fact:
-      _checksums: '{{ lookup(''url'', ''https://github.com/ncabatoff/process-exporter/releases/download/v'' + process_exporter_version + ''/'' + ''process-exporter_'' + process_exporter_version + ''_checksums.txt'', wantlist=True) | list }}'
-  - name: get checksum for {{ go_arch }} architecture
-    with_items: '{{ _checksums }}'
-    when: ('linux-' + go_arch + '.tar.gz') in item
-    become: true
-    tags: process_exporter
-    ansible.builtin.set_fact:
-      process_exporter_checksum: '{{ item.split('' '')[0] }}'
-  - name: download binary to local folder
-    environment: '{{ proxy_env }}'
-    register: _download_binary
-    until: _download_binary is succeeded
-    retries: 5
-    delay: 2
-    delegate_to: localhost
-    check_mode: false
-    become: true
-    tags: process_exporter
-    ansible.builtin.get_url:
-      url: https://github.com/ncabatoff/process-exporter/releases/download/v{{ process_exporter_version }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
-      dest: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
-      checksum: sha256:{{ process_exporter_checksum }}
-      mode: '0644'
-  - name: unpack binary
-    delegate_to: localhost
-    check_mode: false
-    become: true
-    tags: process_exporter
-    ansible.builtin.unarchive:
-      src: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
-      dest: /tmp
-      creates: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter
-  - name: propagate binaries
-    notify: restart process_exporter
-    when: not ansible_check_mode
-    become: true
-    tags: process_exporter
-    ansible.builtin.copy:
-      src: /tmp/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter
-      dest: '{{ process_exporter_binary_install_dir }}/process_exporter'
-      mode: '0755'
-      owner: root
-      group: root
-  when: (not __process_exporter_is_installed.stat.exists) or (__process_exporter_current_version_output.stderr_lines[0].split(" ")[2] != process_exporter_version)
+- name: Create versioned release cache
+  ansible.builtin.file:
+    path: '{{ _process_exporter_download_dir }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Download checksum-verified release on the target
+  ansible.builtin.get_url:
+    url: https://github.com/ncabatoff/process-exporter/releases/download/v{{ process_exporter_version }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    dest: '{{ _process_exporter_download_dir }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz'
+    checksum: sha256:https://github.com/ncabatoff/process-exporter/releases/download/v{{ process_exporter_version }}/checksums.txt
+    mode: '0644'
+  environment: '{{ proxy_env }}'
+  register: _release_download
+  until: _release_download is succeeded
+  retries: 3
+  delay: 2
+- name: Extract the selected release
+  ansible.builtin.unarchive:
+    src: '{{ _process_exporter_download_dir }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}.tar.gz'
+    dest: '{{ _process_exporter_download_dir }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}'
+    remote_src: true
+    creates: '{{ _process_exporter_download_dir }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter'
+- name: Install the selected release binary
+  ansible.builtin.copy:
+    src: '{{ _process_exporter_download_dir }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter-{{ process_exporter_version }}.linux-{{ go_arch }}/process-exporter'
+    dest: '{{ process_exporter_binary_install_dir }}/process_exporter'
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  notify: restart process_exporter
 - name: create/update configuration file
   when: process_exporter_names != []
   notify: reload process_exporter
@@ -169,4 +114,5 @@
   ansible.builtin.systemd_service:
     daemon_reload: true
     name: process_exporter
-    enabled: true
+    enabled: '{{ process_exporter_service_enabled }}'
+    state: '{{ process_exporter_service_state }}'

@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/ar51an/unbound-exporter",
+  "revision": "25f963c2bf23de4fcd7910040807888b78ed3859",
+  "source_url": "https://codeload.github.com/ar51an/unbound-exporter/tar.gz/25f963c2bf23de4fcd7910040807888b78ed3859",
+  "source_sha256": "facd3a44f574b89142b8b1182657e7fc144a1955ecd3abaff7d7e5c73ae3e9da",
+  "go.mod_sha256": "9fe6bfb7696b2d032f65b3bea8b921c6dcb9d4d5154f10b8b9c2a5076156146e",
+  "go.sum_sha256": "1ee8edfb6846dfae118ef3c342610cd3b0ea74df36b09750d9147d6d29e046c8",
+  "go_version": "go1.27.3",
+  "build_flags": [
+    "-mod=readonly",
+    "-trimpath",
+    "-buildvcs=false",
+    "-ldflags=-s -w -buildid="
+  ],
+  "cgo_enabled": "0",
+  "binaries": {
+    "amd64": "bb90abe2ff0ada586636cbafab7673fbbdb3afb7130776af61bd2e09c63af425",
+    "arm64": "b08caf7fef4c265dba176ea9fa04cb25eef6659f9b322efc6db3fd6dddc0285c"
+  },
+  "patch_sha256": "d2bae753dfd9e157aaa8d0e7c42c6f45092a3fa7a7564de4cd8e50f1a4a4bf3a",
+  "test_pattern": "^TestBlocklistDomainCount$",
+  "patch_reason": "Count unique configured domains without negative values, support headerless files and make blocklist collection optional."
+}

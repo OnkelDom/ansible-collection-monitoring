@@ -15,25 +15,25 @@ ExecStart={{ systemd_exporter_binary_install_dir }}/systemd_exporter \
   --log.level '{{ systemd_exporter_log_level }}' \
   --log.format '{{ systemd_exporter_log_format }}' \
 {% if systemd_exporter_collector_unit_whitelist|length > 0 %}
-  --collector.unit-whitelist "{{ systemd_exporter_collector_unit_whitelist }}" \
+  --{{ 'systemd.collector.unit-include' if systemd_exporter_version is version('0.5.0', '>=') else 'collector.unit-whitelist' }} "{{ systemd_exporter_collector_unit_whitelist }}" \
 {% endif %}
 {% if systemd_exporter_collector_unit_blacklist|length > 0 %}
-  --collector.unit-blacklist "{{ systemd_exporter_collector_unit_blacklist }}" \
+  --{{ 'systemd.collector.unit-exclude' if systemd_exporter_version is version('0.5.0', '>=') else 'collector.unit-blacklist' }} "{{ systemd_exporter_collector_unit_blacklist }}" \
   {% endif %}
 {% if systemd_exporter_collector_private|default('',false) is sameas true %}
-  --collector.private \
+  --{{ 'systemd.collector' if systemd_exporter_version is version('0.5.0', '>=') else 'collector' }}.private \
 {% endif %}
 {% if systemd_exporter_ccollector_user|default('',false) is sameas true %}
-  --collector.user \
+  --{{ 'systemd.collector' if systemd_exporter_version is version('0.5.0', '>=') else 'collector' }}.user \
 {% endif %}
 {% if systemd_exporter_ccollector_enable_restart_count|default('',false) is sameas true %}
-  --collector.enable-restart-count \
+  --{{ 'systemd.collector' if systemd_exporter_version is version('0.5.0', '>=') else 'collector' }}.enable-restart-count \
 {% endif %}
 {% if systemd_exporter_ccollector_enable_file_descriptor_size|default('',false) is sameas true %}
-  --collector.enable-file-descriptor-size \
+  --{{ 'systemd.collector' if systemd_exporter_version is version('0.5.0', '>=') else 'collector' }}.enable-file-descriptor-size \
 {% endif %}
 {% if systemd_exporter_ccollector_enable_ip_accounting|default('',false) is sameas true %}
-  --collector.enable-ip-accounting \
+  --{{ 'systemd.collector' if systemd_exporter_version is version('0.5.0', '>=') else 'collector' }}.enable-ip-accounting \
 {% endif %}
   --web.disable-exporter-metrics
 KillMode=process

@@ -1,4 +1,0 @@
----
-dovecot_exporter_manage_service: true
-dovecot_exporter_service_enabled: true
-dovecot_exporter_service_state: started

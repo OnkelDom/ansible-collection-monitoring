@@ -28,12 +28,12 @@ systemd_exporter_version: 0.4.0
 systemd_exporter_web_listen_address: 0.0.0.0
 systemd_exporter_web_listen_port: 9558
 systemd_exporter_log_level: warn
-systemd_exporter_log_format: logger:stdout?json=true
+systemd_exporter_log_format: "{{ 'json' if systemd_exporter_version is version('0.5.0', '>=') else 'logger:stdout?json=true' }}"
 systemd_exporter_binary_install_dir: /usr/local/bin
 systemd_exporter_create_consul_agent_service: false
-systemd_exporter_system_user: prometheus
-systemd_exporter_system_group: prometheus
-systemd_exporter_user_additional_groups: adm
+systemd_exporter_system_user: systemd_exporter
+systemd_exporter_system_group: systemd_exporter
+systemd_exporter_user_additional_groups: []
 systemd_exporter_collector_private: false
 systemd_exporter_ccollector_user: false
 systemd_exporter_ccollector_enable_restart_count: false
@@ -54,7 +54,7 @@ systemd_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.systemd_exporter
+    - role: degitag.monitoring.systemd_exporter
 ```
 
 ## Testing
@@ -78,3 +78,11 @@ Install the collection dependencies from `requirements.yml`. Role dependencies:
 Use check mode where the underlying modules support it. Review the diff before applying
 changes. Network, firewall, identity and storage changes need an out-of-band recovery
 path. Secrets belong in Ansible Vault or the operator secret store, never in defaults.
+
+## Versionsvertrag
+
+Der native Versionswechsel 0.4.0 → 0.5.0 → 0.4.0 prüft die Umbenennung der
+Collector-Flags und das geänderte Logformat. Die öffentlichen bisherigen
+Variablennamen bleiben nutzbar; die Rolle rendert die zum gewählten Release
+passenden CLI-Flags. Der Standard des Logformats hängt deshalb von der Version ab.
+Explizite Betreiberwerte müssen zur gewählten Version passen.

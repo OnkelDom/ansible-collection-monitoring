@@ -51,7 +51,7 @@ victoriametrics_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.victoriametrics
+    - role: degitag.monitoring.victoriametrics
 ```
 
 ## Testing

@@ -1,0 +1,20 @@
+{
+  "repository": "https://github.com/MauveSoftware/ilo5_exporter",
+  "revision": "bbe6159e2bf849d1e5f3fb70372f054243359a4e",
+  "source_url": "https://codeload.github.com/MauveSoftware/ilo5_exporter/tar.gz/bbe6159e2bf849d1e5f3fb70372f054243359a4e",
+  "source_sha256": "7ee6d2b578a81c16a554b078282cb76495079aac6051cca6c8b0166c20b16497",
+  "go.mod_sha256": "1fa4592a5873f1c2ba664bebdb7cb483b0db10343bd47a8d6b9d14af15041eaf",
+  "go.sum_sha256": "da43a032129d8b0b84e278aa43adba3c791cfa3eea892e5e3387464abac4dfa6",
+  "go_version": "go1.27.3",
+  "build_flags": [
+    "-mod=readonly",
+    "-trimpath",
+    "-buildvcs=false",
+    "-ldflags=-s -w -buildid="
+  ],
+  "cgo_enabled": "0",
+  "binaries": {
+    "amd64": "c74f18c80ba2857fcc4f79767a3d28ed32e1e2ffc2beb74e0c1d19800a9ce3bf",
+    "arm64": "525caec5e9b3bf2140a6ac3fc27b203121381c85bf51ec56f4073a8ef2149abe"
+  }
+}

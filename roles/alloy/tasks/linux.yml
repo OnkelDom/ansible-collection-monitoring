@@ -1,4 +1,9 @@
 ---
+- name: Validate the Linux package version selector
+  ansible.builtin.assert:
+    that:
+    - alloy_version | length == 0 or alloy_version is match('^[0-9]+[.][0-9]+[.][0-9]+$')
+    fail_msg: Set a concrete Alloy version, or use an empty string to keep package version selection outside this role.
 - name: Validate supported platform
   ansible.builtin.assert:
     that:
@@ -101,7 +106,7 @@
   - alloy-firewall
 - name: Install Grafana Alloy package
   ansible.builtin.package:
-    name: '{{ alloy_package_name }}'
+    name: '{{ alloy_package_name ~ _alloy_platform_package_version_separator ~ alloy_version ~ _alloy_platform_package_release if alloy_version | length > 0 else alloy_package_name }}'
     state: present
     policy_rc_d: '{{ 101 if ansible_facts.os_family == ''Debian'' and not (alloy_manage_service | bool and alloy_service_state == ''started'') else omit }}'
   become: true
@@ -170,7 +175,7 @@
   - alloy-service
 - name: Manage alloy ports through the firewall role
   ansible.builtin.include_role:
-    name: degit.infrastructure.firewall
+    name: degitag.infrastructure.firewall
     apply:
       tags: &id001
       - alloy

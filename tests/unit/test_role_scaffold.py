@@ -46,7 +46,7 @@ def test_tests_reference_installed_collection():
     for role in iter_role_dirs():
         files = build_role_files(config, role)
         play = yaml.safe_load(files[role / 'tests/test.yml'])[0]
-        assert play['roles'][0]['role'] == 'degit.monitoring.' + role.name
+        assert play['roles'][0]['role'] == 'degitag.monitoring.' + role.name
 
 
 def test_retired_agents_are_not_shipped():

@@ -31,7 +31,7 @@ process_exporter_web_listen_port: 9256
 process_exporter_config_dir: /etc/process_exporter
 process_exporter_system_user: process_exporter
 process_exporter_system_group: process_exporter
-process_exporter_create_consul_agent_service: true
+process_exporter_create_consul_agent_service: false
 process_exporter_names: "{% raw %}\n  - name: \"{{.Comm}}\"\n    cmdline:\n      - '.+'\n{% endraw %}\n"
 process_exporter_manage_service: true
 process_exporter_service_enabled: true
@@ -46,7 +46,7 @@ process_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.process_exporter
+    - role: degitag.monitoring.process_exporter
 ```
 
 ## Testing
@@ -70,3 +70,12 @@ Install the collection dependencies from `requirements.yml`. Role dependencies:
 Use check mode where the underlying modules support it. Review the diff before applying
 changes. Network, firewall, identity and storage changes need an out-of-band recovery
 path. Secrets belong in Ansible Vault or the operator secret store, never in defaults.
+
+## Versionsvertrag
+
+Archive werden auf dem Ziel gegen die veröffentlichte Prüfsumme geprüft. Die native
+Release-Abnahme umfasst den Wechsel 0.7.5 → 0.8.1 → 0.7.5. Version 0.8.0 wird vor
+Änderungen abgewiesen: deren Upstream-Implementierung übergibt keine Listen-Adresse
+an das Exporter-Toolkit und startet deshalb keinen HTTP-Listener. Die Korrektur
+steht in [Upstream 0.8.1](https://github.com/ncabatoff/process-exporter/blob/v0.8.1/cmd/process-exporter/main.go).
+Andere Versionen benötigen eine eigene Laufzeitprüfung.

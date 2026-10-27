@@ -27,7 +27,7 @@ proxy_env: {}
 pushgateway_version: 1.4.3
 pushgateway_web_listen_address: 0.0.0.0
 pushgateway_web_listen_port: 9091
-pushgateway_web_external_url: http://{{ ansible_facts.domain }}.{{ ansible_facts.hostname }}:{{ pushgateway_web_listen_port }}
+pushgateway_web_external_url: ''
 pushgateway_system_user: pushgateway
 pushgateway_system_group: pushgateway
 pushgateway_log_level: warn
@@ -51,7 +51,7 @@ pushgateway_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.pushgateway
+    - role: degitag.monitoring.pushgateway
 ```
 
 ## Testing

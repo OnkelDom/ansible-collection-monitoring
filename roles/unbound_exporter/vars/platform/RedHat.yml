@@ -1,1 +1,2 @@
---- {}
+---
+_unbound_exporter_platform_control_uri: unix:///run/unbound/control

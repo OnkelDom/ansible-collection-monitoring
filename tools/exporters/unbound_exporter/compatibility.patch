@@ -1,0 +1,101 @@
+--- unbound-exporter.go
++++ unbound-exporter.go
+@@ -42,7 +42,7 @@
+ 
+ const NAMESPACE = `unbound`
+ 
+-var blockFilename = `/opt/unbound/blocklists/unbound.block.conf`
++var blockFilename = ``
+ var listenAddress = `0.0.0.0:9167`
+ var metricsPath = `/metrics`
+ var unboundURI = `tcp://localhost:8953`
+@@ -221,36 +221,36 @@
+ 	return scrapeStats(conn, ch)
+ }
+ 
+-func collectBlocklist(ch chan<- prometheus.Metric) {
+-	var count = 0
+-	var err error
+-	var numBytes int
+-	var isLocalData = false
+-	var pattern = []byte("\n")
++func blocklistDomainCount(stream io.Reader) (int, error) {
++	domains := make(map[string]struct{})
++	pattern := regexp.MustCompile(`^\s*(?:local-zone|local-data):\s*"?([^"\s]+)`)
++	scanner := bufio.NewScanner(stream)
++	scanner.Buffer(make([]byte, 1024), 1024*1024)
++	for scanner.Scan() {
++		match := pattern.FindStringSubmatch(scanner.Text())
++		if len(match) == 2 {
++			domains[strings.ToLower(strings.TrimSuffix(match[1], "."))] = struct{}{}
++		}
++	}
++	return len(domains), scanner.Err()
++}
+ 
+-	blocklist, fileErr := os.Open(blockFilename)
+-	if fileErr != nil {
+-		log.Error("blocklist not found: ", fileErr)
++func collectBlocklist(ch chan<- prometheus.Metric) {
++	if blockFilename == "" {
++		return
++	}
++	blocklist, err := os.Open(blockFilename)
++	if err != nil {
++		log.Error("blocklist not found: ", err)
+ 		return
+ 	}
+-	buffer := make([]byte, bufio.MaxScanTokenSize)
+-	for {
+-		numBytes, err = blocklist.Read(buffer)
+-		count += bytes.Count(buffer[:numBytes], pattern)
+-		if err == io.EOF {
+-			break
+-		}
++	defer blocklist.Close()
++	count, err := blocklistDomainCount(blocklist)
++	if err != nil {
++		log.Error("failed to parse blocklist: ", err)
++		return
+ 	}
+-	if bytes.Contains(buffer, []byte(`local-data:`)) {
+-		isLocalData = true
+-	}
+-	count -= 1
+-	if isLocalData {
+-		count /= 2
+-	}
+ 	addMetric(ch, blocklistMetric.desc, blocklistMetric.valueType, float64(count))
+-	buffer = nil
+-	blocklist.Close()
+ }
+ 
+ func (collector *UnboundCollector) Collect(ch chan<- prometheus.Metric) {
+--- /dev/null
++++ blocklist_test.go
+@@ -0,0 +1,25 @@
++package main
++
++import (
++	"strings"
++	"testing"
++)
++
++func TestBlocklistDomainCount(t *testing.T) {
++	cases := []struct {
++		input string
++		want  int
++	}{
++		{"", 0},
++		{"# header\n\n", 0},
++		{`local-zone: "one.invalid" always_nxdomain`, 1},
++		{"# header\nlocal-zone: \"one.invalid.\" static\nlocal-data: \"ONE.invalid A 0.0.0.0\"\n", 1},
++		{"local-data: \"one.invalid A 0.0.0.0\"\nlocal-data: \"one.invalid AAAA ::\"\nlocal-zone: \"two.invalid\" always_nxdomain\n", 2},
++	}
++	for _, c := range cases {
++		got, err := blocklistDomainCount(strings.NewReader(c.input))
++		if err != nil || got != c.want {
++			t.Fatalf("got %d, %v; want %d", got, err, c.want)
++		}
++	}
++}

@@ -23,7 +23,7 @@ unifi_poller_config:
     ssl_key_path: ''
     report_errors: false
   loki:
-    url: http://localhost:3100/api/v1/push
+    url: ''
     user: ''
     pass: ''
     verify_ssl: false
@@ -31,7 +31,7 @@ unifi_poller_config:
     interval: 2m
     timeout: 10s
   influxdb:
-    disable: false
+    disable: true
     interval: 30s
     url: http://127.0.0.1:8086
     user: ''
@@ -77,3 +77,5 @@ unifi_poller_config:
       save_sites: true
       hash_pii: false
       verify_ssl: false
+  datadog:
+    disable: true

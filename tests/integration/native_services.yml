@@ -30,13 +30,13 @@
       name: [unzip, tar]
       state: present
   roles:
-  - degit.monitoring.node_exporter
-  - degit.monitoring.prometheus
-  - degit.monitoring.alertmanager
-  - degit.monitoring.blackbox_exporter
-  - degit.monitoring.loki
-  - degit.monitoring.tempo
-  - degit.monitoring.alloy
+  - degitag.monitoring.node_exporter
+  - degitag.monitoring.prometheus
+  - degitag.monitoring.alertmanager
+  - degitag.monitoring.blackbox_exporter
+  - degitag.monitoring.loki
+  - degitag.monitoring.tempo
+  - degitag.monitoring.alloy
   post_tasks:
   - name: Apply pending handlers before acceptance
     ansible.builtin.meta: flush_handlers

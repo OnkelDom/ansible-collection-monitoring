@@ -1,0 +1,120 @@
+---
+- name: Verify the shared LPM contract with real Telegraf metrics
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    prometheus_remote_write_receiver_enabled: true
+    prometheus_config:
+      global:
+        scrape_interval: 5s
+      scrape_configs:
+      - job_name: node
+        static_configs:
+        - targets:
+          - 127.0.0.1:9100
+          labels:
+            platform: linux
+            monitoring_profile: lpm
+      - job_name: telegraf-lpm
+        static_configs:
+        - targets:
+          - 127.0.0.1:9273
+          labels:
+            instance: '{{ ansible_facts.hostname }}-telegraf'
+            platform: linux
+            monitoring_profile: lpm
+            tenant: validation
+            environment: lab
+            site: release
+    telegraf_plugin_files: []
+    telegraf_global_tags:
+      monitoring_profile: lpm
+      platform: linux
+      tenant: validation
+      environment: lab
+      site: release
+    telegraf_config:
+      agent:
+        interval: 5s
+        flush_interval: 5s
+        hostname: '{{ ansible_facts.hostname }}'
+        omit_hostname: false
+      outputs:
+      - type: prometheus_client
+        config:
+          listen: 127.0.0.1:9273
+          metric_version: 2
+      inputs:
+      - type: cpu
+        config:
+          percpu: true
+          totalcpu: true
+      - type: system
+        config: {}
+      - type: mem
+        config: {}
+      - type: swap
+        config: {}
+      - type: disk
+        config:
+          ignore_fs:
+          - tmpfs
+          - devtmpfs
+          - overlay
+          - squashfs
+      - type: diskio
+        config: {}
+      - type: net
+        config: {}
+      - type: kernel_vmstat
+        config: {}
+  pre_tasks:
+  - name: Require a dedicated disposable guest
+    ansible.builtin.assert:
+      that:
+      - monitoring_lab_disposable | default(false) | bool
+      - ansible_facts.hostname is match('^monitoring-release-')
+  tasks:
+  - name: Install the separately owned Telegraf implementation
+    ansible.builtin.include_role:
+      name: degitag.infrastructure.telegraf
+  - name: Install the monitoring-owned rule and scrape profile
+    ansible.builtin.include_role:
+      name: degitag.monitoring.prometheus
+  - name: Apply pending profile handlers
+    ansible.builtin.meta: flush_handlers
+  - name: Verify actual Telegraf Prometheus exposition
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9273/metrics
+      return_content: true
+    register: telegraf_metrics
+    until: telegraf_metrics is succeeded and 'cpu_usage_idle{' in telegraf_metrics.content
+    retries: 24
+    delay: 5
+  - name: Verify native Telegraf normalization into shared LPM recordings
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9090/api/v1/query?query={{ '%s{instance="%s-telegraf"}' | format(item, ansible_facts.hostname) | urlencode }}
+      return_content: true
+    register: normalized
+    until: normalized is succeeded and normalized.json.status == 'success' and normalized.json.data.result | length > 0
+    retries: 24
+    delay: 5
+    loop:
+    - lpm:system_uptime_seconds
+    - lpm:cpu_utilization:avg15m
+    - lpm:mem_utilization:avg15m
+    - lpm:memory_available_bytes:avg15m
+    - lpm:disk_used_percent:avg15m
+    - lpm:disk_inodes_used_percent:avg15m
+    - lpm:diskio_utilization:avg15m
+    - lpm:diskio_await:avg15m
+    - lpm:net_bytes_recv:rate5m
+  - name: Verify all installed rule groups are healthy
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9090/api/v1/rules
+      return_content: true
+    register: profile_rules
+    until: profile_rules is succeeded and profile_rules.json.data.groups | map(attribute='rules') | flatten | rejectattr('health', 'equalto', 'ok') | list | length == 0
+    retries: 24
+    delay: 5

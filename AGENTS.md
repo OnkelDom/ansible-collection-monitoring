@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Dieses Repository enthaelt die Ansible Collection `degit.monitoring`.
+Dieses Repository enthaelt die Ansible Collection `degitag.monitoring`.
 
 ## Ziele
 
@@ -62,7 +62,7 @@ Dieses Repository enthaelt die Ansible Collection `degit.monitoring`.
 
 ## Doku- und Namespace-Regeln
 
-- Collection-Referenzen immer als `degit.monitoring.*`
+- Collection-Referenzen immer als `degitag.monitoring.*`
 - keine neuen Verweise auf den alten Namespace oder alte Repository-Namen
 - Beispiel-Playbooks und Rollen-READMEs nach jeder Namespace-Aenderung regenerieren
 

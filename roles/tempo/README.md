@@ -65,7 +65,7 @@ tempo_manage_service: true
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.tempo
+    - role: degitag.monitoring.tempo
 ```
 
 ## Testing
@@ -107,7 +107,7 @@ ausserhalb der Rolle abgesichert werden.
 - hosts: monitoring
   become: true
   roles:
-    - role: lenmail.monitoring.tempo
+    - role: degitag.monitoring.tempo
   vars:
     tempo_data_dir: /srv/monitoring/tempo
     tempo_otlp_listen_address: 10.30.30.24

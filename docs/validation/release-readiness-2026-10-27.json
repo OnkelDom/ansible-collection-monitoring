@@ -1,0 +1,1531 @@
+{
+  "date": "2026-10-27",
+  "collection": "degitag.monitoring",
+  "version": "2.0.0",
+  "controller": {
+    "python": "3.12",
+    "ansible_core": "2.21.5",
+    "shared_entry": "bash tests/run_checks.sh",
+    "exit_code": 0,
+    "unit_tests": 49,
+    "production_lint": {
+      "failures": 0,
+      "warnings": 0
+    }
+  },
+  "lpm": {
+    "recording_rules": 42,
+    "alerts": 53,
+    "promtool_scenarios": 135,
+    "real_alertmanager_inhibition_cases": 25,
+    "email_template_cases": 7
+  },
+  "linux_platforms": [
+    "Debian13.7",
+    "Rocky9.8",
+    "Ubuntu22.04",
+    "Ubuntu24.04",
+    "Ubuntu26.04"
+  ],
+  "linux_roles": 21,
+  "windows_platform": "Microsoft Windows Server2025 Datacenter Evaluation10.0.26100.0",
+  "windows_alloy_version": "1.21.2",
+  "native_guest_ids": [
+    3390,
+    3391,
+    3392,
+    3393,
+    3394,
+    3395,
+    3396
+  ],
+  "artifact": {
+    "name": "degitag-monitoring-2.0.0.tar.gz",
+    "local_archive_sha256": "0535bb4e73424918551bcee2b4befeedda2704b0ddf889782a70ea620889c5e1",
+    "canonical_payload_sha256": "539d92a405a4b7a1cb9583ece4cdd6e3e78d89ef0ab055260ce994b76d1dd86c",
+    "file_count": 498
+  },
+  "dependency_artifacts": {
+    "original_infrastructure_2.0.0_sha256": "a06382977c5a6d7ab12b400b32c06b1e910fae58c7ac21c63927de9386dd3ec5",
+    "qualified_infrastructure_2.0.1_candidate_sha256": "2802a32b1a5754fcba8f71f050370eb87510b4fabaa1aa78f819f06bebdc796c",
+    "telegraf_native_proof": {
+      "artifact_sha256": "2802a32b1a5754fcba8f71f050370eb87510b4fabaa1aa78f819f06bebdc796c",
+      "installed_version": "2.0.1",
+      "loaded_task_file": "/tmp/monitoring-release-20261027/collections.fsZOGl/ansible_collections/degitag/infrastructure/roles/telegraf/tasks/configuration.yml",
+      "loaded_task_sha256": "432cf9c3097f0023d0128f0808798e61e3c196a220717468d826fc6256a02762",
+      "log_sha256": "4abc69ee1d88c401117298606218714cb21cb516b94ca0a6cd0db5dc3873207e",
+      "missing_and_empty_keyrings_recovered": true,
+      "final_identical_application_changed_zero": true,
+      "phases": [
+        {
+          "play": "Exercise absent repository-keyring recovery only in disposable guests",
+          "changed_tasks": [
+            {
+              "task": "TASK [Remove only the disposable Telegraf keyring] *****************************",
+              "host": "changed: [release_ubuntu22]"
+            },
+            {
+              "task": "TASK [Remove only the disposable Telegraf keyring] *****************************",
+              "host": "changed: [release_debian13]"
+            },
+            {
+              "task": "TASK [Remove only the disposable Telegraf keyring] *****************************",
+              "host": "changed: [release_ubuntu26]"
+            },
+            {
+              "task": "TASK [Remove only the disposable Telegraf keyring] *****************************",
+              "host": "changed: [release_ubuntu24]"
+            }
+          ]
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_tasks": [
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_ubuntu22]"
+            },
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_ubuntu24]"
+            },
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_debian13]"
+            },
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_ubuntu26]"
+            },
+            {
+              "task": "TASK [degitag.monitoring.prometheus : Install neutral LPM host rules] **********",
+              "host": "changed: [release_ubuntu22]"
+            },
+            {
+              "task": "TASK [degitag.monitoring.prometheus : Install neutral LPM host rules] **********",
+              "host": "changed: [release_ubuntu24]"
+            },
+            {
+              "task": "TASK [degitag.monitoring.prometheus : Install neutral LPM host rules] **********",
+              "host": "changed: [release_ubuntu26]"
+            },
+            {
+              "task": "TASK [degitag.monitoring.prometheus : Install neutral LPM host rules] **********",
+              "host": "changed: [release_debian13]"
+            },
+            {
+              "task": "TASK [degitag.monitoring.prometheus : Install neutral LPM host rules] **********",
+              "host": "changed: [release_rocky9]"
+            },
+            {
+              "task": "RUNNING HANDLER [degitag.monitoring.prometheus : reload prometheus] ************",
+              "host": "changed: [release_ubuntu22]"
+            },
+            {
+              "task": "RUNNING HANDLER [degitag.monitoring.prometheus : reload prometheus] ************",
+              "host": "changed: [release_ubuntu24]"
+            },
+            {
+              "task": "RUNNING HANDLER [degitag.monitoring.prometheus : reload prometheus] ************",
+              "host": "changed: [release_ubuntu26]"
+            },
+            {
+              "task": "RUNNING HANDLER [degitag.monitoring.prometheus : reload prometheus] ************",
+              "host": "changed: [release_debian13]"
+            },
+            {
+              "task": "RUNNING HANDLER [degitag.monitoring.prometheus : reload prometheus] ************",
+              "host": "changed: [release_rocky9]"
+            }
+          ]
+        },
+        {
+          "play": "Exercise empty repository-keyring recovery only in disposable guests",
+          "changed_tasks": [
+            {
+              "task": "TASK [Create only a disposable empty Telegraf keyring] *************************",
+              "host": "changed: [release_ubuntu22]"
+            },
+            {
+              "task": "TASK [Create only a disposable empty Telegraf keyring] *************************",
+              "host": "changed: [release_debian13]"
+            },
+            {
+              "task": "TASK [Create only a disposable empty Telegraf keyring] *************************",
+              "host": "changed: [release_ubuntu24]"
+            },
+            {
+              "task": "TASK [Create only a disposable empty Telegraf keyring] *************************",
+              "host": "changed: [release_ubuntu26]"
+            }
+          ]
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_tasks": [
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_ubuntu22]"
+            },
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_debian13]"
+            },
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_ubuntu26]"
+            },
+            {
+              "task": "TASK [degitag.infrastructure.telegraf : Dearmor InfluxData archive key for Debian] ***",
+              "host": "changed: [release_ubuntu24]"
+            }
+          ]
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_tasks": []
+        }
+      ]
+    }
+  },
+  "exporter_provenance": {
+    "ilo5_exporter": {
+      "repository": "https://github.com/MauveSoftware/ilo5_exporter",
+      "revision": "bbe6159e2bf849d1e5f3fb70372f054243359a4e",
+      "source_url": "https://codeload.github.com/MauveSoftware/ilo5_exporter/tar.gz/bbe6159e2bf849d1e5f3fb70372f054243359a4e",
+      "source_sha256": "7ee6d2b578a81c16a554b078282cb76495079aac6051cca6c8b0166c20b16497",
+      "go.mod_sha256": "1fa4592a5873f1c2ba664bebdb7cb483b0db10343bd47a8d6b9d14af15041eaf",
+      "go.sum_sha256": "da43a032129d8b0b84e278aa43adba3c791cfa3eea892e5e3387464abac4dfa6",
+      "go_version": "go1.27.3",
+      "build_flags": [
+        "-mod=readonly",
+        "-trimpath",
+        "-buildvcs=false",
+        "-ldflags=-s -w -buildid="
+      ],
+      "cgo_enabled": "0",
+      "binaries": {
+        "amd64": "c74f18c80ba2857fcc4f79767a3d28ed32e1e2ffc2beb74e0c1d19800a9ce3bf",
+        "arm64": "525caec5e9b3bf2140a6ac3fc27b203121381c85bf51ec56f4073a8ef2149abe"
+      },
+      "govulncheck_log_sha256": "3016e51e4eac0d421674d2128bbbdefb2924b4646e0c14a1ab034977ad73fae5"
+    },
+    "squid_exporter": {
+      "repository": "https://github.com/boynux/squid-exporter",
+      "revision": "900fd001ce0759a694e16f73c2725dbd1df44cbe",
+      "source_url": "https://codeload.github.com/boynux/squid-exporter/tar.gz/900fd001ce0759a694e16f73c2725dbd1df44cbe",
+      "source_sha256": "eea2585c6b398bcc23afe5d468ed973c4c1158a80c6cf7f3b4e89ab391e458b8",
+      "go.mod_sha256": "409e6827815d70ceee859170eab41bf9ecfbe8ce153b040730648d70fe3c2706",
+      "go.sum_sha256": "c38be6e4c8dfafccc1bd1730100b55e1a66b9e23b153de90f3515613de21fc38",
+      "go_version": "go1.27.3",
+      "build_flags": [
+        "-mod=readonly",
+        "-trimpath",
+        "-buildvcs=false",
+        "-ldflags=-s -w -buildid="
+      ],
+      "cgo_enabled": "0",
+      "binaries": {
+        "amd64": "7b2ccf0ec3a25672d8280dfb3b395d49afd2c15716535b52dbfabd9175c7fdde",
+        "arm64": "317bce4aab33f972a92f11cdaf3acde65dc82c8d901d36a6966e8213a92f343e"
+      },
+      "patch_sha256": "130d11be4aa05bf3f4c3846b8f9bb596775d0214da489641ab40521c2cc39180",
+      "patch_reason": "Support current Prometheus collectors and Squid 7 manager HTTP paths; close scrape connections.",
+      "test_pattern": "^TestModernManagerPath$",
+      "test_package": "./collector",
+      "govulncheck_log_sha256": "3016e51e4eac0d421674d2128bbbdefb2924b4646e0c14a1ab034977ad73fae5"
+    },
+    "unbound_exporter": {
+      "repository": "https://github.com/ar51an/unbound-exporter",
+      "revision": "25f963c2bf23de4fcd7910040807888b78ed3859",
+      "source_url": "https://codeload.github.com/ar51an/unbound-exporter/tar.gz/25f963c2bf23de4fcd7910040807888b78ed3859",
+      "source_sha256": "facd3a44f574b89142b8b1182657e7fc144a1955ecd3abaff7d7e5c73ae3e9da",
+      "go.mod_sha256": "9fe6bfb7696b2d032f65b3bea8b921c6dcb9d4d5154f10b8b9c2a5076156146e",
+      "go.sum_sha256": "1ee8edfb6846dfae118ef3c342610cd3b0ea74df36b09750d9147d6d29e046c8",
+      "go_version": "go1.27.3",
+      "build_flags": [
+        "-mod=readonly",
+        "-trimpath",
+        "-buildvcs=false",
+        "-ldflags=-s -w -buildid="
+      ],
+      "cgo_enabled": "0",
+      "binaries": {
+        "amd64": "bb90abe2ff0ada586636cbafab7673fbbdb3afb7130776af61bd2e09c63af425",
+        "arm64": "b08caf7fef4c265dba176ea9fa04cb25eef6659f9b322efc6db3fd6dddc0285c"
+      },
+      "patch_sha256": "d2bae753dfd9e157aaa8d0e7c42c6f45092a3fa7a7564de4cd8e50f1a4a4bf3a",
+      "test_pattern": "^TestBlocklistDomainCount$",
+      "patch_reason": "Count unique configured domains without negative values, support headerless files and make blocklist collection optional.",
+      "govulncheck_log_sha256": "3016e51e4eac0d421674d2128bbbdefb2924b4646e0c14a1ab034977ad73fae5"
+    }
+  },
+  "evidence_logs": {
+    "final-checks.log": {
+      "sha256": "8d501b622dd59f87967b739b752ac101b08daff75eacfacdac47cb3561faa829",
+      "recaps": [],
+      "phases": [
+        {
+          "play": "Verify installed role preflights without modifying the controller",
+          "changed_results": 0
+        }
+      ]
+    },
+    "package-smoke.log": {
+      "sha256": "2ade2ca1e61276acab19a440888d023fc4a92733f15b88174b31be9db6602b43",
+      "recaps": [],
+      "phases": []
+    },
+    "native-upgrade.log": {
+      "sha256": "4ef74142db9c75ff8984c313626371d63d1a14d75b633e6f8a7f2b2cb43dd2af",
+      "recaps": [
+        {
+          "host": "release_debian13",
+          "ok": 340,
+          "changed": 36,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 118,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify selected exporter version changes and return to qualified defaults",
+          "changed_results": 36
+        }
+      ]
+    },
+    "final-debian.log": {
+      "sha256": "af60dd69d8cac3af71352b2cc313b45b687fe3769ae59dd74fbbeb5af7700a2b",
+      "recaps": [
+        {
+          "host": "release_debian13",
+          "ok": 196,
+          "changed": 7,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 41,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 314,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 125,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 430,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 467,
+          "changed": 17,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 235,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 530,
+          "changed": 21,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 286,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 574,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 312,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 617,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 338,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Qualify exporters only on explicitly disposable Linux guests",
+          "changed_results": 7
+        },
+        {
+          "play": "Install and exercise native monitoring services on disposable VMs",
+          "changed_results": 5
+        },
+        {
+          "play": "Install and exercise native monitoring services on disposable VMs",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 11
+        },
+        {
+          "play": "Verify optional host firewall delegation on disposable guests",
+          "changed_results": 4
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 3
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 1
+        }
+      ]
+    },
+    "final-matrix.log": {
+      "sha256": "971b609e9c6fe94c9af1a45884f51b69481c253e0a0dd609e8b1ffecdbc6b41b",
+      "recaps": [
+        {
+          "host": "release_rocky9",
+          "ok": 206,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 29,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 206,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 29,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 206,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 29,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 206,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 29,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 330,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 106,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 330,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 104,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 330,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 104,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 330,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 104,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 453,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 183,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 453,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 179,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 453,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 179,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 453,
+          "changed": 9,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 179,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 487,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 211,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 490,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 201,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 490,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 201,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 490,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 201,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 554,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 256,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 557,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 248,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 557,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 248,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 557,
+          "changed": 12,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 248,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 600,
+          "changed": 14,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 280,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 603,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 272,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 603,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 272,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 603,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 272,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 645,
+          "changed": 14,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 304,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 648,
+          "changed": 16,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 296,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 648,
+          "changed": 16,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 296,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 648,
+          "changed": 16,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 296,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Qualify exporters only on explicitly disposable Linux guests",
+          "changed_results": 24
+        },
+        {
+          "play": "Install and exercise native monitoring services on disposable VMs",
+          "changed_results": 12
+        },
+        {
+          "play": "Install and exercise native monitoring services on disposable VMs",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 36
+        },
+        {
+          "play": "Verify optional host firewall delegation on disposable guests",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 11
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 3
+        }
+      ]
+    },
+    "final-debian-lifecycle.log": {
+      "sha256": "2afeca9b0f05ffc47b19b6147a3754eefb26fd688dec7c6ddaf40885b8f3b0e1",
+      "recaps": [
+        {
+          "host": "release_debian13",
+          "ok": 7,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 0,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 119,
+          "changed": 11,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 116,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 237,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 200,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 281,
+          "changed": 18,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 226,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 301,
+          "changed": 23,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 226,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 306,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 226,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 313,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 226,
+          "rescued": 1,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify local telemetry data paths in the disposable lab",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify transferred agents honour lifecycle and reject invalid configuration",
+          "changed_results": 11
+        },
+        {
+          "play": "Install and exercise native monitoring services on disposable VMs",
+          "changed_results": 4
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 3
+        },
+        {
+          "play": "Verify cold backup and restore on disposable monitoring guests",
+          "changed_results": 26
+        },
+        {
+          "play": "Verify native services survive a disposable guest reboot",
+          "changed_results": 1
+        },
+        {
+          "play": "Verify local telemetry data paths in the disposable lab",
+          "changed_results": 0
+        }
+      ]
+    },
+    "final-matrix-lifecycle.log": {
+      "sha256": "95e30610a72566f52236f0fbd85dead7705931e9104a4322f9a2e3a72fd99e57",
+      "recaps": [
+        {
+          "host": "release_rocky9",
+          "ok": 7,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 0,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 7,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 0,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 7,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 0,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 7,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 0,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 121,
+          "changed": 11,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 114,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 125,
+          "changed": 11,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 110,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 125,
+          "changed": 11,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 110,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 125,
+          "changed": 11,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 110,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 246,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 191,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 250,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 185,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 250,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 185,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 250,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 185,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 292,
+          "changed": 17,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 215,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 296,
+          "changed": 18,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 296,
+          "changed": 18,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 296,
+          "changed": 18,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 312,
+          "changed": 23,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 215,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 316,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 316,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 316,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 317,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 215,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 321,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 321,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 321,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 324,
+          "changed": 24,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 215,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 328,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 328,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 328,
+          "changed": 25,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 209,
+          "rescued": 1,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify local telemetry data paths in the disposable lab",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify transferred agents honour lifecycle and reject invalid configuration",
+          "changed_results": 44
+        },
+        {
+          "play": "Install and exercise native monitoring services on disposable VMs",
+          "changed_results": 16
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 11
+        },
+        {
+          "play": "Verify cold backup and restore on disposable monitoring guests",
+          "changed_results": 108
+        },
+        {
+          "play": "Verify native services survive a disposable guest reboot",
+          "changed_results": 4
+        },
+        {
+          "play": "Verify local telemetry data paths in the disposable lab",
+          "changed_results": 0
+        }
+      ]
+    },
+    "final-grafana-exporters-debian.log": {
+      "sha256": "1324dcccf8d981fc270cb2897c8b0afef605014d58dfe8b224e818d051646950",
+      "recaps": [
+        {
+          "host": "release_debian13",
+          "ok": 38,
+          "changed": 3,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 26,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 74,
+          "changed": 3,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 52,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 267,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 94,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 7
+        },
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 0
+        },
+        {
+          "play": "Qualify exporters only on explicitly disposable Linux guests",
+          "changed_results": 3
+        }
+      ]
+    },
+    "final-grafana-exporters-matrix.log": {
+      "sha256": "8c02361867a67a5344fa81b9894f71dc02a3c6a5f0551bf7870dc8672af9cde6",
+      "recaps": [
+        {
+          "host": "release_rocky9",
+          "ok": 34,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 28,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 37,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 22,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 37,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 22,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 37,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 22,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 68,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 56,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 74,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 44,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 74,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 44,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 74,
+          "changed": 1,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 44,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 274,
+          "changed": 2,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 85,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 280,
+          "changed": 4,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 73,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 280,
+          "changed": 4,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 73,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 280,
+          "changed": 4,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 73,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 8
+        },
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 0
+        },
+        {
+          "play": "Qualify exporters only on explicitly disposable Linux guests",
+          "changed_results": 13
+        }
+      ]
+    },
+    "final-windows.log": {
+      "sha256": "3414561487b8feefd2c0100fdce69d78f70a85f566f7438a694b755702b20245",
+      "recaps": [
+        {
+          "host": "release_windows_server2025",
+          "ok": 19,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 23,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_debian13",
+          "ok": 2,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 0,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_windows_server2025",
+          "ok": 19,
+          "changed": 0,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 23,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify Alloy on a fresh disposable Windows guest",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify Windows-labelled telemetry reaches the isolated Linux sink",
+          "changed_results": 0
+        }
+      ]
+    },
+    "native-windows-lifecycle.log": {
+      "sha256": "11a59a7de85573b576bfae1bffd4bfd3d47a3e5731d124045961ac84fdecb9d2",
+      "recaps": [
+        {
+          "host": "release_windows_server2025",
+          "ok": 66,
+          "changed": 11,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 100,
+          "rescued": 1,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Verify Windows Alloy lifecycle and configuration protection",
+          "changed_results": 11
+        }
+      ]
+    },
+    "telegraf-key-recovery.log": {
+      "sha256": "4abc69ee1d88c401117298606218714cb21cb516b94ca0a6cd0db5dc3873207e",
+      "recaps": [
+        {
+          "host": "release_debian13",
+          "ok": 138,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 79,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_rocky9",
+          "ok": 140,
+          "changed": 2,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 77,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu22",
+          "ok": 144,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 73,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu24",
+          "ok": 144,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 73,
+          "rescued": 0,
+          "ignored": 0
+        },
+        {
+          "host": "release_ubuntu26",
+          "ok": 144,
+          "changed": 6,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 73,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Exercise absent repository-keyring recovery only in disposable guests",
+          "changed_results": 4
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 14
+        },
+        {
+          "play": "Exercise empty repository-keyring recovery only in disposable guests",
+          "changed_results": 4
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 4
+        },
+        {
+          "play": "Verify the shared LPM contract with real Telegraf metrics",
+          "changed_results": 0
+        }
+      ]
+    },
+    "grafana-clean-boot.log": {
+      "sha256": "f7a3414f73ab2cfedcc036adddd260eb6f911dc21aa389832255ff0007b55547",
+      "recaps": [
+        {
+          "host": "release_debian13",
+          "ok": 79,
+          "changed": 15,
+          "unreachable": 0,
+          "failed": 0,
+          "skipped": 51,
+          "rescued": 0,
+          "ignored": 0
+        }
+      ],
+      "phases": [
+        {
+          "play": "Wait for the explicitly owned clean Debian control guest",
+          "changed_results": 0
+        },
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 26
+        },
+        {
+          "play": "Verify native Grafana installation on disposable Linux guests",
+          "changed_results": 0
+        }
+      ]
+    },
+    "reproducibility.log": {
+      "sha256": "376d3fffa3f98fcab095a3ca546322fe1471f2ae28cbe0afb3e6a84a8e5b17c3",
+      "recaps": [],
+      "phases": []
+    }
+  },
+  "limits": [
+    "Rocky was explicitly selected instead of a separately subscribed RHEL9 test",
+    "ARM64 cross-builds are reproducible but not natively tested",
+    "iLO hardware, external UniFi controllers, Consul servers and SNMP devices were unavailable",
+    "Version round trips qualify only the eight documented pairs; cold restores do not imply arbitrary major-version downgrade compatibility",
+    "SMTP delivery to real recipients was not performed"
+  ],
+  "production_rollout": false,
+  "galaxy_publication": false,
+  "lab_cleanup": {
+    "owned_guest_ids_removed": [
+      3390,
+      3391,
+      3392,
+      3393,
+      3394,
+      3395,
+      3396
+    ],
+    "preexisting_guests": 15,
+    "preexisting_identity_status_node_unchanged": true,
+    "preexisting_config_unchanged_during_cleanup": true,
+    "owned_images_and_seed_media_removed": true,
+    "remaining_guest_count": 15
+  }
+}

@@ -144,7 +144,7 @@
   - prometheus_alertrules
 - name: Apply platform-specific alert annotations
   ansible.builtin.copy:
-    content: '{{ lookup(''ansible.builtin.file'', prometheus_alert_rules_src_dir ~ ''/'' ~ item) | from_yaml | degit.monitoring.monitoring_platform_annotations(prometheus_platform_annotation_overrides) | to_nice_yaml(indent=2, sort_keys=False) }}'
+    content: '{{ lookup(''ansible.builtin.file'', prometheus_alert_rules_src_dir ~ ''/'' ~ item) | from_yaml | degitag.monitoring.monitoring_platform_annotations(prometheus_platform_annotation_overrides) | to_nice_yaml(indent=2, sort_keys=False) }}'
     dest: /etc/prometheus/rules/{{ item }}
     mode: '0644'
     owner: prometheus
@@ -210,7 +210,7 @@
   - prometheus_alertrules
 - name: Install neutral LPM host rules
   ansible.builtin.copy:
-    content: '{{ lookup(''ansible.builtin.file'', role_path ~ ''/files/lpm/host.rules'') | from_yaml | degit.monitoring.monitoring_lpm_rules(prometheus_lpm_default_criticality, prometheus_lpm_dashboard_url, prometheus_lpm_runbook_url) | degit.monitoring.monitoring_platform_annotations(lookup(''ansible.builtin.file'', role_path ~ ''/files/lpm/platform-annotations.yml'') | from_yaml) | degit.monitoring.monitoring_platform_annotations(prometheus_platform_annotation_overrides) | to_nice_yaml(indent=2, sort_keys=False) }}'
+    content: '{{ lookup(''ansible.builtin.file'', role_path ~ ''/files/lpm/host.rules'') | degitag.monitoring.monitoring_lpm_rules(prometheus_lpm_default_criticality, prometheus_lpm_dashboard_url, prometheus_lpm_runbook_url) | degitag.monitoring.monitoring_platform_annotations(lookup(''ansible.builtin.file'', role_path ~ ''/files/lpm/platform-annotations.yml'')) | degitag.monitoring.monitoring_platform_annotations(prometheus_platform_annotation_overrides) }}'
     dest: /etc/prometheus/lpm/host.rules
     owner: prometheus
     group: prometheus

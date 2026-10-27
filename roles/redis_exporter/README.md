@@ -27,7 +27,6 @@ proxy_env: {}
 redis_exporter_version: 1.46.0
 redis_exporter_config_flags_extra:
   redis.addr: redis://localhost:6379
-  redis.password: '{{ redis_password_sha256 }}'
 redis_exporter_manage_service: true
 redis_exporter_service_enabled: true
 redis_exporter_service_state: started
@@ -41,7 +40,7 @@ redis_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.redis_exporter
+    - role: degitag.monitoring.redis_exporter
 ```
 
 ## Testing

@@ -1,0 +1,82 @@
+--- main.go
++++ main.go
+@@ -9,6 +9,7 @@
+ 	"github.com/boynux/squid-exporter/collector"
+ 	"github.com/boynux/squid-exporter/config"
+ 	"github.com/prometheus/client_golang/prometheus"
++	"github.com/prometheus/client_golang/prometheus/collectors"
+ 	"github.com/prometheus/client_golang/prometheus/promhttp"
+ 	"github.com/prometheus/common/version"
+ )
+@@ -22,7 +23,7 @@
+              </html>`
+ 
+ func init() {
+-	prometheus.MustRegister(version.NewCollector("squid_exporter"))
++	prometheus.MustRegister(collectors.NewBuildInfoCollector())
+ }
+ 
+ func main() {
+--- collector/client.go
++++ collector/client.go
+@@ -28,7 +28,7 @@
+ }
+ 
+ const (
+-	requestProtocol = "GET cache_object://localhost/%s HTTP/1.0"
++	requestProtocol = "GET /squid-internal-mgr/%s HTTP/1.0"
+ )
+ 
+ func buildBasicAuthString(login string, password string) string {
+@@ -57,11 +57,15 @@
+ 		return types.Counters{}, err
+ 	}
+ 
++	defer conn.Close()
++
+ 	r, err := get(conn, "counters", c.basicAuthString)
+ 
+ 	if err != nil {
+ 		return nil, err
+ 	}
++
++	defer r.Body.Close()
+ 
+ 	if r.StatusCode != 200 {
+ 		return nil, fmt.Errorf("Non success code %d while fetching metrics", r.StatusCode)
+@@ -109,7 +113,7 @@
+ 	rBody = append(rBody, "Accept: */*", "\r\n")
+ 	request := strings.Join(rBody, "\r\n")
+ 
+-	fmt.Fprintf(conn, request)
++	fmt.Fprint(conn, request)
+ 	return http.ReadResponse(bufio.NewReader(conn), nil)
+ }
+ 
+--- /dev/null
++++ collector/manager_path_test.go
+@@ -0,0 +1,24 @@
++package collector
++
++import (
++    "fmt"
++    "net"
++    "net/http"
++    "testing"
++)
++
++func TestModernManagerPath(t *testing.T) {
++    listener, err := net.Listen("tcp", "127.0.0.1:0")
++    if err != nil { t.Fatal(err) }
++    defer listener.Close()
++    server := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++        if r.URL.Path != "/squid-internal-mgr/counters" { t.Errorf("unexpected manager path: %s", r.URL.Path); w.WriteHeader(400); return }
++        fmt.Fprintln(w, "client_http.requests = 42")
++    })}
++    defer server.Close()
++    go server.Serve(listener)
++    client := NewCacheObjectClient("127.0.0.1", listener.Addr().(*net.TCPAddr).Port, "", "")
++    counters, err := client.GetCounters()
++    if err != nil { t.Fatal(err) }
++    if len(counters) != 1 { t.Fatalf("expected one real parsed counter, got %v", counters) }
++}

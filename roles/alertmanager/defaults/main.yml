@@ -29,9 +29,11 @@ alertmanager_lpm_inhibit_rules:
 - source_matchers:
   - monitoring_profile="lpm"
   - severity="ERROR"
+  - instance=~".+"
   target_matchers:
   - monitoring_profile="lpm"
   - severity="WARN"
+  - instance=~".+"
   equal:
   - instance
   - tenant
@@ -42,8 +44,42 @@ alertmanager_lpm_inhibit_rules:
   - interface
   - alert_family
   - platform
+  - name
+  - device
+  - target
+  - server
+  - port
+  - protocol
+  - method
+  - lpm
+- source_matchers:
+  - monitoring_profile="lpm"
+  - alert_family="LPMCollectorDown"
+  - severity="ERROR"
+  - instance=~".+"
+  - platform=~"linux|windows"
+  target_matchers:
+  - monitoring_profile="lpm"
+  - category!="availability"
+  equal:
+  - instance
+  - tenant
+  - environment
+  - site
+  - platform
 alertmanager_proxmox_enabled: false
 alertmanager_proxmox_inhibit_rules:
-- source_matchers: ['severity="ERROR"', 'monitoring_profile="proxmox"']
-  target_matchers: ['severity="WARN"', 'monitoring_profile="proxmox"']
-  equal: [tenant, environment, site, cluster, node, storage, alert_family]
+- source_matchers:
+  - severity="ERROR"
+  - monitoring_profile="proxmox"
+  target_matchers:
+  - severity="WARN"
+  - monitoring_profile="proxmox"
+  equal:
+  - tenant
+  - environment
+  - site
+  - cluster
+  - node
+  - storage
+  - alert_family

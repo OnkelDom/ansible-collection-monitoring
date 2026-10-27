@@ -7,3 +7,5 @@ go_arch_map:
   armv6l: 'armhf'
 
 go_arch: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
+
+_unifi_poller_download_dir: /var/cache/degitag/unifi_poller

@@ -2,8 +2,7 @@
 proxy_env: {}
 unbound_exporter_log_level: warn
 unbound_exporter_config_flags_extra:
-  block-file: /etc/unbound/unbound.block.conf
-  unbound.uri: tcp://localhost:953
+  unbound.uri: '{{ _unbound_exporter_platform_control_uri | default("tcp://127.0.0.1:8953") }}'
 unbound_exporter_manage_service: true
 unbound_exporter_service_enabled: true
 unbound_exporter_service_state: started

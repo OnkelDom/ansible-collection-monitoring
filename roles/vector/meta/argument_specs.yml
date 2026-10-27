@@ -75,3 +75,8 @@ argument_specs:
         - Controls `vector_service_state` for the `vector` role.
         required: false
         type: str
+      vector_version:
+        description:
+        - Controls `vector_version` for the `vector` role.
+        required: false
+        type: str

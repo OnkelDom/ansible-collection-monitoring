@@ -14,7 +14,6 @@
   - name: download grafana dashboard from grafana.net to local directory
     args:
       creates: '{{ _tmp_dashboards.path }}/{{ item.dashboard_id }}.json'
-      warn: false
     register: _download_dashboards
     until: _download_dashboards is succeeded
     retries: 5
@@ -43,7 +42,9 @@
   with_fileglob:
   - '{{ _tmp_dashboards.path }}/*'
   - '{{ grafana_dashboards_dir }}/*.json'
-  when: not grafana_use_provisioning
+  when:
+  - not grafana_use_provisioning
+  - (item | basename) != 'proxmox-native.json' and not (item is search('[.]provenance[.]json$'))
   tags: grafana
   ansible.builtin.uri:
     url: '{{ grafana_api_url }}/api/dashboards/db'
@@ -55,6 +56,14 @@
     body: "{\n  \"dashboard\": {{ lookup(\"file\", item) }},\n  \"overwrite\": true,\n  \"message\": \"Updated by ansible\"\n}\n"
 - when: grafana_use_provisioning
   block:
+  - name: Remove metadata and the legacy generic PVE dashboard copy
+    ansible.builtin.file:
+      path: '{{ grafana_data_dir }}/dashboards/{{ item }}'
+      state: absent
+    loop:
+    - proxmox-native.provenance.json
+    - proxmox-native.json
+    become: true
   - name: Create/Update dashboards file (provisioning)
     become: true
     notify: restart grafana
@@ -86,7 +95,10 @@
     ansible.builtin.copy:
       src: '{{ item }}'
       dest: '{{ grafana_data_dir }}/dashboards/{{ item | basename }}'
-      mode: '0644'
+      mode: '0640'
+      owner: grafana
+      group: grafana
+    when: (item | basename) != 'proxmox-native.json' and not (item is search('[.]provenance[.]json$'))
   - name: Get dashboard lists
     when: grafana_provisioning_synced
     tags: grafana

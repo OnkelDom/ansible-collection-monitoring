@@ -55,10 +55,10 @@
       dest: /etc/prometheus/extra/custom.rules
       mode: '0644'
   roles:
-  - degit.monitoring.node_exporter
-  - degit.monitoring.prometheus
-  - degit.monitoring.alertmanager
-  - degit.monitoring.alloy
+  - degitag.monitoring.node_exporter
+  - degitag.monitoring.prometheus
+  - degitag.monitoring.alertmanager
+  - degitag.monitoring.alloy
   post_tasks:
   - name: Apply pending service handlers
     ansible.builtin.meta: flush_handlers

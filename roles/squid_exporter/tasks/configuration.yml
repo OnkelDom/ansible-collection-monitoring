@@ -5,6 +5,11 @@
       manage: '{{ squid_exporter_manage_service | bool }}'
       state: '{{ squid_exporter_service_state }}'
       enabled: '{{ squid_exporter_service_enabled | bool }}'
+- name: Validate the bundled binary architecture
+  ansible.builtin.assert:
+    that:
+    - ansible_facts.architecture in ['x86_64', 'aarch64']
+    fail_msg: Bundled verified exporters support x86_64 and aarch64 only.
 - name: create system group
   when: squid_exporter_system_group != "root"
   become: true
@@ -31,11 +36,10 @@
     path: '{{ squid_exporter_binary_local_dir }}/squid_exporter'
 - name: copy binaries
   notify: restart squid_exporter
-  when: (not __squid_exporter_is_installed.stat.exists)
   become: true
   tags: squid_exporter
   ansible.builtin.copy:
-    src: '{{ role_path }}/files/squid_exporter_v{{ squid_exporter_version }}_{{ go_arch }}'
+    src: 'squid_exporter_linux_{{ {''x86_64'': ''amd64'', ''aarch64'': ''arm64''}[ansible_facts.architecture] }}'
     dest: '{{ squid_exporter_binary_local_dir }}/squid_exporter'
     mode: '0755'
     owner: root

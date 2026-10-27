@@ -2,8 +2,15 @@
 from copy import deepcopy
 import re
 
+import yaml
+
 
 def monitoring_lpm_rules(document, criticality='mid', dashboard_url='', runbook_url=''):
+    if isinstance(document, str):
+        # Keep raw YAML across Ansible filter boundaries. Core's tagged containers
+        # otherwise multiply provenance while copying a complete rules document.
+        result = monitoring_lpm_rules(yaml.safe_load(document), criticality, dashboard_url, runbook_url)
+        return yaml.safe_dump(result, sort_keys=False, allow_unicode=True, indent=2)
     if criticality not in ('high', 'mid', 'low'):
         raise ValueError('LPM criticality must be high, mid or low')
     result = deepcopy(document)

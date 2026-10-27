@@ -47,7 +47,7 @@ unifi_poller_config:
     ssl_key_path: ''
     report_errors: false
   loki:
-    url: http://localhost:3100/api/v1/push
+    url: ''
     user: ''
     pass: ''
     verify_ssl: false
@@ -55,7 +55,7 @@ unifi_poller_config:
     interval: 2m
     timeout: 10s
   influxdb:
-    disable: false
+    disable: true
     interval: 30s
     url: http://127.0.0.1:8086
     user: ''
@@ -101,6 +101,8 @@ unifi_poller_config:
       save_sites: true
       hash_pii: false
       verify_ssl: false
+  datadog:
+    disable: true
 ```
 
 ## Example Playbook
@@ -111,7 +113,7 @@ unifi_poller_config:
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.unifi_poller
+    - role: degitag.monitoring.unifi_poller
 ```
 
 ## Testing
@@ -135,3 +137,18 @@ Install the collection dependencies from `requirements.yml`. Role dependencies:
 Use check mode where the underlying modules support it. Review the diff before applying
 changes. Network, firewall, identity and storage changes need an out-of-band recovery
 path. Secrets belong in Ansible Vault or the operator secret store, never in defaults.
+
+## Reproduzierbare Releases
+
+Die Rolle prüft Archiv und Binärinhalt bei jedem Lauf. Sie verlässt sich nicht auf
+`--version`: Upstream 2.1.4 liefert dort eine leere Versionsnummer. Ab 2.1.4 werden
+die modernen Tar-Archive samt versionsbenannter Checksum-Datei verwendet; 2.1.3
+verwendet das Legacy-Gzip. Der geschützte, root-eigene Releasecache behält Archive
+und entpackte Dateien, sodass Wiederholungen keine Downloads neu erzeugen müssen.
+Die native Abnahme prüft 2.1.3 → 2.2.0 → 2.1.3 anhand des Inhalts der jeweils
+checksum-geprüften Quelle sowie der tatsächlichen Exposition. Ein echter
+UniFi-Controller ist für eine kundenspezifische Backend-Abnahme zusätzlich nötig.
+
+Versionen 2.1.4 und 2.1.5 werden vor Änderungen abgewiesen: das offizielle Binary stürzt im
+Datadog-Plugin mit einem Nil-Pointer ab. Die [Upstream-Release-Notizen für 2.2.0](https://github.com/unpoller/unpoller/releases/tag/v2.2.0)
+dokumentieren den Fix. Ein deaktivierter Datadog-Abschnitt behebt diese Abstürze nicht.

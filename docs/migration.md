@@ -1,24 +1,24 @@
 # Monitoring Collection Version 2
 
-Ziel ist `degit.monitoring:2.0.0`. Dieser Branch bereitet einen neuen Vertrag vor;
-er ist noch kein freigegebener Produktionsrelease. Repository-Transfer, Release-Tags
-und produktive Upgrades werden getrennt durchgeführt.
+`degitag.monitoring:2.0.0` führt den neuen Rollen- und Namespace-Vertrag ein.
+Die Release-Abnahme steht im [datierten Nachweis](validation/release-readiness-2026-10-27.md).
+Repository-Transfer und produktive Upgrades sind eigenständige Betreiberentscheidungen.
 
 ## Verantwortung
 
 `alloy` und `node_exporter` liegen ausschließlich in dieser Collection. Die Rollen
-entfallen aus `degit.infrastructure`. Aufrufer verwenden künftig
-`degit.monitoring.alloy` bzw. `degit.monitoring.node_exporter`. Es gibt keine
+entfallen aus `degitag.infrastructure`. Aufrufer verwenden künftig
+`degitag.monitoring.alloy` bzw. `degitag.monitoring.node_exporter`. Es gibt keine
 Wrapper oder gegenseitigen Collection-Abhängigkeiten.
 
-Firewall und Netzwerk bleiben bei `degit.infrastructure`. Wer die optionale
+Firewall und Netzwerk bleiben bei `degitag.infrastructure`. Wer die optionale
 Firewall-Verwaltung einer Monitoringrolle aktiviert, installiert zusätzlich die
 Host-Collection. Ohne diesen Schalter verwaltet die Monitoringrolle keine Ports.
 
 `grafana_agent` und `promtail` sind entfernt. Die bestehenden Systeme sind bereits
 umgestellt; die Collection führt weder eine Migration noch eine Deinstallation
-auf Servern aus. Vier bisherige Platzhalterrollen bleiben ausdrücklich nicht
-implementiert und weisen Aufrufe vor Änderungen zurück.
+auf Servern aus. Die vier nie implementierten Platzhalterrollen `dovecot_exporter`, `ipmi_exporter`,
+`keepalived_exporter` und `postfix_exporter` sind aus dem Artefakt entfernt.
 
 ## Rolle und Plattform
 
@@ -94,3 +94,18 @@ Node Exporter deaktiviert den für OOM-/Swap-Metriken benötigten `vmstat`-Colle
 nicht mehr standardmäßig. Windows-Alloy aktiviert zusätzlich `memory`. Im Alloy-
 Pipelineprofil kennzeichnet `alloy_lpm_enabled` die Remote-Write-Metriken für das
 LPM-Scrape-Monitoring. Diese Option schaltet keine Unternehmensziele oder Empfänger ein.
+
+## Namespace und Releaseumfang
+
+Alle Monitoring-Aufrufe und Filter verwenden `degitag.monitoring.*`. Das
+Collection-Artefakt heißt `degitag-monitoring-2.0.0.tar.gz`. Alte Installationen
+unter `degit.monitoring` werden nicht automatisch entfernt. Die separat umgestellten Geschwister-Collections verwenden ebenfalls `degitag`;
+die Firewall-Delegation benötigt `degitag.infrastructure`. Die Namespace-Änderung
+verändert keine installierten Dienste und führt keinen Rollout aus.
+
+Die vier nie implementierten Exporterrollen für Dovecot, IPMI, Keepalived und
+Postfix sind aus dem Paket entfernt. Redis und iLO benötigen keine versteckten
+Fremdvariablen mehr; Secrets werden ausschließlich über die jeweiligen
+`*_config_flags_extra` aus dem Inventory übergeben. Consul-Registrierung ist
+bei Process- und SNMP-Exporter standardmäßig ausgeschaltet. Vector verwendet
+ein festgelegtes, SHA256-geprüftes Paket und eine lokal validierte Konfiguration.

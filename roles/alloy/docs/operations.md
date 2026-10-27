@@ -1,6 +1,6 @@
 ## Ownership
 
-This role is owned exclusively by `degit.monitoring`. Host firewall policy remains in `degit.infrastructure`.
+This role is owned exclusively by `degitag.monitoring`. Host firewall policy remains in `degitag.infrastructure`.
 
 ## Native Proxmox OTLP receiver
 
@@ -47,3 +47,14 @@ Excluding an alias removes both byte and inode duplicates while canonical LPM
 capacity alerts remain unchanged. Stale historical samples expire normally.
 Legacy custom Alloy blocks must explicitly consume the same variables; the
 structured pipeline applies them automatically. No customer paths are defaults.
+
+
+## Qualifizierte Paketversion
+
+Linux verwendet standardmäßig Alloy 1.21.2 (Paketrelease 1), statt beim ersten Lauf
+ungebunden die dann neueste Version zu wählen. `alloy_version` wählt eine konkrete
+semantische Version; eine leere Zeichenfolge überlässt die Paketversion bewusst
+der bestehenden Hostverwaltung. Der Windows-Installer bleibt ein eigener Vertrag
+mit expliziter URL und SHA256. Ein URL-Wechsel allein ist kein qualifizierter
+Windows-In-place-Upgradepfad; Erstinstallation und Dienst-Lifecycle werden separat
+abgenommen.

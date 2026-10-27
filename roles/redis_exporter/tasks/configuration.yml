@@ -21,54 +21,39 @@
     createhome: false
   become: true
   tags: redis_exporter
-- name: check if is installed
-  ansible.builtin.stat:
-    path: /usr/local/bin/redis_exporter
-  register: __redis_exporter_is_installed
-  become: true
-  tags: redis_exporter
-- name: gather currently installed version (if any)
-  ansible.builtin.command: /usr/local/bin/redis_exporter -version
-  changed_when: false
-  register: __redis_exporter_current_version_output
-  when: __redis_exporter_is_installed.stat.exists
-  become: true
-  tags: redis_exporter
-- name: download binary to local folder
-  ansible.builtin.get_url:
-    url: https://github.com/oliver006/redis_exporter/releases/download/v{{ redis_exporter_version }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
-    dest: /tmp/redis_exporter-{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
-    mode: '0644'
-  register: _download_binary
-  until: _download_binary is succeeded
-  retries: 5
-  delay: 2
-  delegate_to: localhost
-  check_mode: false
-  become: true
-  tags: redis_exporter
-  when: (not __redis_exporter_is_installed.stat.exists) or (__redis_exporter_current_version_output.stdout_lines[0].split(" ")[4].replace('v', '') != redis_exporter_version)
-- name: unpack binary
-  ansible.builtin.unarchive:
-    src: /tmp/redis_exporter-{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
-    dest: /tmp
-    creates: /tmp/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter
-  delegate_to: localhost
-  check_mode: false
-  become: true
-  tags: redis_exporter
-  when: (not __redis_exporter_is_installed.stat.exists) or (__redis_exporter_current_version_output.stdout_lines[0].split(" ")[4].replace('v', '') != redis_exporter_version)
-- name: propagate binaries
-  ansible.builtin.copy:
-    src: /tmp/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter
-    dest: /usr/local/bin/redis_exporter
-    mode: '0755'
+- name: Create versioned release cache
+  ansible.builtin.file:
+    path: '{{ _redis_exporter_download_dir }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}'
+    state: directory
     owner: root
     group: root
+    mode: '0755'
+- name: Download checksum-verified release on the target
+  ansible.builtin.get_url:
+    url: https://github.com/oliver006/redis_exporter/releases/download/v{{ redis_exporter_version }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz
+    dest: '{{ _redis_exporter_download_dir }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz'
+    checksum: sha256:https://github.com/oliver006/redis_exporter/releases/download/v{{ redis_exporter_version }}/sha256sums.txt
+    mode: '0644'
+  environment: '{{ proxy_env }}'
+  register: _release_download
+  until: _release_download is succeeded
+  retries: 3
+  delay: 2
+- name: Extract the selected release
+  ansible.builtin.unarchive:
+    src: '{{ _redis_exporter_download_dir }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}.tar.gz'
+    dest: '{{ _redis_exporter_download_dir }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}'
+    remote_src: true
+    creates: '{{ _redis_exporter_download_dir }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter'
+- name: Install the selected release binary
+  ansible.builtin.copy:
+    src: '{{ _redis_exporter_download_dir }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter-v{{ redis_exporter_version }}.linux-{{ go_arch }}/redis_exporter'
+    dest: /usr/local/bin/redis_exporter
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
   notify: restart redis_exporter
-  become: true
-  tags: redis_exporter
-  when: (not __redis_exporter_is_installed.stat.exists) or (__redis_exporter_current_version_output.stdout_lines[0].split(" ")[4].replace('v', '') != redis_exporter_version)
 - name: create systemd service unit
   ansible.builtin.template:
     src: redis_exporter.service.j2

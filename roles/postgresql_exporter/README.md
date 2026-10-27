@@ -57,7 +57,7 @@ postgres_exporter_manage_service: true
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.postgresql_exporter
+    - role: degitag.monitoring.postgresql_exporter
 ```
 
 ## Testing

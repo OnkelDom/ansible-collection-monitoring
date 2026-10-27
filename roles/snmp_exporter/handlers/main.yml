@@ -7,7 +7,7 @@
   - (_snmp_exporter_service_policy.state | default('stopped')) != 'stopped'
   ansible.builtin.systemd_service:
     name: snmp_exporter
-    state: reloaded
+    state: restarted
 - name: restart snmp_exporter
   become: true
   tags: snmp_exporter

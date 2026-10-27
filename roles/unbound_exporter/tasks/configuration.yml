@@ -5,6 +5,11 @@
       manage: '{{ unbound_exporter_manage_service | bool }}'
       state: '{{ unbound_exporter_service_state }}'
       enabled: '{{ unbound_exporter_service_enabled | bool }}'
+- name: Validate the bundled binary architecture
+  ansible.builtin.assert:
+    that:
+    - ansible_facts.architecture in ['x86_64', 'aarch64']
+    fail_msg: Bundled verified exporters support x86_64 and aarch64 only.
 - name: create system group
   ansible.builtin.group:
     name: prometheus
@@ -29,7 +34,7 @@
   tags: unbound_exporter
 - name: propagate binaries
   ansible.builtin.copy:
-    src: files/unbound-exporter
+    src: 'unbound_exporter_linux_{{ {''x86_64'': ''amd64'', ''aarch64'': ''arm64''}[ansible_facts.architecture] }}'
     dest: /usr/local/bin/unbound_exporter
     mode: '0755'
     owner: root

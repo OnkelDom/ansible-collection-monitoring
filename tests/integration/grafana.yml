@@ -13,8 +13,14 @@
     grafana_analytics:
       reporting_enabled: false
       check_for_updates: false
+    expected_dashboard_uids:
+    - eea-9_sik
+    - rYdddlPWk
+    - BKf2sowmj
+    - 000000039
+    - f598044f-a5f5-42a2-8fa5-c95c1f3e158d
   roles:
-  - degit.monitoring.grafana
+  - degitag.monitoring.grafana
   post_tasks:
   - name: Verify Grafana health
     ansible.builtin.uri:
@@ -27,3 +33,15 @@
   - name: Verify Grafana database health
     ansible.builtin.assert:
       that: health.json.database == 'ok'
+  - name: Verify provisioned dashboards through the actual Grafana API
+    ansible.builtin.uri:
+      url: http://127.0.0.1:3000/api/search?type=dash-db
+      user: '{{ grafana_security.admin_user }}'
+      password: '{{ grafana_security.admin_password }}'
+      force_basic_auth: true
+      return_content: true
+    register: grafana_search
+    no_log: true
+    until: grafana_search is succeeded and expected_dashboard_uids | difference(grafana_search.json | map(attribute='uid') | list) | length == 0 and 'monitoring-proxmox-native' not in (grafana_search.json | map(attribute='uid') | list)
+    retries: 12
+    delay: 5

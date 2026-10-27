@@ -1,5 +1,5 @@
 ---
-grafana_version: latest
+grafana_version: 13.2.4
 grafana_yum_repo_template: grafana.repo.j2
 grafana_manage_repo: true
 grafana_use_provisioning: true
@@ -58,6 +58,4 @@ grafana_panels: {}
 grafana_manage_service: true
 grafana_service_enabled: true
 grafana_service_state: started
-
-# Dedicated provider and directory preserve independently managed dashboards.
 grafana_proxmox_dashboard_enabled: false

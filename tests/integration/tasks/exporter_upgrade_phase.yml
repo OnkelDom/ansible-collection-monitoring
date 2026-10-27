@@ -1,0 +1,47 @@
+---
+- name: Select the public version parameter
+  ansible.builtin.set_fact:
+    '{{ upgrade_case.role }}_version': '{{ upgrade_version }}'
+- name: Reconcile the actual packaged role
+  ansible.builtin.include_role:
+    name: 'degitag.monitoring.{{ upgrade_case.role }}'
+- name: Apply the version-change handler
+  ansible.builtin.meta: flush_handlers
+- name: Inspect the installed executable version
+  ansible.builtin.command:
+    argv: ['/usr/local/bin/{{ upgrade_case.binary }}', --version]
+  register: upgrade_binary
+  changed_when: false
+  when: upgrade_case.role not in ['consul_exporter', 'snmp_exporter', 'unifi_poller']
+  failed_when: upgrade_version not in (upgrade_binary.stdout ~ upgrade_binary.stderr)
+- name: Verify the exporter after its version change
+  ansible.builtin.uri:
+    url: 'http://127.0.0.1:{{ upgrade_case.port }}/metrics'
+    status_code: 200
+  register: upgrade_ready
+  until: upgrade_ready is succeeded
+  retries: 12
+  delay: 2
+- name: Verify exporter build metadata
+  ansible.builtin.uri:
+    url: 'http://127.0.0.1:{{ upgrade_case.port }}/metrics'
+    return_content: true
+  register: upgrade_consul_build
+  when: upgrade_case.role in ['consul_exporter', 'snmp_exporter']
+  failed_when: ('version="' ~ upgrade_version ~ '"') not in upgrade_consul_build.content
+- name: Inspect the installed Unpoller checksum
+  ansible.builtin.stat:
+    path: /usr/local/bin/unpoller
+    checksum_algorithm: sha256
+  register: upgrade_unpoller_installed
+  when: upgrade_case.role == 'unifi_poller'
+- name: Inspect the selected checksum-verified Unpoller release
+  ansible.builtin.stat:
+    path: "{{ '/var/cache/degitag/unifi_poller/unifi_poller-' ~ upgrade_version ~ '.linux-amd64' ~ ('/unpoller' if upgrade_version is version('2.1.4', '>=') else '') }}"
+    checksum_algorithm: sha256
+  register: upgrade_unpoller_release
+  when: upgrade_case.role == 'unifi_poller'
+- name: Require the selected Unpoller release despite missing upstream version metadata
+  ansible.builtin.assert:
+    that: upgrade_unpoller_installed.stat.checksum == upgrade_unpoller_release.stat.checksum
+  when: upgrade_case.role == 'unifi_poller'

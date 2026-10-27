@@ -51,7 +51,7 @@ blackbox_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.blackbox_exporter
+    - role: degitag.monitoring.blackbox_exporter
 ```
 
 ## Testing

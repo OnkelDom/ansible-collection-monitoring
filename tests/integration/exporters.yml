@@ -1,0 +1,143 @@
+---
+- name: Qualify exporters only on explicitly disposable Linux guests
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    process_exporter_create_consul_agent_service: false
+    snmp_exporter_create_consul_agent_service: false
+    unbound_exporter_config_flags_extra:
+      unbound.uri: '{{ "unix:///run/unbound.ctl" if ansible_facts.os_family == "Debian" else "unix:///run/unbound/control" }}'
+      block-file: /etc/unbound/release-test.block
+    unifi_poller_config:
+      poller:
+        quiet: true
+        debug: false
+      prometheus:
+        disable: false
+        http_listen: 127.0.0.1:9130
+      influxdb:
+        disable: true
+      unifi:
+        dynamic: true
+        controllers: []
+      datadog:
+        disable: true
+  pre_tasks:
+  - name: Require an explicit disposable target marker
+    ansible.builtin.assert:
+      that: monitoring_lab_disposable | default(false) | bool
+      fail_msg: This test installs local backend fixtures and is restricted to disposable guests.
+  - name: Install local Redis, PostgreSQL, Squid and Unbound fixtures
+    ansible.builtin.package:
+      name: '{{ {"Debian": ["redis-server", "postgresql", "squid", "unbound"], "RedHat": ["redis", "postgresql-server", "squid", "unbound"]}[ansible_facts.os_family] }}'
+      state: present
+  - name: Initialize the Rocky PostgreSQL fixture
+    ansible.builtin.command:
+      cmd: postgresql-setup --initdb
+      creates: /var/lib/pgsql/data/PG_VERSION
+    when: ansible_facts.os_family == 'RedHat'
+  - name: Enable the disposable Unbound control-socket fixture
+    ansible.builtin.copy:
+      dest: /etc/unbound/unbound.conf.d/release-control.conf
+      content: "remote-control:\n  control-enable: yes\n  control-interface: /run/unbound.ctl\n"
+      mode: '0644'
+    register: fixture_unbound_control
+    when: ansible_facts.os_family == 'Debian'
+  - name: Apply the disposable Unbound fixture configuration
+    ansible.builtin.service:
+      name: unbound
+      state: restarted
+    when: ansible_facts.os_family == 'Debian' and fixture_unbound_control.changed
+  - name: Start fixture backends
+    ansible.builtin.service:
+      name: '{{ item }}'
+      state: started
+    loop:
+    - '{{ "redis-server" if ansible_facts.os_family == "Debian" else "redis" }}'
+    - postgresql
+    - squid
+    - unbound
+  - name: Create the unbound blocklist fixture
+    ansible.builtin.copy:
+      dest: /etc/unbound/release-test.block
+      content: 'local-zone: "release-test.invalid" always_nxdomain'
+      mode: '0644'
+  - name: Create the PostgreSQL monitoring fixture account
+    ansible.builtin.command:
+      argv:
+      - runuser
+      - -u
+      - postgres
+      - --
+      - psql
+      - -v
+      - ON_ERROR_STOP=1
+      - -c
+      - DO $body$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'postgres_exporter') THEN CREATE ROLE postgres_exporter LOGIN; END IF; END $body$; GRANT pg_monitor TO postgres_exporter;
+    changed_when: false
+  roles:
+  - degitag.monitoring.consul_exporter
+  - degitag.monitoring.ilo5_exporter
+  - degitag.monitoring.postgresql_exporter
+  - degitag.monitoring.process_exporter
+  - degitag.monitoring.pushgateway
+  - degitag.monitoring.redis_exporter
+  - degitag.monitoring.snmp_exporter
+  - degitag.monitoring.squid_exporter
+  - degitag.monitoring.systemd_exporter
+  - degitag.monitoring.unbound_exporter
+  - degitag.monitoring.unifi_poller
+  - degitag.monitoring.vector
+  - degitag.monitoring.victoriametrics
+  post_tasks:
+  - name: Apply pending configuration handlers
+    ansible.builtin.meta: flush_handlers
+  - name: Verify native HTTP endpoints
+    ansible.builtin.uri:
+      url: http://127.0.0.1:{{ item }}
+      return_content: true
+    register: exporter_endpoint
+    until: exporter_endpoint is succeeded
+    retries: 12
+    delay: 5
+    loop:
+    - 9107/metrics
+    - 9545/
+    - 9187/metrics
+    - 9256/metrics
+    - 9091/metrics
+    - 9121/metrics
+    - 9116/metrics
+    - 9301/metrics
+    - 9558/metrics
+    - 9167/metrics
+    - 9130/metrics
+    - 8428/health
+  - name: Verify real Redis metric collection
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9121/metrics
+      return_content: true
+    register: redis_metrics
+    failed_when: '''redis_up 1'' not in redis_metrics.content'
+  - name: Verify real PostgreSQL metric collection
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9187/metrics
+      return_content: true
+    register: postgres_metrics
+    failed_when: '''pg_up 1'' not in postgres_metrics.content'
+  - name: Verify Vector health
+    ansible.builtin.command: vector validate --no-environment --skip-healthchecks /etc/vector/vector.yaml
+    changed_when: false
+  - name: Verify real Squid cache-manager collection
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9301/metrics
+      return_content: true
+    register: squid_metrics
+    failed_when: squid_metrics.content is not search('squid_up[^\n]* 1')
+  - name: Verify real Unbound control-socket statistics
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9167/metrics
+      return_content: true
+    register: unbound_metrics
+    failed_when: '''unbound_queries_total'' not in unbound_metrics.content or ''unbound_blocklist_domain_count 1'' not in unbound_metrics.content'

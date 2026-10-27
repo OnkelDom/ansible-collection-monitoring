@@ -5,6 +5,11 @@
       manage: '{{ ilo5_exporter_manage_service | bool }}'
       state: '{{ ilo5_exporter_service_state }}'
       enabled: '{{ ilo5_exporter_service_enabled | bool }}'
+- name: Validate the bundled binary architecture
+  ansible.builtin.assert:
+    that:
+    - ansible_facts.architecture in ['x86_64', 'aarch64']
+    fail_msg: Bundled verified exporters support x86_64 and aarch64 only.
 - name: create system group
   ansible.builtin.group:
     name: prometheus
@@ -29,7 +34,7 @@
   tags: ilo5_exporter
 - name: propagate binaries
   ansible.builtin.copy:
-    src: files/ilo5_exporter
+    src: 'ilo5_exporter_linux_{{ {''x86_64'': ''amd64'', ''aarch64'': ''arm64''}[ansible_facts.architecture] }}'
     dest: /usr/local/bin/ilo5_exporter
     mode: '0755'
     owner: root

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-27",
+  "collection": "degitag.monitoring",
+  "contract": "degitag-collections-v1",
+  "coordinator": "degitag.infrastructure",
+  "shared_files": {
+    "docs/repository-standard.md": "d16398b6f6f807f55319c75d945c10550235c5c00f4adcca0372b0ec153e144a",
+    ".editorconfig": "1023fd774150f1ddc05c50686326791fa5017d933469961869cdf948244a58a1",
+    "tools/check_collection_artifact.py": "b68d7b00bbbadda8d0b579477c23fcd0a12086b4f07346224c2f5c1cc9d10458",
+    "tools/check_repository.py": "c9b29d436e4ae0c4879501724e5a589f9a770592ef02b90776c3613f38a70c3d",
+    "tools/collection_metadata.py": "5464c76212aa08dac7f0df7cb17d457c0a3aad45609df4912b440ada9827c1c0",
+    "tests/run_collection_sanity.sh": "54e797fe0f39c7e39c70615678ff66d61e8c2240588832728ece4c6bafc40aa9",
+    "tests/unit/test_collection_artifact.py": "2e781d658a7bc6eb4f96eda74265231f53ba40a9b513b52aabccff15a0ee154b",
+    "tests/unit/test_repository_contract.py": "15d685c36f0aa6112e17329b2da3cd9b93ced9ea25e2d6c208b1c43a1b890c04"
+  },
+  "command": "bash tests/run_checks.sh",
+  "unit_tests": 49,
+  "production_rollout": false,
+  "exit_code": 0
+}

@@ -32,28 +32,20 @@ vector_configure_config_path: /etc/vector/vector.yaml
 vector_configure_data_dir: /var/lib/vector
 vector_configure_api:
   enabled: true
+  address: 127.0.0.1:8686
 vector_configure_sources:
-  syslog:
-    type: syslog
-    address: 0.0.0.0:514
-    max_length: '102_400'
-    mode: udp
-    path: /tmp/syslog_udp
+  internal_metrics:
+    type: internal_metrics
 vector_configure_sinks:
-  loki:
-    type: loki
+  discard:
+    type: blackhole
     inputs:
-    - source_syslog
-    endpoint: http://localhost:3100
-    labels:
-      datasource: source_syslog
-    out_of_order_action: rewrite_timestamp
-    encoding:
-      codec: json
+    - internal_metrics
 vector_service_enabled: true
 vector_service_status: started
 vector_manage_service: true
 vector_service_state: started
+vector_version: 0.60.0
 ```
 
 ## Example Playbook
@@ -64,7 +56,7 @@ vector_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.vector
+    - role: degitag.monitoring.vector
 ```
 
 ## Testing

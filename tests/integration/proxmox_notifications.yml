@@ -11,7 +11,7 @@
       group_by:
       - alertname
   roles:
-  - degit.monitoring.alertmanager
+  - degitag.monitoring.alertmanager
   post_tasks:
   - name: Apply the validated isolated Alertmanager configuration
     ansible.builtin.meta: flush_handlers

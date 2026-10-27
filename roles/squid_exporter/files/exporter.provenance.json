@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/boynux/squid-exporter",
+  "revision": "900fd001ce0759a694e16f73c2725dbd1df44cbe",
+  "source_url": "https://codeload.github.com/boynux/squid-exporter/tar.gz/900fd001ce0759a694e16f73c2725dbd1df44cbe",
+  "source_sha256": "eea2585c6b398bcc23afe5d468ed973c4c1158a80c6cf7f3b4e89ab391e458b8",
+  "go.mod_sha256": "409e6827815d70ceee859170eab41bf9ecfbe8ce153b040730648d70fe3c2706",
+  "go.sum_sha256": "c38be6e4c8dfafccc1bd1730100b55e1a66b9e23b153de90f3515613de21fc38",
+  "go_version": "go1.27.3",
+  "build_flags": [
+    "-mod=readonly",
+    "-trimpath",
+    "-buildvcs=false",
+    "-ldflags=-s -w -buildid="
+  ],
+  "cgo_enabled": "0",
+  "binaries": {
+    "amd64": "7b2ccf0ec3a25672d8280dfb3b395d49afd2c15716535b52dbfabd9175c7fdde",
+    "arm64": "317bce4aab33f972a92f11cdaf3acde65dc82c8d901d36a6966e8213a92f343e"
+  },
+  "patch_sha256": "130d11be4aa05bf3f4c3846b8f9bb596775d0214da489641ab40521c2cc39180",
+  "patch_reason": "Support current Prometheus collectors and Squid 7 manager HTTP paths; close scrape connections.",
+  "test_pattern": "^TestModernManagerPath$",
+  "test_package": "./collector"
+}

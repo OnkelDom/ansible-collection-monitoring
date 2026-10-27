@@ -4,6 +4,9 @@
   become: true
   gather_facts: false
   tasks:
+  - name: Require an explicitly disposable target
+    ansible.builtin.assert:
+      that: monitoring_lab_disposable | default(false) | bool
   - name: Reboot the disposable guest
     ansible.builtin.reboot:
       reboot_timeout: 180
@@ -24,3 +27,44 @@
     - '3200/ready'
     - '12345/-/ready'
     - '3000/api/health'
+    - '9107/metrics'
+    - '9545/'
+    - '9187/metrics'
+    - '9256/metrics'
+    - '9091/metrics'
+    - '9121/metrics'
+    - '9116/metrics'
+    - '9301/metrics'
+    - '9558/metrics'
+    - '9167/metrics'
+    - '9130/metrics'
+    - '8428/metrics'
+    - '9273/metrics'
+  - name: Inspect all installed monitoring services after reboot
+    ansible.builtin.service_facts:
+  - name: Require all 21 monitoring services and Telegraf to run
+    ansible.builtin.assert:
+      that: ansible_facts.services[item ~ '.service'].state == 'running'
+    loop:
+    - alloy
+    - node_exporter
+    - prometheus
+    - alertmanager
+    - blackbox_exporter
+    - loki
+    - tempo
+    - grafana-server
+    - consul_exporter
+    - ilo5_exporter
+    - postgres_exporter
+    - process_exporter
+    - pushgateway
+    - redis_exporter
+    - snmp_exporter
+    - squid_exporter
+    - systemd_exporter
+    - unbound_exporter
+    - unifi-poller
+    - vector
+    - victoriametrics
+    - telegraf

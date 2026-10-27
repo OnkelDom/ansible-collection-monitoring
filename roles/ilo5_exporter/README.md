@@ -24,9 +24,7 @@ The role interface is validated through `meta/argument_specs.yml`. Defaults are 
 ```yaml
 ---
 proxy_env: {}
-ilo5_exporter_config_flags_extra:
-  api.username: '{{ ilo5_user }}'
-  api.password: '{{ ilo5_pass }}'
+ilo5_exporter_config_flags_extra: {}
 ilo5_exporter_manage_service: true
 ilo5_exporter_service_enabled: true
 ilo5_exporter_service_state: started
@@ -40,7 +38,7 @@ ilo5_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.ilo5_exporter
+    - role: degitag.monitoring.ilo5_exporter
 ```
 
 ## Testing
@@ -64,3 +62,11 @@ Install the collection dependencies from `requirements.yml`. Role dependencies:
 Use check mode where the underlying modules support it. Review the diff before applying
 changes. Network, firewall, identity and storage changes need an out-of-band recovery
 path. Secrets belong in Ansible Vault or the operator secret store, never in defaults.
+
+## Binary provenance
+
+Bundled binaries support Linux x86_64 and aarch64. The role rejects other
+architectures before installation. `files/exporter.provenance.json` records the
+immutable upstream revision, source checksum, Go toolchain, dependency lock hashes
+and binary hashes. Rebuild and verify with `tools/build_exporters.py`; unknown
+bundled ELF files are rejected during artifact validation.

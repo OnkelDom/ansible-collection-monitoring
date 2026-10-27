@@ -17,4 +17,4 @@
   - (_process_exporter_service_policy.state | default('stopped')) != 'stopped'
   ansible.builtin.systemd_service:
     name: process_exporter
-    state: reloaded
+    state: restarted

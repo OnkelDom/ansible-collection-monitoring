@@ -42,7 +42,7 @@ prometheus.remote_write "default" {
 {% if ansible_facts.os_family != 'Windows' and alloy_linux_metrics_enabled and remote_write_enabled %}
 prometheus.exporter.unix "local" {
   filesystem {
-    mount_points_exclude = {{ alloy_linux_filesystem_mount_points_exclude | degit.monitoring.monitoring_filesystem_mount_exclude(alloy_linux_filesystem_mount_points_exclude_extra) | to_json }}
+    mount_points_exclude = {{ alloy_linux_filesystem_mount_points_exclude | degitag.monitoring.monitoring_filesystem_mount_exclude(alloy_linux_filesystem_mount_points_exclude_extra) | to_json }}
   }
 {% if alloy_linux_metrics_collectors_disabled | default([], true) | length > 0 %}
   disable_collectors = {{ alloy_linux_metrics_collectors_disabled | to_json }}

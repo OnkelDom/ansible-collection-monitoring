@@ -90,7 +90,7 @@ loki_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.loki
+    - role: degitag.monitoring.loki
 ```
 
 ## Testing

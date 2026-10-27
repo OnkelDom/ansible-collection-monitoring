@@ -10,6 +10,8 @@ argument_specs:
         - Controls `squid_exporter_version` for the `squid_exporter` role.
         required: false
         type: str
+        choices:
+        - 1.8.2
       squid_exporter_web_listen_address:
         description:
         - Controls `squid_exporter_web_listen_address` for the `squid_exporter` role.

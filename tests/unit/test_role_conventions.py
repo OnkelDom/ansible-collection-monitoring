@@ -87,8 +87,8 @@ def test_role_readmes_include_core_sections_and_examples() -> None:
         if "```yaml" not in text:
             invalid.append(f"{role_dir.name}: README.md must contain at least one YAML example block")
 
-        if f"degit.monitoring.{role_dir.name}" not in text:
-            invalid.append(f"{role_dir.name}: README.md example playbook must reference degit.monitoring.{role_dir.name}")
+        if f"degitag.monitoring.{role_dir.name}" not in text:
+            invalid.append(f"{role_dir.name}: README.md example playbook must reference degitag.monitoring.{role_dir.name}")
 
     assert not invalid, "\n".join(invalid)
 
@@ -123,8 +123,8 @@ def test_role_meta_main_matches_collection_quality_baseline() -> None:
         if str(galaxy_info.get("min_ansible_version")) != min_ansible_version:
             invalid.append(f"{role_dir.name}: meta/main.yml has unexpected min_ansible_version")
 
-        if galaxy_info.get("license") != "MIT":
-            invalid.append(f"{role_dir.name}: meta/main.yml must declare MIT license")
+        if galaxy_info.get("license") != SCAFFOLD_CONFIG.get("role_licenses", {}).get(role_dir.name, "MIT"):
+            invalid.append(f"{role_dir.name}: meta/main.yml must preserve its configured license")
 
         dependencies = meta.get("dependencies")
         if not isinstance(dependencies, list):

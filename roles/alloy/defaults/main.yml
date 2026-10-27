@@ -115,7 +115,6 @@ alloy_selinux_port_type: '{{ _alloy_platform_selinux_port_type | default(''http_
 alloy_rpm_repository_url: https://rpm.grafana.com
 alloy_rpm_repository_key_url: https://rpm.grafana.com/gpg.key
 alloy_lpm_enabled: true
-# Central PVE native OTLP/HTTP receiver; separate from local host telemetry.
 alloy_proxmox_enabled: false
 alloy_proxmox_endpoint: 127.0.0.1:14318
 alloy_proxmox_htpasswd_file: ''
@@ -127,6 +126,6 @@ alloy_proxmox_labels:
   tenant: default
   environment: prod
   site: default
-# Exclude audited aliases at collection time; retain canonical mounts and submounts.
 alloy_linux_filesystem_mount_points_exclude: ^/(dev|proc|run|sys)($|/)
 alloy_linux_filesystem_mount_points_exclude_extra: []
+alloy_version: 1.21.2

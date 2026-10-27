@@ -4,5 +4,6 @@ _alloy_platform_service_name: alloy
 _alloy_platform_config_dir: /etc/alloy
 _alloy_platform_data_dir: /var/lib/alloy
 _alloy_platform_log_dir: /var/log/alloy
-
 _alloy_platform_binary_path: /usr/bin/alloy
+_alloy_platform_package_version_separator: '='
+_alloy_platform_package_release: '-1'

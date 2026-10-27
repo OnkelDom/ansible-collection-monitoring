@@ -65,3 +65,20 @@ def test_filesystem_alias_exclusions_are_exact_and_preserve_canonical_mounts():
         import pytest
         with pytest.raises(ValueError):
             module.monitoring_filesystem_mount_exclude('', invalid)
+
+
+def test_raw_yaml_pipeline_preserves_full_compiled_rule_semantics():
+    spec = importlib.util.spec_from_file_location('platform_rules', ROOT / 'plugins/filter/monitoring_platform.py')
+    platform = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(platform)
+    source = (ROOT / 'roles/prometheus/files/lpm/host.rules').read_text()
+    annotations = (ROOT / 'roles/prometheus/files/lpm/platform-annotations.yml').read_text()
+    overrides = [{'alertname': 'LPMCPU.*', 'annotations': {'operator_note': 'Inventory override'}}]
+    expected = lpm.monitoring_lpm_rules(yaml.safe_load(source), 'high', 'https://dashboard.invalid', 'https://runbook.invalid')
+    expected = platform.monitoring_platform_annotations(expected, yaml.safe_load(annotations))
+    expected = platform.monitoring_platform_annotations(expected, overrides)
+    actual = lpm.monitoring_lpm_rules(source, 'high', 'https://dashboard.invalid', 'https://runbook.invalid')
+    actual = platform.monitoring_platform_annotations(actual, annotations)
+    actual = platform.monitoring_platform_annotations(actual, overrides)
+    assert isinstance(actual, str)
+    assert yaml.safe_load(actual) == expected

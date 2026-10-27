@@ -1,4 +1,0 @@
----
-keepalived_exporter_manage_service: true
-keepalived_exporter_service_enabled: true
-keepalived_exporter_service_state: started

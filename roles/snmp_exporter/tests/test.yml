@@ -4,4 +4,4 @@
   connection: local
   gather_facts: true
   roles:
-  - role: degit.monitoring.snmp_exporter
+  - role: degitag.monitoring.snmp_exporter

@@ -6,7 +6,7 @@
   - (_vector_service_policy.state | default('stopped')) != 'stopped'
   ansible.builtin.systemd_service:
     name: vector
-    state: reloaded
+    state: restarted
 - name: reload vector
   tags: vector
   when:

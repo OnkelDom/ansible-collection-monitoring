@@ -53,9 +53,11 @@ alertmanager_lpm_inhibit_rules:
 - source_matchers:
   - monitoring_profile="lpm"
   - severity="ERROR"
+  - instance=~".+"
   target_matchers:
   - monitoring_profile="lpm"
   - severity="WARN"
+  - instance=~".+"
   equal:
   - instance
   - tenant
@@ -65,6 +67,29 @@ alertmanager_lpm_inhibit_rules:
   - path
   - interface
   - alert_family
+  - platform
+  - name
+  - device
+  - target
+  - server
+  - port
+  - protocol
+  - method
+  - lpm
+- source_matchers:
+  - monitoring_profile="lpm"
+  - alert_family="LPMCollectorDown"
+  - severity="ERROR"
+  - instance=~".+"
+  - platform=~"linux|windows"
+  target_matchers:
+  - monitoring_profile="lpm"
+  - category!="availability"
+  equal:
+  - instance
+  - tenant
+  - environment
+  - site
   - platform
 alertmanager_proxmox_enabled: false
 alertmanager_proxmox_inhibit_rules:
@@ -92,7 +117,7 @@ alertmanager_proxmox_inhibit_rules:
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.alertmanager
+    - role: degitag.monitoring.alertmanager
 ```
 
 ## Testing
@@ -155,3 +180,25 @@ CPU, memory and different storage resources do not suppress one another.
 The existing neutral notification templates display the supplied descriptions,
 next steps and optional dashboard URL. SMTP, recipients and external branding
 remain inventory policy; no test notification is sent by enabling this profile.
+
+
+## LPM-Inhibition und Ressourcengrenzen
+
+ERROR unterdrückt WARN nur innerhalb derselben LPM-Alarmfamilie und identischen
+Instanz-, Mandanten-, Umgebungs-, Standort- und Plattformgrenzen. Dateisystem,
+Gerät, I/O-Name, Interface, Probe-Ziel, Server/Port/Protokoll/Methode und Klasse
+müssen ebenfalls übereinstimmen. Unterschiedliche Datenträger oder Ziele werden
+nicht gegenseitig unterdrückt. Eine leere Instanzkennung ist keine gemeinsame
+Hostidentität und erhält keine Severity-Inhibition.
+
+Ein ausdrücklich markierter `LPMCollectorDown` unterdrückt Ressourcenfolgealarme
+nur für dieselbe Instanz und denselben Mandanten/Standort/dieselbe Plattform;
+Verfügbarkeitsalarme bleiben davon ausgenommen. Dafür müssen direkte Scrapes neben
+`monitoring_profile="lpm"` auch `platform="linux"` bzw. `"windows"` tragen.
+Komplett verlorene Remote-Write-Sender benötigen zusätzlich externes Heartbeat.
+
+Die Standardregeln gelten unabhängig davon, ob Alloy, Node Exporter oder Telegraf
+die vereinbarten LPM-Messwerte liefert. Eigene Regeln in
+`alertmanager_inhibit_rules` werden zusätzlich angewendet. Der lokale Prüfeinstieg
+startet einen isolierten echten Alertmanager mit Blackhole-Empfänger und prüft
+positive sowie negative Inhibition-Fälle. Es wird keine Testmail versendet.

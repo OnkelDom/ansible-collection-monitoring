@@ -34,7 +34,7 @@ consul_exporter_system_user: consul_exporter
 consul_exporter_system_group: consul_exporter
 consul_exporter_consul_token: ''
 consul_exporter_params:
-- consul.server-namelocalhost:8500
+- consul.server=localhost:8500
 consul_exporter_manage_service: true
 consul_exporter_service_enabled: true
 consul_exporter_service_state: started
@@ -48,7 +48,7 @@ consul_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.consul_exporter
+    - role: degitag.monitoring.consul_exporter
 ```
 
 ## Testing

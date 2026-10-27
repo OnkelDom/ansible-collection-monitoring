@@ -14,7 +14,7 @@
       alloy_service_enabled: false
       node_exporter_service_state: stopped
       node_exporter_service_enabled: false
-    loop: [degit.monitoring.alloy, degit.monitoring.node_exporter]
+    loop: [degitag.monitoring.alloy, degitag.monitoring.node_exporter]
   - name: Flush stop-state handlers
     ansible.builtin.meta: flush_handlers
   - name: Query stopped agents
@@ -33,7 +33,7 @@
     block:
     - name: Attempt invalid Alloy configuration
       ansible.builtin.include_role:
-        name: degit.monitoring.alloy
+        name: degitag.monitoring.alloy
       vars:
         alloy_manage_service: false
         alloy_custom_blocks: ['this is invalid {']
@@ -55,7 +55,7 @@
       that: before_invalid.stat.checksum == after_invalid.stat.checksum
   - name: Change valid configuration with service management disabled
     ansible.builtin.include_role:
-      name: degit.monitoring.alloy
+      name: degitag.monitoring.alloy
     vars:
       alloy_manage_service: false
       alloy_log_level: warn
@@ -69,4 +69,4 @@
   - name: Restore both agents through their public role API
     ansible.builtin.include_role:
       name: '{{ item }}'
-    loop: [degit.monitoring.alloy, degit.monitoring.node_exporter]
+    loop: [degitag.monitoring.alloy, degitag.monitoring.node_exporter]

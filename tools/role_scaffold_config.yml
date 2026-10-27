@@ -1,5 +1,5 @@
 ---
-collection_namespace: degit
+collection_namespace: degitag
 collection_name: monitoring
 min_ansible_version: '2.20'
 common_platforms:
@@ -25,14 +25,10 @@ role_descriptions:
   alloy: Install and configure Grafana Alloy as a telemetry agent.
   blackbox_exporter: Install and configure the Prometheus blackbox_exporter.
   consul_exporter: Install and configure the Prometheus consul_exporter.
-  dovecot_exporter: Install and configure a Dovecot Prometheus exporter.
   grafana: Install and configure Grafana dashboards, datasources, and settings.
   ilo5_exporter: Install and configure the HPE iLO5 Prometheus exporter.
-  ipmi_exporter: Install and configure the Prometheus ipmi_exporter.
-  keepalived_exporter: Install and configure the Prometheus keepalived_exporter.
   loki: Install and configure Grafana Loki.
   node_exporter: Install and configure Prometheus node_exporter.
-  postfix_exporter: Install and configure a Postfix Prometheus exporter.
   postgresql_exporter: Install and configure the postgres_exporter for PostgreSQL metrics.
   process_exporter: Install and configure the Prometheus process_exporter.
   prometheus: Install and configure the Prometheus server and rule files.
@@ -47,10 +43,6 @@ role_descriptions:
   victoriametrics: Install and configure VictoriaMetrics.
   tempo: Install and configure a native Grafana Tempo service.
 role_platform_overrides:
-  dovecot_exporter: []
-  ipmi_exporter: []
-  keepalived_exporter: []
-  postfix_exporter: []
   alloy:
   - *id001
   - *id002
@@ -71,10 +63,10 @@ role_argument_overrides:
       - high
       - mid
       - low
+  squid_exporter:
+    squid_exporter_version:
+      choices:
+      - 1.8.2
 role_notes:
-  dovecot_exporter: Not implemented. Execution is rejected before making changes.
-  ipmi_exporter: Not implemented. Execution is rejected before making changes.
-  keepalived_exporter: Not implemented. Execution is rejected before making changes.
-  postfix_exporter: Not implemented. Execution is rejected before making changes.
-  alloy: Owned exclusively by degit.monitoring. Optional firewall rules delegate to degit.infrastructure.firewall. Configure only one telemetry agent for each metric source.
-  node_exporter: Owned exclusively by degit.monitoring. Optional firewall rules delegate to degit.infrastructure.firewall. Configure only one telemetry agent for each metric source.
+  alloy: Owned exclusively by degitag.monitoring. Optional firewall rules delegate to degitag.infrastructure.firewall. Configure only one telemetry agent for each metric source.
+  node_exporter: Owned exclusively by degitag.monitoring. Optional firewall rules delegate to degitag.infrastructure.firewall. Configure only one telemetry agent for each metric source.

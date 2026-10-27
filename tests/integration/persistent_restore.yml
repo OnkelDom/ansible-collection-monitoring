@@ -1,0 +1,173 @@
+---
+- name: Verify cold backup and restore on disposable monitoring guests
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    restore_services:
+    - name: alloy
+      path: /var/lib/alloy
+    - name: prometheus
+      path: /var/lib/prometheus
+    - name: alertmanager
+      path: /var/lib/alertmanager
+    - name: loki
+      path: /var/lib/loki
+    - name: tempo
+      path: /var/lib/tempo
+    - name: victoriametrics
+      path: /var/lib/victoriametrics
+    - name: pushgateway
+      path: /var/lib/pushgateway
+    - name: grafana-server
+      path: /var/lib/grafana
+    restore_manifest_script: "import hashlib, json\nfrom pathlib import Path\nroot = Path('/var/lib')\npaths = ['alloy', 'alertmanager', 'prometheus', 'loki', 'tempo', 'victoriametrics', 'pushgateway', 'grafana']\nresult = {}\nfor name in paths:\n    for path in sorted((root / name).rglob('*')):\n        if path.is_file():\n            result[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()\nprint(json.dumps(result, sort_keys=True))\n"
+  tasks:
+  - name: Require a disposable guest before modifying persistent data
+    ansible.builtin.assert:
+      that:
+      - monitoring_lab_disposable | default(false) | bool
+      - ansible_facts.hostname is match('^monitoring-release-')
+  - name: Read a real historical Prometheus sample
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9090/api/v1/query?query=node_uname_info
+      return_content: true
+    register: original_metric
+    failed_when: original_metric.json.data.result | length == 0
+  - name: Create a real isolated Alertmanager silence before backup
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9093/api/v2/silences
+      method: POST
+      body_format: json
+      body:
+        matchers:
+        - name: validation_fixture
+          value: release-restore
+          isRegex: false
+          isEqual: true
+        startsAt: '{{ ansible_facts.date_time.iso8601 }}'
+        endsAt: '{{ ''%Y-%m-%dT%H:%M:%SZ'' | strftime(ansible_facts.date_time.epoch | int + 3600, utc=true) }}'
+        createdBy: release-validation
+        comment: Disposable restore fixture
+    register: restore_silence
+  - name: Require an existing real trace before backup
+    ansible.builtin.uri:
+      url: http://127.0.0.1:3200/api/traces/{{ (inventory_hostname | hash("sha256"))[:32] }}
+      headers:
+        Accept: application/json
+      return_content: true
+    register: before_restore_trace
+    failed_when: '''native-monitoring-test'' not in before_restore_trace.content'
+  - name: Stop every persistent backend before the consistent backup
+    ansible.builtin.systemd_service:
+      name: '{{ item.name }}'
+      state: stopped
+    loop: '{{ restore_services }}'
+  - name: Fingerprint the stopped backend data
+    ansible.builtin.command:
+      argv:
+      - python3
+      - -c
+      - '{{ restore_manifest_script }}'
+    register: original_manifest
+    changed_when: false
+  - name: Require actual persistent data before backup
+    ansible.builtin.assert:
+      that: original_manifest.stdout | from_json | length > 0
+  - name: Create the isolated backup directory
+    ansible.builtin.file:
+      path: /var/backups/monitoring-release
+      state: directory
+      mode: '0700'
+  - name: Archive consistent persistent backend data
+    ansible.builtin.command:
+      argv:
+      - tar
+      - -czpf
+      - /var/backups/monitoring-release/data.tar.gz
+      - -C
+      - /var/lib
+      - prometheus
+      - loki
+      - tempo
+      - victoriametrics
+      - pushgateway
+      - grafana
+      - alloy
+      - alertmanager
+    changed_when: true
+  - name: Remove the disposable data paths to exercise a real restore
+    ansible.builtin.file:
+      path: '{{ item.path }}'
+      state: absent
+    loop: '{{ restore_services }}'
+  - name: Restore the cold backup into the empty data paths
+    ansible.builtin.unarchive:
+      src: /var/backups/monitoring-release/data.tar.gz
+      dest: /var/lib
+      remote_src: true
+  - name: Fingerprint the restored backend data before startup
+    ansible.builtin.command:
+      argv:
+      - python3
+      - -c
+      - '{{ restore_manifest_script }}'
+    register: restored_manifest
+    changed_when: false
+  - name: Require byte-identical restored backend data
+    ansible.builtin.assert:
+      that: original_manifest.stdout | from_json == restored_manifest.stdout | from_json
+  - name: Start the restored persistent backends
+    ansible.builtin.systemd_service:
+      name: '{{ item.name }}'
+      state: started
+    loop: '{{ restore_services | reverse | list }}'
+  - name: Verify historical Prometheus data survived restore
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9090/api/v1/query?query=node_uname_info&time={{ original_metric.json.data.result[0].value[0] }}
+      return_content: true
+    register: restored_metric
+    until: restored_metric is succeeded
+    retries: 12
+    delay: 5
+    failed_when: restored_metric.json.data.result | length == 0
+  - name: Verify restored backend readiness
+    ansible.builtin.uri:
+      url: http://127.0.0.1:{{ item }}
+    register: restored_ready
+    until: restored_ready is succeeded
+    retries: 24
+    delay: 5
+    loop:
+    - 9090/-/ready
+    - 3100/ready
+    - 3200/ready
+    - 8428/health
+    - 9091/-/ready
+    - 3000/api/health
+    - 9093/-/ready
+    - 12345/-/ready
+  - name: Verify the persisted Alertmanager silence survived restore
+    ansible.builtin.uri:
+      url: http://127.0.0.1:9093/api/v2/silence/{{ restore_silence.json.silenceID }}
+      return_content: true
+    register: restored_silence
+    failed_when: restored_silence.json.comment != 'Disposable restore fixture'
+  - name: Verify the original trace survived restore
+    ansible.builtin.uri:
+      url: http://127.0.0.1:3200/api/traces/{{ (inventory_hostname | hash("sha256"))[:32] }}
+      headers:
+        Accept: application/json
+      return_content: true
+    register: restored_trace
+    until: restored_trace is succeeded and 'native-monitoring-test' in restored_trace.content
+    retries: 24
+    delay: 5
+  - name: Verify the original journal proof survived restore
+    ansible.builtin.uri:
+      url: http://127.0.0.1:3100/loki/api/v1/query_range?query=%7Btenant%3D%22validation%22%2Cplatform%3D%22linux%22%7D%20%7C%3D%20%22monitoring-v2-runtime-proof-{{ inventory_hostname }}%22
+      return_content: true
+    register: restored_log
+    until: restored_log is succeeded and restored_log.json.data.result | length > 0
+    retries: 24
+    delay: 5

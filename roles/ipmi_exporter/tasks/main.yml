@@ -1,7 +1,0 @@
----
-- name: Prepare facts and platform variables
-  ansible.builtin.import_tasks: preflight.yml
-  tags: always
-- name: Apply ipmi_exporter configuration
-  ansible.builtin.import_tasks: configuration.yml
-  tags: ipmi_exporter

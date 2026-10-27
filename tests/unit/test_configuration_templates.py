@@ -15,7 +15,7 @@ def render(relative, **variables):
     spec = importlib.util.spec_from_file_location('monitoring_lpm', ROOT / 'plugins/filter/monitoring_lpm.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    environment.filters.update({'degit.monitoring.' + k: v for k, v in module.FilterModule().filters().items()})
+    environment.filters.update({'degitag.monitoring.' + k: v for k, v in module.FilterModule().filters().items()})
     return environment.from_string((ROOT / relative).read_text()).render(**variables)
 
 

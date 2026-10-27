@@ -103,4 +103,4 @@
   ansible.builtin.package:
     name: '{{ grafana_package }}'
     state: '{{ (grafana_version == ''latest'') | ternary(''latest'', ''present'') }}'
-    policy_rc_d: '{{ 101 if ansible_facts.os_family == ''Debian'' and not (grafana_manage_service | bool and grafana_service_state == ''started'') else omit }}'
+    policy_rc_d: '{{ 101 if ansible_facts.os_family == ''Debian'' else omit }}'

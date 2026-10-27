@@ -59,3 +59,27 @@
       linux: "Linux: URL vom \xFCberwachten Host mit curl -v pr\xFCfen. DNS, TLS-Zertifikat, HTTP-Status und Antwort mit der Healthcheck-Konfiguration abgleichen."
       windows: "Windows: URL vom \xFCberwachten Host mit Invoke-WebRequest -Uri 'URL' pr\xFCfen. DNS, TLS-Zertifikat, HTTP-Status und Antwort mit der Healthcheck-Konfiguration abgleichen."
       unknown: "Betriebssystem des \xFCberwachten Hosts pr\xFCfen. URL, DNS, TLS-Zertifikat, HTTP-Status und Antwort vom \xFCberwachten Host mit der Healthcheck-Konfiguration abgleichen."
+- alertname: LPMCpu(High|Mid|Low)_(WARN|ERROR)
+  annotations:
+    action:
+      linux: "Linux: top; ps -eo pid,comm,pcpu --sort=-pcpu | head. Dauerlast und konfigurierte Kritikalit\xE4tsklasse pr\xFCfen."
+      windows: "Windows: Task-Manager nach CPU-Verbrauch sortieren; Get-Process | Sort-Object CPU -Descending | Select-Object -First 10. Dauerlast und Kritikalit\xE4tsklasse pr\xFCfen."
+      unknown: "CPU-Verbraucher, Dauerlast und vereinbarte Kritikalit\xE4tsklasse auf dem \xFCberwachten Host pr\xFCfen."
+- alertname: LPMMemory(High|Mid|Low)_(WARN|ERROR)|LPMSwapUsage
+  annotations:
+    action:
+      linux: "Linux: free -h; ps -eo pid,comm,rss --sort=-rss | head. Verf\xFCgbare Reserve, Swap und Prozessverbrauch pr\xFCfen; Cache ist kein alleiniger Drucknachweis."
+      windows: "Windows: Task-Manager und Ressourcenmonitor f\xFCr verf\xFCgbaren und zugesicherten Speicher sowie Auslagerung pr\xFCfen."
+      unknown: "Verf\xFCgbaren Speicher, Reserve, Swap und Prozessverbrauch auf dem \xFCberwachten Host pr\xFCfen."
+- alertname: LPMDiskIOUtilHigh_(WARN|ERROR)
+  annotations:
+    action:
+      linux: "Linux: iostat -xz 1 5. Auslastung gemeinsam mit Latenz und Warteschlange des betroffenen Datentr\xE4gers pr\xFCfen."
+      windows: "Windows: Datentr\xE4ger im Ressourcenmonitor pr\xFCfen und Auslastung mit Latenz und Warteschlange abgleichen."
+      unknown: "Datentr\xE4gerauslastung gemeinsam mit Latenz und Warteschlange des betroffenen Ger\xE4ts pr\xFCfen."
+- alertname: LPMSystemdService(High|Mid|Low)_ERROR
+  annotations:
+    action:
+      linux: "Linux: systemctl status \"{{ $labels.name }}\"; journalctl -u \"{{ $labels.name }}\". Erwarteten Betriebszustand und Abh\xE4ngigkeiten pr\xFCfen."
+      windows: "Windows: Get-Service -Name '{{ $labels.name }}'; Ereignisprotokoll und Dienstabh\xE4ngigkeiten pr\xFCfen."
+      unknown: "Den ausdr\xFCcklich \xFCberwachten Dienst {{ $labels.name }}, Sollzustand und Abh\xE4ngigkeiten auf dem Zielhost pr\xFCfen."

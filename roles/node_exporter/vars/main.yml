@@ -7,4 +7,4 @@ _node_exporter_arch_map:
   armv6l: armv6
 
 _node_exporter_arch: '{{ _node_exporter_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}'
-_node_exporter_download_dir: /var/cache/degit/node_exporter
+_node_exporter_download_dir: /var/cache/degitag/node_exporter

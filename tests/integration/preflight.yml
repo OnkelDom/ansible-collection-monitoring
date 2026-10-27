@@ -13,7 +13,7 @@
     block:
     - name: Load the actual collection preflight
       ansible.builtin.include_role:
-        name: 'degit.monitoring.{{ _preflight_role }}'
+        name: 'degitag.monitoring.{{ _preflight_role }}'
         tasks_from: preflight.yml
         public: true
       loop: '{{ monitoring_test_roles }}'

@@ -1,0 +1,169 @@
+---
+schema_version: 1
+identity_labels: [instance, tenant, environment, site]
+resource_labels: [path, device, name, interface, target, server, port, protocol, method]
+source_policy: one_primary_source_per_host
+telegraf_metric_version: 2
+sources:
+  alloy_linux:
+    family: node
+    collectors: [cpu, meminfo, vmstat, filesystem, diskstats, netdev, conntrack, pressure]
+    optional_collectors: [systemd, blackbox]
+  node_exporter:
+    family: node
+    collectors: [cpu, meminfo, vmstat, filesystem, diskstats, netdev, conntrack, pressure]
+    optional_collectors: [systemd]
+  telegraf_linux:
+    family: telegraf
+    inputs: [cpu, system, mem, swap, disk, diskio, net, kernel_vmstat]
+    optional_inputs: [conntrack, systemd_units, net_response, http_response]
+  alloy_windows:
+    family: windows
+    collectors: [cpu, logical_disk, memory, net, os, system]
+    optional_collectors: [service]
+metrics:
+  uptime:
+    record: lpm:system_uptime_seconds
+    unit: seconds
+    node: node_boot_time_seconds
+    telegraf: system_uptime
+  cpu:
+    record: lpm:cpu_utilization:avg15m
+    unit: percent
+    node: node_cpu_seconds_total
+    telegraf: cpu_usage_idle
+    telegraf_selector: cpu=cpu-total
+  memory:
+    record: lpm:mem_utilization:avg15m
+    unit: percent
+    node: [node_memory_MemAvailable_bytes, node_memory_MemTotal_bytes]
+    telegraf: [mem_available, mem_total]
+    semantics: available_memory_excludes_reclaimable_cache_from_pressure
+  memory_reserve:
+    record: lpm:memory_available_bytes:avg15m
+    unit: bytes
+    node: node_memory_MemAvailable_bytes
+    telegraf: mem_available
+  swap:
+    record: lpm:swap_utilization:avg15m
+    unit: percent
+    node: [node_memory_SwapFree_bytes, node_memory_SwapTotal_bytes]
+    telegraf: [swap_free, swap_total]
+    zero_capacity: no_series
+  swap_io:
+    record: lpm:swap_io_pages:rate15m
+    unit: pages_per_second
+    node: [node_vmstat_pswpin, node_vmstat_pswpout]
+    telegraf: [kernel_vmstat_pswpin, kernel_vmstat_pswpout]
+  filesystem:
+    record: lpm:disk_used_percent:avg15m
+    unit: percent
+    node: [node_filesystem_avail_bytes, node_filesystem_size_bytes]
+    telegraf: [disk_used_percent, disk_total]
+    removed_or_zero_capacity: no_series
+  inodes:
+    record: lpm:disk_inodes_used_percent:avg15m
+    unit: percent
+    node: [node_filesystem_files_free, node_filesystem_files]
+    telegraf: [disk_inodes_used, disk_inodes_total]
+    removed_or_zero_capacity: no_series
+  io_utilization:
+    record: lpm:diskio_utilization:avg15m
+    unit: ratio
+    node: node_disk_io_time_seconds_total
+    telegraf: diskio_io_time
+    telegraf_input_unit: milliseconds
+  io_latency:
+    record: lpm:diskio_await:avg15m
+    unit: milliseconds
+    node: [node_disk_read_time_seconds_total, node_disk_write_time_seconds_total, node_disk_reads_completed_total, node_disk_writes_completed_total]
+    telegraf: [diskio_read_time, diskio_write_time, diskio_reads, diskio_writes]
+  io_queue:
+    record: lpm:diskio_queue:avg15m
+    unit: requests
+    node: node_disk_io_now
+    telegraf: diskio_iops_in_progress
+  network:
+    record: lpm:net_bytes_recv:rate5m
+    unit: bytes_per_second
+    node: [node_network_receive_bytes_total, node_network_transmit_bytes_total]
+    telegraf: [net_bytes_recv, net_bytes_sent]
+  network_errors:
+    record: lpm:net_err_in:rate5m
+    unit: events_per_second
+    node: [node_network_receive_errs_total, node_network_transmit_errs_total, node_network_receive_drop_total, node_network_transmit_drop_total]
+    telegraf: [net_err_in, net_err_out, net_drop_in, net_drop_out]
+  conntrack:
+    record: lpm:conntrack_utilization
+    unit: ratio
+    node: [node_nf_conntrack_entries, node_nf_conntrack_entries_limit]
+    telegraf: [conntrack_ip_conntrack_count, conntrack_ip_conntrack_max]
+    optional: true
+  selected_services:
+    record: lpm:systemd_active_code
+    unit: result_code_zero_is_ready
+    node: node_systemd_unit_state
+    telegraf: systemd_units_active_code
+    windows: windows_service_state
+    selection: lpm_service_expected=true
+    missing_series: external_expectation_required
+  portcheck:
+    record: lpm:portcheck_result_code
+    unit: result_code_zero_is_success
+    blackbox: probe_success
+    telegraf: net_response_result_code
+    selection: monitoring_profile=lpm
+    blackbox_probe_kind: port
+  httpcheck:
+    record: lpm:httpcheck_result_code
+    unit: result_code_zero_is_success
+    blackbox: probe_success
+    telegraf: http_response_result_code
+    selection: monitoring_profile=lpm
+    blackbox_probe_kind: http
+thresholds:
+  cpu:
+    high: {warn: 30, error: 40, for: 15m}
+    mid: {warn: 70, error: 85, for: 15m}
+    low: {warn: 85, error: 95, for: 60m}
+    uptime_guard: 600
+  memory:
+    high: {warn: 60, error: 75, for: 15m}
+    mid: {warn: 80, error: 90, for: 15m}
+    low: {warn: 90, error: 95, for: 60m}
+  filesystem:
+    high: {warn: 70, error: 85, for: 15m}
+    mid: {warn: 80, error: 90, for: 15m}
+    low: {warn: 90, error: 95, for: 60m}
+  io_utilization:
+    high: {warn: 0.60, error: 0.80, for: 15m}
+    uptime_guard: 600
+  io_latency:
+    high: {warn: 10, error: 25, for: 15m}
+    uptime_guard: 600
+  io_queue:
+    high: {error: 5, for: 15m}
+    uptime_guard: 600
+  conntrack:
+    high: {warn: 0.50, error: 0.70, for: 5m}
+    mid: {warn: 0.70, error: 0.85, for: 5m}
+    low: {warn: 0.85, error: 0.95, for: 10m}
+  selected_services:
+    high: {for: 30s}
+    mid: {for: 1m}
+    low: {for: 2m}
+  portcheck:
+    high: {for: 30s}
+    mid: {for: 1m}
+    low: {for: 2m}
+  httpcheck:
+    high: {for: 30s}
+    mid: {for: 1m}
+    low: {for: 2m}
+capability_limits:
+- CPU and memory PSI pressure require Linux pressure collector metrics; baseline Telegraf does not supply PSI.
+- Windows commit pressure needs the Windows memory collector.
+- Kernel OOM alerts need vmstat oom_kill metrics from node or kernel_vmstat.
+- Node Exporter does not perform HTTP or port probes; use Blackbox Exporter or the explicit Alloy blackbox component.
+- Service metrics require an enabled optional collector and explicit expected-service selection.
+- A silent remote-write sender needs an external heartbeat; local up cannot prove complete sender failure.

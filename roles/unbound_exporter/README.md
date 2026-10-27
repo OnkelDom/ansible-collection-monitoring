@@ -26,8 +26,7 @@ The role interface is validated through `meta/argument_specs.yml`. Defaults are 
 proxy_env: {}
 unbound_exporter_log_level: warn
 unbound_exporter_config_flags_extra:
-  block-file: /etc/unbound/unbound.block.conf
-  unbound.uri: tcp://localhost:953
+  unbound.uri: '{{ _unbound_exporter_platform_control_uri | default("tcp://127.0.0.1:8953") }}'
 unbound_exporter_manage_service: true
 unbound_exporter_service_enabled: true
 unbound_exporter_service_state: started
@@ -41,7 +40,7 @@ unbound_exporter_service_state: started
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.unbound_exporter
+    - role: degitag.monitoring.unbound_exporter
 ```
 
 ## Testing
@@ -65,3 +64,27 @@ Install the collection dependencies from `requirements.yml`. Role dependencies:
 Use check mode where the underlying modules support it. Review the diff before applying
 changes. Network, firewall, identity and storage changes need an out-of-band recovery
 path. Secrets belong in Ansible Vault or the operator secret store, never in defaults.
+
+## Binary provenance
+
+Bundled binaries support Linux x86_64 and aarch64. The role rejects other
+architectures before installation. `files/exporter.provenance.json` records the
+immutable upstream revision, source checksum, Go toolchain, dependency lock hashes
+and binary hashes. Rebuild and verify with `tools/build_exporters.py`; unknown
+bundled ELF files are rejected during artifact validation.
+
+
+## Unbound-Steuerpfad und optionale Blockliste
+
+Die Plattformschicht wählt den Paketstandard für den lokalen Unix-Control-Socket:
+Debian/Ubuntu `/run/unbound.ctl`, Rocky/RHEL `/run/unbound/control`. Abweichende
+Installationen überschreiben `unbound_exporter_config_flags_extra['unbound.uri']`.
+Auf Ubuntu 22.04 muss der Betreiber Control explizit aktivieren; die Exporter-Rolle
+konfiguriert den DNS-Dienst nicht selbst.
+TCP-Control benötigt entsprechend konfigurierte Zertifikate und Serverfreigaben.
+
+Blocklisten-Metriken sind optional; ein Dateipfad wird ausdrücklich über
+`unbound_exporter_config_flags_extra['block-file']` angegeben. Der geprüfte
+Source-Patch zählt eindeutige Domains aus `local-zone`/`local-data`, unterstützt
+Dateien ohne Header oder abschließenden Zeilenumbruch und liefert keine negativen
+Anzahlen. Die Herkunftsdatei verweist auf Patch und Go-Regressionstest.

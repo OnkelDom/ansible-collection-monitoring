@@ -15,7 +15,7 @@ Facts are collected at entry only when the required platform facts are missing.
 family, distribution and release variables from `vars/platform/` in that order.
 Public inputs belong in `defaults/main.yml`; platform internals belong in `vars/`.
 
-Owned exclusively by degit.monitoring. Optional firewall rules delegate to degit.infrastructure.firewall. Configure only one telemetry agent for each metric source.
+Owned exclusively by degitag.monitoring. Optional firewall rules delegate to degitag.infrastructure.firewall. Configure only one telemetry agent for each metric source.
 
 ## Role Variables
 
@@ -79,7 +79,7 @@ node_exporter_checksum: ''
   become: true
   gather_facts: true
   roles:
-    - role: degit.monitoring.node_exporter
+    - role: degitag.monitoring.node_exporter
 ```
 
 ## Testing
@@ -106,4 +106,4 @@ path. Secrets belong in Ansible Vault or the operator secret store, never in def
 
 ## Ownership
 
-This role is owned exclusively by `degit.monitoring`. Host firewall policy remains in `degit.infrastructure`.
+This role is owned exclusively by `degitag.monitoring`. Host firewall policy remains in `degitag.infrastructure`.

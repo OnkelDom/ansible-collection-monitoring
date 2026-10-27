@@ -1,0 +1,87 @@
+---
+- name: Verify selected exporter version changes and return to qualified defaults
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    process_exporter_create_consul_agent_service: false
+    snmp_exporter_create_consul_agent_service: false
+    unifi_poller_config:
+      poller:
+        quiet: true
+        debug: false
+      prometheus:
+        disable: false
+        http_listen: 127.0.0.1:9130
+      influxdb:
+        disable: true
+      unifi:
+        dynamic: true
+        controllers: []
+      datadog:
+        disable: true
+    upgrade_cases:
+    - role: consul_exporter
+      baseline: 0.7.1
+      candidate: 0.8.0
+      binary: consul_exporter
+      port: 9107
+    - role: redis_exporter
+      baseline: 1.46.0
+      candidate: 1.47.0
+      binary: redis_exporter
+      port: 9121
+    - role: process_exporter
+      baseline: 0.7.5
+      candidate: 0.8.1
+      binary: process_exporter
+      port: 9256
+    - role: snmp_exporter
+      baseline: 0.18.0
+      candidate: 0.19.0
+      binary: snmp_exporter
+      port: 9116
+    - role: systemd_exporter
+      baseline: 0.4.0
+      candidate: 0.5.0
+      binary: systemd_exporter
+      port: 9558
+    - role: pushgateway
+      baseline: 1.4.3
+      candidate: 1.5.1
+      binary: pushgateway
+      port: 9091
+    - role: victoriametrics
+      baseline: 1.57.1
+      candidate: 1.58.0
+      binary: victoriametrics
+      port: 8428
+    - role: unifi_poller
+      baseline: 2.1.3
+      candidate: 2.2.0
+      binary: unpoller
+      port: 9130
+  tasks:
+  - name: Require an explicitly disposable guest
+    ansible.builtin.assert:
+      that:
+      - monitoring_lab_disposable | default(false) | bool
+      - ansible_facts.hostname is match('^monitoring-release-')
+  - name: Write a persistent VictoriaMetrics probe before version changes
+    ansible.builtin.uri:
+      url: http://127.0.0.1:8428/api/v1/import/prometheus
+      method: POST
+      body: release_upgrade_probe{scope="lab"} 20261027
+      status_code: 204
+  - name: Exercise each selected exporter release pair
+    ansible.builtin.include_tasks: tasks/exporter_upgrade_case.yml
+    loop: '{{ upgrade_cases }}'
+    loop_control:
+      loop_var: upgrade_case
+      label: '{{ upgrade_case.role }}'
+  - name: Verify persistent VictoriaMetrics data survived the version round trip
+    ansible.builtin.uri:
+      url: http://127.0.0.1:8428/api/v1/query?query=release_upgrade_probe
+      return_content: true
+    register: upgrade_metric
+    failed_when: upgrade_metric.json.data.result | length == 0

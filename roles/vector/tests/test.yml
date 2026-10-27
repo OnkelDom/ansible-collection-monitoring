@@ -4,4 +4,4 @@
   connection: local
   gather_facts: true
   roles:
-  - role: degit.monitoring.vector
+  - role: degitag.monitoring.vector

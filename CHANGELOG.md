@@ -1,12 +1,20 @@
 # Changelog
 
-## 2.0.0 preparation
+## 2.0.0
+
+- Rename the collection and sibling references to `degitag`; preserve historical validation evidence.
+- Remove the four unimplemented exporter placeholders from the artifact.
+- Rebuild bundled iLO5/Squid/Unbound exporters from pinned sources and updated locked dependencies for AMD64/ARM64; verify provenance and reproducibility.
+- Install checksum-verified exporter releases on targets and honor version and service policy changes.
+- Remove hidden Redis/iLO credentials and implicit Consul registration; pin and validate Vector packages/configuration.
 
 - Move Alloy and node_exporter ownership out of default_server into monitoring.
 - Remove Grafana Agent and Promtail without migration automation.
-- Introduce degit namespace, generated preflight/platform layers, service guards and artifact-based controller validation.
+- Introduce generated preflight/platform layers, service guards and artifact-based controller validation.
 - Remove customer defaults and make configuration inputs explicit.
-- Runtime, upgrade and restore qualification is pending; this is not a released version.
+- Adopt the shared five-collection repository, README, CI, artifact and release contract.
+- Integrate the Alloy/Node Exporter/Telegraf LPM source matrix: 42 recordings, 53 alarms, resource-scoped inhibition, 135 semantic scenarios and 25 real Alertmanager tests.
+- Pin Alloy, Grafana and Vector defaults; qualify native services on five Linux platforms and Alloy on Windows Server 2025. See the dated validation report for exact runtime, upgrade and restore scope; no production deployment is included.
 
 ## Previous main changes
 

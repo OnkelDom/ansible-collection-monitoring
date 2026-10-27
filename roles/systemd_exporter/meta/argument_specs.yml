@@ -59,7 +59,7 @@ argument_specs:
         description:
         - Controls `systemd_exporter_user_additional_groups` for the `systemd_exporter` role.
         required: false
-        type: str
+        type: list
       systemd_exporter_collector_private:
         description:
         - Controls `systemd_exporter_collector_private` for the `systemd_exporter` role.

@@ -1,0 +1,6 @@
+---
+- name: Install the selected candidate and return to the release baseline
+  ansible.builtin.include_tasks: exporter_upgrade_phase.yml
+  loop: '{{ [upgrade_case.candidate, upgrade_case.baseline] }}'
+  loop_control:
+    loop_var: upgrade_version

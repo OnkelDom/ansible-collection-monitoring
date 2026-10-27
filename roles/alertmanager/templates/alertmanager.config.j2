@@ -20,7 +20,7 @@ templates:
 receivers:
 - name: blackhole
 {# STANDARD RECEIVERS #}
-{% set receivers = alertmanager_routes | degit.monitoring.monitoring_email_routes(alertmanager_lpm_enabled | default(true)) | selectattr('config','defined') %}{% for receiver in receivers %}
+{% set receivers = alertmanager_routes | degitag.monitoring.monitoring_email_routes(alertmanager_lpm_enabled | default(true)) | selectattr('config','defined') %}{% for receiver in receivers %}
 - name: {{ receiver.receiver }}
 {{ receiver.config | to_nice_yaml(indent=2,sort_keys=False) | indent(2, True) }}
 {%- endfor %}

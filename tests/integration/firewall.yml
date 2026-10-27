@@ -1,0 +1,54 @@
+---
+- name: Verify optional host firewall delegation on disposable guests
+  hosts: monitoring_lab
+  become: true
+  gather_facts: true
+  vars:
+    node_exporter_manage_firewall: true
+    node_exporter_firewall_ports:
+    - 9100/tcp
+    alloy_manage_firewall: true
+    alloy_firewall_ports:
+    - 12345/tcp
+    alloy_pipeline_enabled: true
+    alloy_labels:
+      tenant: validation
+      environment: lab
+    alloy_prometheus_remote_write_url: http://127.0.0.1:9090/api/v1/write
+    alloy_loki_endpoint: http://127.0.0.1:3100/loki/api/v1/push
+  pre_tasks:
+  - name: Require an explicitly disposable guest
+    ansible.builtin.assert:
+      that:
+      - monitoring_lab_disposable | default(false) | bool
+      - ansible_facts.hostname is match('^monitoring-release-')
+  roles:
+  - degitag.monitoring.node_exporter
+  - degitag.monitoring.alloy
+  post_tasks:
+  - name: Inspect additive UFW rules
+    ansible.builtin.command: ufw show added
+    changed_when: false
+    register: ufw_rules
+    when: ansible_facts.os_family == 'Debian'
+  - name: Verify both delegated UFW rules
+    ansible.builtin.assert:
+      that:
+      - '''9100/tcp'' in ufw_rules.stdout'
+      - '''12345/tcp'' in ufw_rules.stdout'
+    when: ansible_facts.os_family == 'Debian'
+  - name: Verify permanent firewalld rules
+    ansible.builtin.command:
+      argv:
+      - firewall-cmd
+      - --permanent
+      - --zone=public
+      - --query-rich-rule
+      - rule port port="{{ item }}" protocol="tcp" accept
+    changed_when: false
+    loop:
+    - '9100'
+    - '12345'
+    when: ansible_facts.os_family == 'RedHat'
+  - name: Verify SSH remains reachable after additive rule management
+    ansible.builtin.ping:

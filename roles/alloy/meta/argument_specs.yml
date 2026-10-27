@@ -389,3 +389,8 @@ argument_specs:
         - Controls `alloy_linux_filesystem_mount_points_exclude_extra` for the `alloy` role.
         required: false
         type: list
+      alloy_version:
+        description:
+        - Controls `alloy_version` for the `alloy` role.
+        required: false
+        type: str

@@ -1,5 +1,10 @@
 ---
 name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 concurrency:
@@ -13,14 +18,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core:
-        - '2.20'
-        - '2.21'
+        core: ['2.20', '2.21']
     env:
       ANSIBLE_HOME: ${{ github.workspace }}/.ansible
       ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
@@ -29,55 +32,18 @@ jobs:
         cache: pip
         cache-dependency-path: requirements-test.txt
     - name: Install controller dependencies
-      run: 'python -m pip install -r requirements-test.txt
-
-        python -m pip install ''ansible-core~=${{ matrix.core }}.0''
-
+      run: |
+        python -m pip install -r requirements-test.txt
+        python -m pip install 'ansible-core~=${{ matrix.core }}.0'
         ansible-galaxy collection install -r requirements.yml
-
-        '
-    - name: Check role contracts and unit tests
-      run: 'python tools/generate_role_scaffold.py --check
-
-        pytest tests/unit -q
-
-        yamllint .
-
-        '
-    - name: Build and install collection
-      run: 'ansible-galaxy collection build --force
-
-        python tools/check_collection_artifact.py degit-monitoring-*.tar.gz
-
-        ansible-galaxy collection install degit-monitoring-*.tar.gz --force
-
-        '
-    - name: Run collection sanity checks
-      run: bash tests/run_collection_sanity.sh degit-monitoring-*.tar.gz monitoring
-    - name: Exercise installed platform contracts without host changes
-      run: python tests/run_preflight_checks.py
-    - name: Validate neutral LPM and native PVE rules
-      run: 'python tests/install_monitoring_test_tools.py --dest "$RUNNER_TEMP/monitoring-tools"
-
-        python tests/run_lpm_checks.py --promtool "$RUNNER_TEMP/monitoring-tools/promtool" --amtool "$RUNNER_TEMP/monitoring-tools/amtool"
-
-        PROMTOOL="$RUNNER_TEMP/monitoring-tools/promtool" python tests/run_proxmox_checks.py
-
-        '
-    - name: Check syntax and Ansible lint
-      run: 'bash tests/run_role_syntax_checks.sh
-
-        ansible-lint --offline
-
-        '
-    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+    - name: Run the shared repository and monitoring checks
+      run: bash tests/run_checks.sh
+    - name: Resolve the checked artifact name
+      id: metadata
+      run: echo "artifact=$(python tools/collection_metadata.py artifact)" >> "$GITHUB_OUTPUT"
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       if: matrix.core == '2.21'
       with:
         name: collection
-        path: degit-monitoring-*.tar.gz
+        path: ${{ steps.metadata.outputs.artifact }}
         retention-days: 14
-'on':
-  push:
-  pull_request:
-  workflow_dispatch:
-  workflow_call:

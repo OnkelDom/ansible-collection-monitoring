@@ -1,5 +1,9 @@
 # Native Abnahme auf pve.lenmail.de
 
+Die aktuelle Ergänzung für `degitag.monitoring:2.0.0` steht in der
+[Release-Abnahme vom 27.10.2026](release-readiness-2026-10-27.md).
+Der folgende historische Nachweis behält seinen ursprünglichen Umfang und Namespace.
+
 Stand: 18.10.2026. Getestet wird der vorbereitete Branch `codex/monitoring-v2`
 mit dem gebauten und installierten Artefakt `degit.monitoring:2.0.0`.
 Dies ist eine Entwicklungsabnahme, kein Produktionsrelease.

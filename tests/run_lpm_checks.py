@@ -34,7 +34,14 @@ def main():
         rules = folder / 'host.rules'
         rules.write_text(yaml.safe_dump(document, sort_keys=False, allow_unicode=True))
         subprocess.run([args.promtool, 'check', 'rules', str(rules)], check=True)
-        tests = yaml.safe_load((ROOT / 'tests/lpm/rules.test.yml').read_text())
+        tests = {'evaluation_interval': '1m', 'tests': []}
+        for path in sorted((ROOT / 'tests/lpm').glob('*.test.yml')):
+            tests['tests'].extend(yaml.safe_load(path.read_text())['tests'])
+        matrix_spec = importlib.util.spec_from_file_location('lpm_matrix', ROOT / 'tests/lpm/matrix_cases.py')
+        matrix = importlib.util.module_from_spec(matrix_spec)
+        matrix_spec.loader.exec_module(matrix)
+        tests['tests'].extend(matrix.matrix_cases())
+        print(str(len(tests['tests'])) + ' Promtool source/matrix scenarios', flush=True)
         tests['rule_files'] = [str(rules)]
         suite = folder / 'rules.test.yml'
         suite.write_text(yaml.safe_dump(tests, sort_keys=False, allow_unicode=True))

@@ -32,109 +32,53 @@
     owner: '{{ victoriametrics_system_user }}'
     group: '{{ victoriametrics_system_group }}'
     mode: '0755'
-- name: check if is installed
-  register: __victoriametrics_is_installed
-  become: true
-  tags: victoriametrics
-  ansible.builtin.stat:
-    path: /usr/local/bin/victoriametrics
-- name: gather currently installed version (if any)
-  args:
-    warn: false
-  changed_when: false
-  register: __victoriametrics_current_version_output
-  when: __victoriametrics_is_installed.stat.exists
-  become: true
-  tags: victoriametrics
-  check_mode: false
-  ansible.builtin.command: /usr/local/bin/victoriametrics -version
-- block:
-  - name: get latest release
-    environment: '{{ proxy_env }}'
-    no_log: '{{ not lookup(''env'', ''MOLECULE_DEBUG'') | bool }}'
-    register: _latest_release
-    until: _latest_release.status == 200
-    tags: victoriametrics
-    retries: 5
-    ansible.builtin.uri:
-      url: https://api.github.com/repos/VictoriaMetrics/VictoriaMetrics/releases/latest
-      method: GET
-      return_content: true
-      status_code: 200
-      body_format: json
-      validate_certs: true
-      user: '{{ lookup(''env'', ''GH_USER'') | default(omit) }}'
-      password: '{{ lookup(''env'', ''GH_TOKEN'') | default(omit) }}'
-  - name: set victoriametrics version to {{ _latest_release.json.tag_name[1:] }}
-    tags: victoriametrics
-    ansible.builtin.set_fact:
-      victoriametrics_version: '{{ _latest_release.json.tag_name[1:] }}'
-  when: victoriametrics_version == "latest"
-  delegate_to: localhost
-  run_once: true
-  become: true
-  tags: victoriametrics
-- name: set fact for version split
-  tags: victoriametrics
-  when: __victoriametrics_current_version_output.stdout_lines is defined
+- name: Create versioned release cache
+  ansible.builtin.file:
+    path: '{{ _victoriametrics_download_dir }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Read the architecture-specific upstream checksum manifest
+  ansible.builtin.uri:
+    url: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v{{ victoriametrics_version }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}_checksums.txt
+    return_content: true
+  register: _victoriametrics_release_manifest
+  environment: '{{ proxy_env }}'
+- name: Select the current or historical archive checksum name
   ansible.builtin.set_fact:
-    victoriametrics_version2: '{{ __victoriametrics_current_version_output.stdout_lines[0].split(''-'')[5]|regex_search(''[0-9.]+'') }}'
-- name: defined version
-  tags: victoriametrics
-  when: __victoriametrics_current_version_output.stdout_lines is defined
-  ansible.builtin.debug:
-    msg: '{{ victoriametrics_version2 }}'
-- block:
-  - name: get checksum list from github
-    environment: '{{ proxy_env }}'
-    run_once: true
-    become: true
-    tags: victoriametrics
-    ansible.builtin.set_fact:
-      _checksums: '{{ lookup(''url'', ''https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v'' + victoriametrics_version + ''/victoria-metrics-'' + go_arch + ''-v'' + victoriametrics_version + ''_checksums.txt'', wantlist=True) | list }}'
-  - name: get checksum for {{ go_arch }} architecture
-    with_items: '{{ _checksums }}'
-    when: ('victoria-metrics-' + go_arch + '-v' + victoriametrics_version + '.tar.gz') in item
-    become: true
-    tags: victoriametrics
-    ansible.builtin.set_fact:
-      victoriametrics_checksum: '{{ item.split('' '')[0] }}'
-  - name: download binary to local folder
-    environment: '{{ proxy_env }}'
-    register: _download_binary
-    until: _download_binary is succeeded
-    retries: 5
-    delay: 2
-    delegate_to: localhost
-    check_mode: false
-    become: false
-    tags: victoriametrics
-    ansible.builtin.get_url:
-      url: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v{{ victoriametrics_version }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}.tar.gz
-      dest: /tmp/victoriametrics-{{ victoriametrics_version }}.linux-{{ go_arch }}.tar.gz
-      checksum: sha256:{{ victoriametrics_checksum }}
-      mode: '0644'
-  - name: unpack binary
-    delegate_to: localhost
-    check_mode: false
-    become: false
-    tags: victoriametrics
-    ansible.builtin.unarchive:
-      src: /tmp/victoriametrics-{{ victoriametrics_version }}.linux-{{ go_arch }}.tar.gz
-      dest: /tmp
-      creates: /tmp/victoriametrics-{{ victoriametrics_version }}.linux-{{ go_arch }}/victoriametrics
-  - name: propagate binaries
-    notify: restart victoriametrics
-    when: not ansible_check_mode
-    become: true
-    tags: victoriametrics
-    ansible.builtin.copy:
-      src: /tmp/victoria-metrics-prod
-      dest: '{{ victoriametrics_binary_install_dir }}/victoriametrics'
-      mode: '0755'
-      owner: root
-      group: root
-  when: (not __victoriametrics_is_installed.stat.exists) or (__victoriametrics_current_version_output.stdout_lines[0].split("-")[5]|regex_search('[0-9.]+') != victoriametrics_version)
+    _victoriametrics_release_checksums: '{{ _victoriametrics_release_manifest.content | regex_findall(''(?m)^([a-fA-F0-9]{64})\s+\*?victoria-metrics-(?:'' + go_arch + ''-)?v'' + (victoriametrics_version | regex_escape) + ''\.tar\.gz$'') }}'
+- name: Require one unambiguous archive checksum
+  ansible.builtin.assert:
+    that:
+    - _victoriametrics_release_checksums | length == 1
+    fail_msg: The upstream manifest must identify exactly one matching release archive.
+- name: Download checksum-verified release on the target
+  ansible.builtin.get_url:
+    url: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v{{ victoriametrics_version }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}.tar.gz
+    dest: '{{ _victoriametrics_download_dir }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}.tar.gz'
+    checksum: sha256:{{ _victoriametrics_release_checksums[0] }}
+    mode: '0644'
+  environment: '{{ proxy_env }}'
+  register: _release_download
+  until: _release_download is succeeded
+  retries: 3
+  delay: 2
+- name: Extract the selected release
+  ansible.builtin.unarchive:
+    src: '{{ _victoriametrics_download_dir }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}.tar.gz'
+    dest: '{{ _victoriametrics_download_dir }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}'
+    remote_src: true
+    creates: '{{ _victoriametrics_download_dir }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}/victoria-metrics-prod'
+- name: Install the selected release binary
+  ansible.builtin.copy:
+    src: '{{ _victoriametrics_download_dir }}/victoria-metrics-{{ go_arch }}-v{{ victoriametrics_version }}/victoria-metrics-prod'
+    dest: '{{ victoriametrics_binary_install_dir }}/victoriametrics'
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  notify: restart victoriametrics
 - block:
   - name: create config directory
     become: true

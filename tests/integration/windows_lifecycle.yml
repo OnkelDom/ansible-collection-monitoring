@@ -12,7 +12,7 @@
   tasks:
   - name: Stop Alloy and set manual startup through its role API
     ansible.builtin.include_role:
-      name: degit.monitoring.alloy
+      name: degitag.monitoring.alloy
     vars:
       alloy_service_state: stopped
       alloy_service_enabled: false
@@ -37,7 +37,7 @@
     block:
     - name: Try an invalid candidate
       ansible.builtin.include_role:
-        name: degit.monitoring.alloy
+        name: degitag.monitoring.alloy
       vars:
         alloy_manage_service: false
         alloy_extra_config: 'this is invalid {'
@@ -58,7 +58,7 @@
       that: before_invalid.stat.checksum == after_invalid.stat.checksum
   - name: Apply a valid configuration with service management disabled
     ansible.builtin.include_role:
-      name: degit.monitoring.alloy
+      name: degitag.monitoring.alloy
     vars:
       alloy_manage_service: false
       alloy_log_level: warn
@@ -73,7 +73,7 @@
       that: unmanaged.services[0].state == 'stopped'
   - name: Restore Windows Alloy
     ansible.builtin.include_role:
-      name: degit.monitoring.alloy
+      name: degitag.monitoring.alloy
   - name: Apply pending restore handler
     ansible.builtin.meta: flush_handlers
   - name: Reboot the disposable Windows guest
