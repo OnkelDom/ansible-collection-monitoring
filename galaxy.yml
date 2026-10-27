@@ -57,3 +57,4 @@ build_ignore:
 - roles/*/.yamllint*
 - roles/*/.ansible-lint*
 - roles/*/CONTRIBUTING.md
+- .gitattributes
