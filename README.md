@@ -1,6 +1,10 @@
 # Ansible Collection `degitag.monitoring`
 
-[![CI](https://github.com/OnkelDom/ansible-collection-monitoring/actions/workflows/ci.yml/badge.svg)](https://github.com/OnkelDom/ansible-collection-monitoring/actions/workflows/ci.yml)
+[![CI](https://github.com/degitag/ansible-collection-monitoring/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/degitag/ansible-collection-monitoring/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/degitag/ansible-collection-monitoring)](https://github.com/degitag/ansible-collection-monitoring/releases)
+[![Tag](https://img.shields.io/github/v/tag/degitag/ansible-collection-monitoring?sort=date)](https://github.com/degitag/ansible-collection-monitoring/tags)
+![Ansible Core](https://img.shields.io/badge/ansible--core-2.20%20%7C%202.21-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 Native Monitoringdienste, Agenten, Exporter sowie neutrale Host- und Proxmox-Alarmprofile. Version 2.0.0 vereinheitlicht den Repository-Vertrag und den Namespace `degitag`. Ein Release führt keinen Produktionsrollout aus.
 
